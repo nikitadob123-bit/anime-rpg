@@ -2,54 +2,54 @@
  "warrior": {
   "avgLevel": 30,
   "winRateByTier": [
-   0.56,
-   0.84,
-   0.91,
-   0.96
+   0.8,
+   0.95,
+   0.69,
+   0.92
   ],
-  "runsPerGame": 62.4,
-  "actionsPerBattle": 15.6,
-  "gold": 85678,
+  "runsPerGame": 48,
+  "actionsPerBattle": 17.3,
+  "gold": 70165,
   "firstClear": {
    "mill": {
     "runs": 1,
     "lv": 4
    },
    "wood": {
-    "runs": 2.8,
-    "lv": 6.8
+    "runs": 2.1,
+    "lv": 6.1
    },
    "mines": {
-    "runs": 4,
-    "lv": 8
+    "runs": 3.2,
+    "lv": 7.4
    },
    "swamp": {
-    "runs": 7.9,
-    "lv": 11.4
+    "runs": 6.2,
+    "lv": 10.7
    },
    "spire": {
-    "runs": 10.2,
-    "lv": 13.7
+    "runs": 8.2,
+    "lv": 12.6
    },
    "cathedral": {
-    "runs": 11.8,
-    "lv": 14.4
+    "runs": 11.3,
+    "lv": 15.3
    }
   },
-  "runsToL30": 62,
+  "runsToL30": 48,
   "reachedL30": "10/10"
  },
  "mage": {
   "avgLevel": 30,
   "winRateByTier": [
-   0.83,
-   0.98,
-   0.96,
-   0.99
+   0.9,
+   1,
+   0.95,
+   0.93
   ],
-  "runsPerGame": 43.7,
-  "actionsPerBattle": 11.4,
-  "gold": 58209,
+  "runsPerGame": 41.2,
+  "actionsPerBattle": 11.6,
+  "gold": 61465,
   "firstClear": {
    "mill": {
     "runs": 1.1,
@@ -60,76 +60,76 @@
     "lv": 6.1
    },
    "mines": {
-    "runs": 3.4,
-    "lv": 7.5
+    "runs": 3.3,
+    "lv": 7.4
    },
    "swamp": {
-    "runs": 5.7,
-    "lv": 10.3
+    "runs": 5.4,
+    "lv": 10.1
    },
    "spire": {
-    "runs": 7.5,
-    "lv": 12.2
+    "runs": 7.3,
+    "lv": 12
    },
    "cathedral": {
     "runs": 10.5,
-    "lv": 14.9
+    "lv": 15.1
    }
   },
-  "runsToL30": 44,
+  "runsToL30": 41,
   "reachedL30": "10/10"
  },
  "rogue": {
   "avgLevel": 30,
   "winRateByTier": [
-   0.76,
-   0.97,
-   0.86,
-   0.95
+   0.88,
+   1,
+   0.96,
+   0.96
   ],
-  "runsPerGame": 58.1,
-  "actionsPerBattle": 10.2,
-  "gold": 85283,
+  "runsPerGame": 40.8,
+  "actionsPerBattle": 12.4,
+  "gold": 70541,
   "firstClear": {
    "mill": {
     "runs": 1,
     "lv": 4
    },
    "wood": {
-    "runs": 2.4,
-    "lv": 6.4
+    "runs": 2,
+    "lv": 6
    },
    "mines": {
-    "runs": 3.6,
-    "lv": 7.7
+    "runs": 3.2,
+    "lv": 7.3
    },
    "swamp": {
-    "runs": 6.2,
-    "lv": 10.6
+    "runs": 5.4,
+    "lv": 10.2
    },
    "spire": {
-    "runs": 7.7,
-    "lv": 12.1
+    "runs": 7.4,
+    "lv": 12.2
    },
    "cathedral": {
-    "runs": 10.9,
-    "lv": 15.1
+    "runs": 10.1,
+    "lv": 15
    }
   },
-  "runsToL30": 58,
+  "runsToL30": 41,
   "reachedL30": "10/10"
  },
  "healer": {
   "avgLevel": 30,
   "winRateByTier": [
+   0.98,
    0.94,
-   0.79,
    0.83,
-   0.7
+   0.55
   ],
-  "runsPerGame": 46.5,
-  "actionsPerBattle": 40.5,
-  "gold": 54054,
+  "runsPerGame": 36.6,
+  "actionsPerBattle": 47.8,
+  "gold": 44394,
   "firstClear": {
    "mill": {
     "runs": 1,
@@ -141,62 +141,62 @@
    },
    "mines": {
     "runs": 3.1,
-    "lv": 7.5
+    "lv": 7.6
    },
    "swamp": {
-    "runs": 5.1,
-    "lv": 10.1
+    "runs": 4.5,
+    "lv": 9.5
    },
    "spire": {
-    "runs": 7.2,
-    "lv": 12.1
+    "runs": 7,
+    "lv": 12
    },
    "cathedral": {
-    "runs": 10.3,
-    "lv": 15.1
+    "runs": 10.1,
+    "lv": 15
    }
   },
-  "runsToL30": 47,
+  "runsToL30": 37,
   "reachedL30": "10/10"
  },
  "shield": {
-  "avgLevel": 30,
+  "avgLevel": 29.6,
   "winRateByTier": [
-   0.31,
-   0.38,
-   0.23,
-   0.63
+   0.53,
+   0.54,
+   0.25,
+   0.45
   ],
-  "runsPerGame": 51.4,
-  "actionsPerBattle": 34.7,
-  "gold": 42544,
+  "runsPerGame": 60.9,
+  "actionsPerBattle": 35.9,
+  "gold": 57599,
   "firstClear": {
    "mill": {
     "runs": 1,
     "lv": 4
    },
    "wood": {
-    "runs": 2.7,
-    "lv": 6.5
+    "runs": 2.2,
+    "lv": 6.2
    },
    "mines": {
-    "runs": 4.5,
-    "lv": 8.4
+    "runs": 3.3,
+    "lv": 7.6
    },
    "swamp": {
-    "runs": 15.2,
-    "lv": 14.4
+    "runs": 9.7,
+    "lv": 12.5
    },
    "spire": {
-    "runs": 17.3,
-    "lv": 15.7
+    "runs": 12,
+    "lv": 14.4
    },
    "cathedral": {
-    "runs": 20.2,
-    "lv": 17.2
+    "runs": 13.8,
+    "lv": 15.6
    }
   },
-  "runsToL30": 51,
-  "reachedL30": "10/10"
+  "runsToL30": 58,
+  "reachedL30": "8/10"
  }
 }

@@ -1,6 +1,6 @@
 /* Симулятор баланса: автобой по всем подземельям для каждого класса. node tools/sim.js [runs] [--fast]
    Считает шанс победы вылазки, время (в боях/ходах), уровень, золото, предметы; сводка в sim-report.json */
-const RPG = require('../js/data-core.js'); require('../js/data-prof.js'); require('../js/data-world.js'); require('../js/engine.js'); require('../js/combat.js');
+const RPG = require('../js/data-core.js'); require('../js/data-prof.js'); require('../js/data-world.js'); require('../js/engine.js'); require('../js/combat.js'); require('../js/data-story.js');
 const D = RPG.D, E = RPG.E, C = RPG.C;
 const N = +process.argv[2] || 12;
 const UNIQ = { warrior: 'echoblade', mage: 'phoenix', rogue: 'shadowdance', healer: 'dawnsong', shield: 'ironwill' };
@@ -60,6 +60,7 @@ function simClass(cls, seed) {
   let rounds = 0, stuck = 0;
   while (rounds++ < 160 && slot.hero.level < D.LEVEL_CAP) {
     // лучший доступный контент не выше уровня героя (+1)
+    if (slot.prog.cleared.spire && !slot.story.done.includes('ch2_f')) slot.story.done.push('ch2_f');
     let best = null; const cands = [];
     D.DUNGEONS.forEach(d => { for (let t = 0; t < 4; t++) { if (!E.dungeonUnlocked(slot, d.id) || !E.tierUnlocked(slot, d.id, t)) continue; cands.push({ did: d.id, t, rec: d.lv + D.TIERS[t].lv + 1, fresh: !slot.prog.cleared[d.id] && t === 0 }); } });
     const lim = slot.hero.level + 1 - Math.min(stuck, 3);

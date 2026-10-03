@@ -35,7 +35,7 @@
   D.ROLES = {
     swarm: { hp: 0.55, atk: 0.8, def: 0.6, spd: 1.05, xp: 0.55, g: 0.6 }, brute: { hp: 1.25, atk: 1.0, def: 1.1, spd: 0.8, xp: 1, g: 1 }, skirm: { hp: 0.8, atk: 1.1, def: 0.8, spd: 1.3, xp: 0.9, g: 1 },
     caster: { hp: 0.7, atk: 1.2, def: 0.55, spd: 1.0, xp: 1, g: 1.1 }, tank: { hp: 1.7, atk: 0.8, def: 1.7, spd: 0.7, xp: 1.2, g: 1.2 }, support: { hp: 0.8, atk: 0.8, def: 0.7, spd: 1.0, xp: 1.1, g: 1.1 },
-    mini: { hp: 4.2, atk: 1.15, def: 1.2, spd: 0.95, xp: 3.2, g: 3.5 }, boss: { hp: 8.5, atk: 1.25, def: 1.3, spd: 1.0, xp: 7, g: 8 }
+    mini: { hp: 3.0, atk: 1.15, def: 1.2, spd: 0.95, xp: 3.2, g: 3.5 }, boss: { hp: 6.2, atk: 1.25, def: 1.3, spd: 1.0, xp: 7, g: 8 }
   };
   const ES = D.ESK = {};
   function es(id, n, ic, o) { o.id = id; o.n = n; o.ic = ic; ES[id] = o; }
@@ -51,7 +51,7 @@
   es('e_zap', 'Разряд', '⚡', { tgt: 'foe', fx: [{ k: 'dmg', s: 'mag', m: 1.25, el: 'bolt' }] });
   es('e_shade', 'Теневой коготь', '🌑', { tgt: 'foe', fx: [{ k: 'dmg', s: 'mag', m: 1.2, el: 'dark' }] });
   es('e_curse', 'Проклятие', '🕯️', { tgt: 'foe', fx: [{ k: 'dmg', s: 'mag', m: 0.6, el: 'dark' }, { k: 'st', id: 'weak', p: 1, dur: 3 }] });
-  es('e_heal', 'Целебный шёпот', '💚', { tgt: 'eally', fx: [{ k: 'heal', m: 2.2 }] });
+  es('e_heal', 'Целебный шёпот', '💚', { tgt: 'eally', fx: [{ k: 'heal', m: 1.5 }] });
   es('e_howl', 'Боевой вой', '🐺', { tgt: 'eallies', fx: [{ k: 'st', id: 'rally', dur: 3 }] });
   es('e_guard', 'Каменная стойка', '🪨', { tgt: 'self', fx: [{ k: 'st', id: 'guard', dur: 2, to: 'self' }] });
   es('e_web', 'Паутина', '🕸️', { tgt: 'foe', fx: [{ k: 'dmg', s: 'atk', m: 0.6 }, { k: 'st', id: 'chill', p: 1, dur: 2 }, { k: 'st', id: 'weak', p: 0.6, dur: 2 }] });
@@ -135,7 +135,7 @@
     { id: 'cathedral', n: 'Пепельный собор', ic: '⛪', lv: 15, floors: 3, bio: 'ash', col: '#7a3a4a', d: 'Сердце Ордена Безмолвия. Здесь решится судьба Лиры.', pool: ['ash_cultist', 'hellhound', 'silent_cleric', 'gargoyle', 'shade'], mini: 'mara', boss: 'eydran', ev: ['chest', 'rest', 'gather_ore', 'shrine'], need: 'spire' }
   ];
   D.DUN = {}; D.DUNGEONS.forEach(d => D.DUN[d.id] = d);
-  D.TIERS = [{ n: 'Обычный', lv: 0, mul: 1, loot: 1, ic: '🟢' }, { n: 'Героический', lv: 3, mul: 1.2, loot: 1.3, ic: '🟠' }, { n: 'Кошмар', lv: 6, mul: 1.45, loot: 1.7, ic: '🔴' }, { n: 'Бездна', lv: 9, mul: 1.8, loot: 2.2, ic: '⚫' }];
+  D.TIERS = [{ n: 'Обычный', lv: 0, mul: 1, loot: 1, ic: '🟢' }, { n: 'Героический', lv: 3, mul: 1.3, loot: 1.3, ic: '🟠' }, { n: 'Кошмар', lv: 6, mul: 1.75, loot: 1.7, ic: '🔴' }, { n: 'Бездна', lv: 9, mul: 2.3, loot: 2.2, ic: '⚫' }];
   D.GATHER_EV = { gather_ore: { n: 'Рудная жила', ic: '⛏️', prof: 'miner', drops: [['ore_cu', 1, 3, 4], ['ore_fe', 1, 2, 3], ['ore_ms', 1, 2, 2], ['gem_ae', 0, 1, 1]] }, gather_herb: { n: 'Заросли трав', ic: '🌿', prof: 'herb', drops: [['herb_g', 1, 3, 4], ['herb_b', 1, 3, 3], ['herb_r', 1, 2, 2], ['herb_s', 0, 1, 1]] }, gather_game: { n: 'Звериная тропа', ic: '🏹', prof: 'hunt', drops: [['hide', 1, 3, 4], ['meat', 1, 3, 3], ['fang', 0, 2, 2], ['silk', 0, 1, 1]] }, gather_fish: { n: 'Тихая вода', ic: '🎣', prof: 'fish', drops: [['fish_s', 1, 3, 3], ['fish_m', 1, 3, 3], ['fish_i', 1, 2, 2]] } };
 
   D.COMPANIONS = {

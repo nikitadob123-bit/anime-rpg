@@ -262,6 +262,7 @@
   E.dungeonUnlocked = function (slot, did) {
     const d = D.DUN[did]; if (!d) return false;
     if (d.need === 'ch1') return !!slot.story.flags.prologue_done;
+    if (d.id === 'cathedral' && !slot.story.done.includes('ch2_f')) return false;
     return !!slot.prog.cleared[d.need];
   };
   E.tierUnlocked = (slot, did, t) => t === 0 || !!(slot.prog.cleared[did] && slot.prog.cleared[did] >= t);  // cleared[did] = макс. пройденный тир + 1
@@ -302,4 +303,27 @@
     slot.buffs = []; slot.run = null; slot.rev++; return res;
   };
   if (typeof module !== 'undefined') module.exports = RPG;
+})();
+(function () {
+  const RPG = globalThis.RPG, D = RPG.D, E = RPG.E;
+  // ───── Сюжет ─────
+  E.sceneAvail = function (slot, id) {
+    const st = D.STORY.find(s => s.id === id); if (!st) return false; const n = st.need || {};
+    if (n.done && !slot.story.done.includes(n.done)) return false;
+    if (n.clear && !slot.prog.cleared[n.clear]) return false;
+    return true;
+  };
+  E.nextScene = (slot) => D.STORY.find(s => !slot.story.done.includes(s.id) && E.sceneAvail(slot, s.id)) || null;
+  E.setFlags = function (slot, f) { const fl = slot.story.flags; for (const k in f) { const v = f[k]; fl[k] = (typeof v === 'number' && typeof fl[k] === 'number') ? fl[k] + v : v; } };
+  E.give = function (slot, g) {
+    if (g.gold) { slot.gold += g.gold; }
+    if (g.cons) for (const k in g.cons) E.addCons(slot, k, g.cons[k]);
+    if (g.mats) for (const k in g.mats) E.addMat(slot, k, g.mats[k]);
+    if (g.sp) slot.hero.bossPts = (slot.hero.bossPts || 0) + g.sp;
+    if (g.item === 'tear') { const it = E.genItem(E.rng(777), { base: 'amulet', il: 14, rarity: 4 }); it.nm = 'Слеза Осколка'; it.st.hp = (it.st.hp || 0) + 60; it.st.res = (it.st.res || 0) + 20; E.addItem(slot, it); }
+  };
+  E.finishScene = function (slot, id) { if (!slot.story.done.includes(id)) { slot.story.done.push(id); slot.rev++; } };
+  E.unlockedComps = (slot) => D.COMP_IDS.filter(id => { const n = D.COMPANIONS[id].need; return !!slot.story.flags[n]; });
+  E.setParty = function (slot, ids) { const ok = E.unlockedComps(slot); slot.party = ids.filter(x => ok.includes(x)).slice(0, 2); };
+  E.fmtText = (s, slot) => String(s).replace(/\{name\}/g, slot.hero.name).replace(/\{echo\}/g, slot.hero.uniq ? D.UNIQ[slot.hero.uniq].n : 'Эхо');
 })();
