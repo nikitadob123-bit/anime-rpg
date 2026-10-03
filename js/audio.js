@@ -26,6 +26,7 @@
     magic: () => { tone(300, 0, 0.3, 'sine', 0.12, 900); noise(0.05, 0.2, 0.08, 2500); }, buff: () => { tone(440, 0, 0.12, 'triangle', 0.1); tone(660, 0.07, 0.16, 'triangle', 0.1); },
     win: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.12, 0.28, 'triangle', 0.15)); }, lose: () => { [392, 330, 262, 196].forEach((f, i) => tone(f, i * 0.22, 0.4, 'sine', 0.15)); },
     level: () => { [392, 523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.09, 0.26, 'triangle', 0.15)); }, loot: () => { tone(988, 0, 0.08, 'square', 0.07); tone(1318, 0.07, 0.14, 'square', 0.07); },
+    gold: () => { tone(1200, 0, 0.07, 'square', 0.06); tone(1600, 0.06, 0.12, 'square', 0.06); }, forge: () => { noise(0, 0.08, 0.3, 1500); tone(900, 0, 0.12, 'triangle', 0.1, 600); tone(1350, 0.09, 0.2, 'sine', 0.08); }, equip: () => { noise(0, 0.07, 0.15, 800); tone(420, 0, 0.1, 'triangle', 0.08, 300); }, pick: () => { tone(520, 0, 0.06, 'sine', 0.08, 700); noise(0.02, 0.1, 0.1, 2000); },
     boom: () => { noise(0, 0.5, 0.35, 120); tone(70, 0, 0.5, 'sine', 0.3, 30); }, page: () => noise(0, 0.05, 0.05, 3000), die: () => { tone(300, 0, 0.35, 'sawtooth', 0.12, 60); }
   };
   A.play = function (n) { if (!A.on || !A.ctx) return; try { if (A.ctx.state === 'suspended') A.ctx.resume(); (SFX[n] || SFX.click)(); } catch (e) { /* ignore */ } };

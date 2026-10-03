@@ -139,8 +139,8 @@
   D.GATHER_EV = { gather_ore: { n: 'Рудная жила', ic: '⛏️', prof: 'miner', drops: [['ore_cu', 1, 3, 4], ['ore_fe', 1, 2, 3], ['ore_ms', 1, 2, 2], ['gem_ae', 0, 1, 1]] }, gather_herb: { n: 'Заросли трав', ic: '🌿', prof: 'herb', drops: [['herb_g', 1, 3, 4], ['herb_b', 1, 3, 3], ['herb_r', 1, 2, 2], ['herb_s', 0, 1, 1]] }, gather_game: { n: 'Звериная тропа', ic: '🏹', prof: 'hunt', drops: [['hide', 1, 3, 4], ['meat', 1, 3, 3], ['fang', 0, 2, 2], ['silk', 0, 1, 1]] }, gather_fish: { n: 'Тихая вода', ic: '🎣', prof: 'fish', drops: [['fish_s', 1, 3, 3], ['fish_m', 1, 3, 3], ['fish_i', 1, 2, 2]] } };
 
   D.COMPANIONS = {
-    kairen: { n: 'Кайрен Вос', cls: 'warrior', race: 'human', portrait: 'npc_kairen', ic: '🗡️', skills: ['w_power', 'w_cleave', 'w_rally', 'w_second'], k: 0.8, need: 'ch1_done', role: 'Рыцарь Серых Знамён', d: 'Опытный фронтовик. Держит строй, поднимает боевой дух.' },
-    tika: { n: 'Тика Ломэ', cls: 'rogue', race: 'beast', portrait: 'npc_tika', ic: '🦊', skills: ['r_stab', 'r_poison', 'r_fin', 'r_smoke'], k: 0.78, need: 'ch1_done', role: 'Разведчица-вельдар', d: 'Быстрая, ядовитая, ловкая. Любит добивать.' },
+    kairen: { n: 'Кайрен Вос', cls: 'warrior', race: 'human', portrait: 'npc_kairen', ic: '🗡️', skills: ['w_power', 'w_cleave', 'w_rally', 'w_second'], k: 0.8, need: 'ch1_party', role: 'Рыцарь Серых Знамён', d: 'Опытный фронтовик. Держит строй, поднимает боевой дух.' },
+    tika: { n: 'Тика Ломэ', cls: 'rogue', race: 'beast', portrait: 'npc_tika', ic: '🦊', skills: ['r_stab', 'r_poison', 'r_fin', 'r_smoke'], k: 0.78, need: 'ch1_party', role: 'Разведчица-вельдар', d: 'Быстрая, ядовитая, ловкая. Любит добивать.' },
     irel: { n: 'Ирэль', cls: 'healer', race: 'elf', portrait: 'npc_irel', ic: '🌙', skills: ['h_heal', 'h_regen', 'h_cleanse', 'h_smite', 'h_mend'], k: 0.78, need: 'ch2_irel', role: 'Хранительница песни', d: 'Целительница с тайной. Лечит и очищает отряд.' }
   };
   D.COMP_IDS = Object.keys(D.COMPANIONS);

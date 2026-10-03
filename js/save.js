@@ -55,6 +55,8 @@
     p = tryParse(S.store.getItem(kB(id))); if (p) { return { p, recovered: true }; }
     return { p: null, recovered: false };
   };
+  S.hasBackup = function (id) { try { return !!S.migrate(JSON.parse(S.store.getItem(kB(id)))) && S.validate(S.migrate(JSON.parse(S.store.getItem(kB(id))))); } catch (e) { return false; } };
+  S.restoreBackup = function (id) { try { const p = S.migrate(JSON.parse(S.store.getItem(kB(id)))); if (!S.validate(p)) return null; S.store.setItem(kP(id), JSON.stringify(p)); return p; } catch (e) { return null; } };
   S.remove = function (id) { S.store.removeItem(kP(id)); S.store.removeItem(kB(id)); S.saveIndex(S.listIds().filter(x => x !== id)); };
   S.summaries = function () {
     return S.listIds().map(id => { const r = S.load(id); if (!r.p) return { id, broken: true }; const p = r.p; return { id, nick: p.nick, avatar: p.avatar, last: p.last, recovered: r.recovered, slots: p.slots.map(s => s ? { name: s.hero.name, cls: s.hero.cls, race: s.hero.race, level: s.hero.level, portrait: s.hero.portrait } : null) }; });

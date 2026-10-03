@@ -1,0 +1,84 @@
+{
+ "v": 1,
+ "id": "pold",
+ "nick": "Старый игрок",
+ "avatar": "🦉",
+ "created": 1700000000000,
+ "last": 1700000000000,
+ "settings": {
+  "sound": false
+ },
+ "slots": [
+  {
+   "hero": {
+    "name": "Старичок",
+    "sex": "m",
+    "race": "elf",
+    "cls": "mage",
+    "portrait": "elf_m_1",
+    "uniq": "frostheart",
+    "prof1": "alch",
+    "prof2": "herb",
+    "profLocked": true,
+    "level": 7,
+    "xp": 0,
+    "spent": {}
+   },
+   "gold": 777,
+   "uid": 2,
+   "inv": [],
+   "mats": {},
+   "cons": {
+    "pot_hp1": 3,
+    "pot_mp1": 1
+   },
+   "eq": {
+    "weapon": {
+     "id": 1,
+     "k": "staff",
+     "r": 0,
+     "il": 1,
+     "nm": "Посох",
+     "st": {
+      "mag": 11,
+      "int": 1
+     },
+     "up": 0,
+     "en": null,
+     "sl": "weapon"
+    }
+   },
+   "profs": {
+    "alch": {
+     "lv": 1,
+     "xp": 0
+    },
+    "herb": {
+     "lv": 1,
+     "xp": 0
+    }
+   },
+   "story": {
+    "flags": {},
+    "done": [
+     "prologue"
+    ],
+    "cur": "prologue",
+    "log": []
+   },
+   "prog": {
+    "cleared": {
+     "mill": true
+    },
+    "best": {},
+    "boss": {}
+   },
+   "run": null,
+   "created": 1700000000000,
+   "played": 0
+  },
+  null,
+  null
+ ],
+ "active": 0
+}
