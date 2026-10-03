@@ -15,6 +15,7 @@ const CLASSES = ['warrior', 'mage', 'rogue', 'healer', 'shield'], RN = { warrior
   const page = await ctx.newPage(); const errors = [], failed = [], external = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
+  page.on('response', (r) => { if (r.status() >= 400) failed.push(r.status() + ' ' + r.url()); });
   page.on('requestfailed', (r) => failed.push(r.url()));
   page.on('request', (r) => { if (!r.url().startsWith(url) && !r.url().startsWith('data:') && !r.url().startsWith('blob:')) external.push(r.url()); });
   const shot = (n) => page.screenshot({ path: path.join(outDir, n + '.png') });
@@ -165,8 +166,8 @@ const CLASSES = ['warrior', 'mage', 'rogue', 'healer', 'shield'], RN = { warrior
   check('экспорт-код', code.startsWith('ARPG3.'), code.slice(0, 20));
   const imp = await ev((c) => { const r = __RPG.S.importCode(c); return r.err || r.p.slots[0].hero.name; }, code);
   check('импорт кода', imp === 'Рэйн', imp);
-  const bad = await ev(() => __RPG.S.importCode('ARPG3.zzz.AAAA').err);
-  check('битый код отклонён', !!bad, bad);
+  const badCode = await ev(() => __RPG.S.importCode('ARPG3.zzz.AAAA').err);
+  check('битый код отклонён', !!badCode, badCode);
 
   // ───── Остальные классы: создание → пролог → город → бой ─────
   for (let ci = 1; ci < CLASSES.length; ci++) {

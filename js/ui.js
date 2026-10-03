@@ -30,6 +30,7 @@
   };
   UI.por = function (id, cls, lazy) {
     if (!id) return '<div class="por empty"></div>';
+    if (/^npc_[a-z]+$/.test(id)) id += '_n';
     return `<img class="por ${cls || ''}" ${lazy === false ? '' : 'loading="lazy"'} decoding="async" alt="" draggable="false" data-pid="${esc(id)}" src="assets/portraits/${esc(id)}.webp">`;
   };
   document.addEventListener('error', function (e) {
