@@ -184,6 +184,7 @@ const CLASSES = ['warrior', 'mage', 'rogue', 'healer', 'shield'], RN = { warrior
     await shot('cls-' + cls + '-battle');
     // применим навык, если доступен
     const used = await ev(() => { const b = document.querySelector('.skgrid .sk:not(.off)'); if (b) { b.click(); return true; } return false; });
+    await page.waitForTimeout(300); if (await page.locator('#modal.on [data-act="allyChosen"]').count()) await act('allyChosen');
     await page.waitForTimeout(900); await act('bAuto').catch(() => {}); await act('bSpeed').catch(() => {});
     await page.waitForSelector('[data-act="btDone"]', { timeout: 90000 });
     await shot('cls-' + cls + '-win');
