@@ -1,0 +1,202 @@
+{
+ "warrior": {
+  "avgLevel": 30,
+  "winRateByTier": [
+   0.56,
+   0.84,
+   0.91,
+   0.96
+  ],
+  "runsPerGame": 62.4,
+  "actionsPerBattle": 15.6,
+  "gold": 85678,
+  "firstClear": {
+   "mill": {
+    "runs": 1,
+    "lv": 4
+   },
+   "wood": {
+    "runs": 2.8,
+    "lv": 6.8
+   },
+   "mines": {
+    "runs": 4,
+    "lv": 8
+   },
+   "swamp": {
+    "runs": 7.9,
+    "lv": 11.4
+   },
+   "spire": {
+    "runs": 10.2,
+    "lv": 13.7
+   },
+   "cathedral": {
+    "runs": 11.8,
+    "lv": 14.4
+   }
+  },
+  "runsToL30": 62,
+  "reachedL30": "10/10"
+ },
+ "mage": {
+  "avgLevel": 30,
+  "winRateByTier": [
+   0.83,
+   0.98,
+   0.96,
+   0.99
+  ],
+  "runsPerGame": 43.7,
+  "actionsPerBattle": 11.4,
+  "gold": 58209,
+  "firstClear": {
+   "mill": {
+    "runs": 1.1,
+    "lv": 4
+   },
+   "wood": {
+    "runs": 2.2,
+    "lv": 6.1
+   },
+   "mines": {
+    "runs": 3.4,
+    "lv": 7.5
+   },
+   "swamp": {
+    "runs": 5.7,
+    "lv": 10.3
+   },
+   "spire": {
+    "runs": 7.5,
+    "lv": 12.2
+   },
+   "cathedral": {
+    "runs": 10.5,
+    "lv": 14.9
+   }
+  },
+  "runsToL30": 44,
+  "reachedL30": "10/10"
+ },
+ "rogue": {
+  "avgLevel": 30,
+  "winRateByTier": [
+   0.76,
+   0.97,
+   0.86,
+   0.95
+  ],
+  "runsPerGame": 58.1,
+  "actionsPerBattle": 10.2,
+  "gold": 85283,
+  "firstClear": {
+   "mill": {
+    "runs": 1,
+    "lv": 4
+   },
+   "wood": {
+    "runs": 2.4,
+    "lv": 6.4
+   },
+   "mines": {
+    "runs": 3.6,
+    "lv": 7.7
+   },
+   "swamp": {
+    "runs": 6.2,
+    "lv": 10.6
+   },
+   "spire": {
+    "runs": 7.7,
+    "lv": 12.1
+   },
+   "cathedral": {
+    "runs": 10.9,
+    "lv": 15.1
+   }
+  },
+  "runsToL30": 58,
+  "reachedL30": "10/10"
+ },
+ "healer": {
+  "avgLevel": 30,
+  "winRateByTier": [
+   0.94,
+   0.79,
+   0.83,
+   0.7
+  ],
+  "runsPerGame": 46.5,
+  "actionsPerBattle": 40.5,
+  "gold": 54054,
+  "firstClear": {
+   "mill": {
+    "runs": 1,
+    "lv": 4
+   },
+   "wood": {
+    "runs": 2,
+    "lv": 6
+   },
+   "mines": {
+    "runs": 3.1,
+    "lv": 7.5
+   },
+   "swamp": {
+    "runs": 5.1,
+    "lv": 10.1
+   },
+   "spire": {
+    "runs": 7.2,
+    "lv": 12.1
+   },
+   "cathedral": {
+    "runs": 10.3,
+    "lv": 15.1
+   }
+  },
+  "runsToL30": 47,
+  "reachedL30": "10/10"
+ },
+ "shield": {
+  "avgLevel": 30,
+  "winRateByTier": [
+   0.31,
+   0.38,
+   0.23,
+   0.63
+  ],
+  "runsPerGame": 51.4,
+  "actionsPerBattle": 34.7,
+  "gold": 42544,
+  "firstClear": {
+   "mill": {
+    "runs": 1,
+    "lv": 4
+   },
+   "wood": {
+    "runs": 2.7,
+    "lv": 6.5
+   },
+   "mines": {
+    "runs": 4.5,
+    "lv": 8.4
+   },
+   "swamp": {
+    "runs": 15.2,
+    "lv": 14.4
+   },
+   "spire": {
+    "runs": 17.3,
+    "lv": 15.7
+   },
+   "cathedral": {
+    "runs": 20.2,
+    "lv": 17.2
+   }
+  },
+  "runsToL30": 51,
+  "reachedL30": "10/10"
+ }
+}

@@ -1,0 +1,492 @@
+/* Пошаговый бой: очередь по скорости, ресурсы класса, стихии и реакции, статусы, ИИ врагов и союзников. */
+(function () {
+  const RPG = globalThis.RPG || (globalThis.RPG = {});
+  const D = RPG.D, E = RPG.E;
+  const C = RPG.C = {};
+  C.TUNE = { hp: 1.6, atk: 2.5 };
+  const SKL = (id) => D.SKILLS[id] || D.ESK[id];
+  const clamp = E.clamp;
+  const isDeb = (s) => { const k = D.ST[s.id].k; return k === 'debuff' || k === 'dot' || k === 'ctrl'; };
+
+  // ───── Создание юнитов ─────
+  C.unitFromSlot = function (slot) {
+    const h = slot.hero, d = E.derive(slot), cls = D.CLASSES[h.cls], run = slot.run;
+    const u = base({ id: 'p', side: 'a', name: h.name, cls: h.cls, lv: h.level, hero: true, portrait: h.portrait, ic: cls.ic, tags: ['human'] }, d);
+    u.skb = d.skb; u.sk = E.skillsOf(h); u.ov = {};
+    if (h.uniq) {
+      const U = D.UNIQ[h.uniq], sid = 'u_' + h.uniq, sk0 = JSON.parse(JSON.stringify(D.SKILLS[sid]));
+      let cdm = 0, mpm = 0;
+      U.nodes.forEach(n => { const r = h.uspent[n.id] || 0; if (!r) return; if (n.e.cdm) cdm += n.e.cdm * r; if (n.e.mpm) mpm += n.e.mpm * r;
+        (n.e.fxAdd || []).forEach(f => { const g = JSON.parse(JSON.stringify(f)); const rk = g.rank ? r : 1; delete g.rank; if (g.m != null) g.m *= rk; if (g.v != null) g.v *= rk; if (g.pow != null) g.pow *= rk; sk0.fx.push(g); }); });
+      sk0.cd = Math.max(1, (sk0.cd || 0) - cdm); sk0.mp = Math.max(4, (sk0.mp || 0) - mpm); u.ov[sid] = sk0;
+    }
+    u.rcMax = cls.rc.max; u.rc = 0; u.cls = h.cls;
+    if (run && run.hp != null) { u.hp = clamp(run.hp, 1, u.maxHp); u.mp = clamp(run.mp, 0, u.maxMp); }
+    u.slotRef = true; return u;
+  };
+  function base(o, d) {
+    return Object.assign({ hp: d.maxHp, maxHp: d.maxHp, mp: d.maxMp, maxMp: d.maxMp, rc: 0, rcMax: 100, atk: d.atk, mag: d.mag, hpow: d.hpow, def: d.def, res: d.res, spd: d.spd, crit: d.crit, critDmg: d.critDmg, eva: d.eva, mods: d.mods || {}, skb: {}, st: [], cds: {}, gauge: 0, alive: true, weak: [], resist: [], sk: [], ov: {}, takenSince: 0, tags: [], turns: 0, ai: false }, o);
+  }
+  C.fakeSlot = function (cls, L, race) {
+    const slot = { hero: { cls, race: race || 'human', level: L, spent: {}, uspent: {}, name: 'x', prof1: null, prof2: null }, eq: {}, profs: {}, buffs: [] };
+    const rng = E.rng(L * 7 + cls.length);
+    const bs = { warrior: ['sword', 'head_h', 'body_h', 'boots_h'], mage: ['staff', 'head_c', 'body_c', 'boots_c'], rogue: ['dagger', 'head_l', 'body_l', 'boots_l'], healer: ['wand', 'head_c', 'body_c', 'boots_c'], shield: ['shield', 'head_h', 'body_h', 'boots_h'] }[cls];
+    ['weapon', 'head', 'body', 'boots'].forEach((s, i) => { slot.eq[s] = E.genItem(rng, { base: bs[i], il: Math.max(1, L - 1), rarity: 0 }); });
+    return slot;
+  };
+  C.unitFromComp = function (cid, L, hpFrac) {
+    const c = D.COMPANIONS[cid], fs = C.fakeSlot(c.cls, L, c.race), d = E.derive(fs), k = c.k || 0.92;
+    ['maxHp', 'atk', 'mag', 'hpow', 'def', 'res'].forEach(s => d[s] = Math.round(d[s] * k));
+    const u = base({ id: cid, side: 'a', name: c.n, cls: c.cls, lv: L, portrait: c.portrait, ic: c.ic, ai: true, tags: [c.race === 'human' ? 'human' : c.race] }, d);
+    u.sk = c.skills.slice(); u.rcMax = D.CLASSES[c.cls].rc.max; u.hp = Math.round(u.maxHp * (hpFrac == null ? 1 : hpFrac)); u.mp = u.maxMp; u.compSlot = c; return u;
+  };
+  C.unitFromEnemy = function (eid, lv, tier, elite, idn) {
+    const t = D.ENEMIES[eid], R = D.ROLES[t.role], tm = D.TIERS[tier || 0].mul, L = lv;
+    const ramp = Math.min(1, (L + 1) / 12), th = 1 + (C.TUNE.hp - 1) * ramp, ta = 1 + (C.TUNE.atk - 1) * ramp;
+    const hp = (30 + 22 * L + 1.0 * L * L) * R.hp * tm * (elite ? 1.35 : 1) * th, atk = (8 + 3.4 * L) * R.atk * (1 + (tm - 1) * 0.55) * (elite ? 1.15 : 1) * ta, def = (4 + 2.6 * L) * R.def;
+    const u = base({ id: idn, side: 'e', eid, role: t.role, name: (elite ? 'Закалённый ' : '') + t.n.replace(/^(.)/, (m, a) => elite ? a.toLowerCase() : a), lv: L, ic: t.ic, tags: t.tags.slice(), weak: t.weak || [], resist: t.res || [], elite: !!elite, ai: true, tier: tier || 0 },
+      { maxHp: Math.round(hp), maxMp: 999, atk, mag: atk, hpow: atk, def, res: def * 0.9, spd: (10 + L * 0.25) * R.spd, crit: 5, critDmg: 1.5, eva: t.role === 'skirm' ? 8 : 2 });
+    u.sk = t.sk.slice(); u.mp = 999; u.maxMp = 999; u.phase = 1; return u;
+  };
+
+  // ───── Бой ─────
+  C.create = function (party, foes, rng, opts) {
+    const B = { party, foes, units: party.concat(foes), rng, log: [], ev: [], over: null, cur: null, opts: opts || {}, stolen: 0, nextId: 1, cons: opts && opts.cons || {}, round: 0, potionK: (opts && opts.potionK) || 1, bombK: (opts && opts.bombK) || 1, killed: [] };
+    B.units.forEach(u => { u.gauge = rng() * 35; if (u.mods.startShield) addSt(B, u, u, 'shield', 5, u.maxHp * u.mods.startShield / 100); if (u.mods.startHaste) addSt(B, u, u, 'haste', u.mods.startHaste + 1); u.reviveUsed = false; });
+    foes.forEach(e => intent(B, e));
+    return B;
+  };
+  const side = (B, u) => u.side === 'a' ? B.party : B.foes;
+  const opp = (B, u) => u.side === 'a' ? B.foes : B.party;
+  const alive = (arr) => arr.filter(x => x.alive);
+  C.alive = alive;
+  const has = (u, id) => u.st.find(s => s.id === id);
+  C.has = has;
+  const msg = (B, s) => { B.log.push(s); if (B.log.length > 80) B.log.shift(); };
+  const ev = (B, o) => B.ev.push(o);
+  function spdOf(u) { let s = u.spd; u.st.forEach(x => { const d = D.ST[x.id]; if (d.spd) s *= 1 + d.spd; }); return Math.max(1, s); }
+  C.spdOf = spdOf;
+
+  function addSt(B, src, tgt, id, dur, pow) {
+    if (!tgt.alive) return;
+    const def = D.ST[id]; let s = has(tgt, id);
+    if (id === 'shield') { if (s) { s.pow += pow; s.dur = Math.max(s.dur, dur); } else tgt.st.push({ id, dur, pow, src: src.id }); }
+    else if (s) { s.dur = Math.max(s.dur, dur); s.pow = Math.max(s.pow || 0, pow || 0); }
+    else tgt.st.push({ id, dur, pow: pow || 0, src: src.id });
+    ev(B, { t: 'st', u: tgt.id, id, on: 1 });
+  }
+  function rmSt(tgt, id) { const i = tgt.st.findIndex(s => s.id === id); if (i >= 0) tgt.st.splice(i, 1); }
+  C.addSt = addSt;
+
+  // Следующий исполнитель. Возвращает юнит, ожидающий команды игрока, или null (ход обработан автоматически / бой окончен).
+  C.next = function (B) {
+    if (B.over) return null;
+    if (!B.cur) {
+      let best = null, bt = 1e9;
+      for (const u of B.units) { if (!u.alive) continue; const t = (100 - u.gauge) / spdOf(u); if (t < bt - 1e-9 || (Math.abs(t - bt) < 1e-9 && best && u.side === 'a' && best.side === 'e')) { bt = t; best = u; } }
+      if (!best) { B.over = 'lose'; return null; }
+      const adv = Math.max(0, bt); B.units.forEach(u => { if (u.alive) u.gauge += adv * spdOf(u); });
+      best.gauge -= 100; B.cur = best; B.round++; startTurn(B, best); check(B);
+      if (!best.alive || B.over) { B.cur = null; return null; }
+      if (best.skip) { best.skip = false; endTurn(B, best); return null; }
+    }
+    const u = B.cur;
+    if (u.ai || (B.opts.auto && u.side === 'a')) { C.act(B, u, C.choose(B, u)); return null; }
+    return u;
+  };
+  function startTurn(B, u) {
+    u.turns++; u.skip = false;
+    if (u.side === 'e' && u.turns > 10) { u.atk *= 1.07; u.mag *= 1.07; if (u.turns === 11) msg(B, u.name + ' теряет терпение…'); }
+    for (const id in u.cds) if (u.cds[id] > 0) u.cds[id]--;
+    // сначала регенерация и DoT
+    const hr = (u.mods.hpRegen || 0); if (hr) heal(B, u, u, u.maxHp * hr / 100, true);
+    (has(u, 'regen') ? [has(u, 'regen')] : []).forEach(s => heal(B, { id: s.src, hpow: s.pow }, u, s.pow, true, true));
+    u.st.filter(s => D.ST[s.id].k === 'dot').forEach(s => { if (!u.alive) return; const v = Math.max(1, Math.round(s.pow)); hurt(B, u, v, D.ST[s.id].el, null, true); ev(B, { t: 'dot', u: u.id, id: s.id, v }); msg(B, u.name + ': ' + D.ST[s.id].n + ' −' + v); });
+    if (!u.alive) return;
+    const c = has(u, 'stun') || has(u, 'freeze');
+    if (c) { u.skip = true; msg(B, u.name + ' пропускает ход (' + D.ST[c.id].n + ')'); ev(B, { t: 'skip', u: u.id, id: c.id }); rmSt(u, c.id); }
+  }
+  function endTurn(B, u) {
+    u.st.forEach(s => s.dur--); u.st = u.st.filter(s => s.dur > 0 && !(s.id === 'shield' && s.pow <= 0));
+    if (u.alive && u.side === 'e') intent(B, u);
+    if (u.alive && u.side === 'a') { u.mp = Math.min(u.maxMp, u.mp + 2 + (u.mods.mpRegen || 0)); }
+    B.cur = null; check(B);
+  }
+  function check(B) {
+    if (!alive(B.foes).length) B.over = 'win'; else if (!B.party[0].alive) B.over = 'lose';
+    else if (!alive(B.party).length) B.over = 'lose';
+  }
+
+  // ───── Урон/лечение ─────
+  function absorb(B, tgt, v) {
+    const s = has(tgt, 'shield'); if (!s || s.pow <= 0) return v;
+    const a = Math.min(s.pow, v); s.pow -= a; ev(B, { t: 'abs', u: tgt.id, v: Math.round(a) }); return v - a;
+  }
+  function hurt(B, tgt, v, el, src, dot) {
+    if (!tgt.alive) return 0;
+    if (!dot) v = absorb(B, tgt, v);
+    v = Math.max(0, Math.round(v));
+    tgt.hp -= v; tgt.takenSince += v;
+    if (v > 0 && tgt.side === 'a') { const c = D.CLASSES[tgt.cls]; if (c && !dot && tgt.hero) tgt.rc = clamp(tgt.rc + (c.rc.taken || 0), 0, tgt.rcMax); }
+    if (tgt.hp <= 0) {
+      if (tgt.mods.reviveOnce && !tgt.reviveUsed) { tgt.reviveUsed = true; tgt.hp = Math.round(tgt.maxHp * 0.3); ev(B, { t: 'revive', u: tgt.id }); msg(B, tgt.name + ' возрождается!'); return v; }
+      tgt.hp = 0; tgt.alive = false; tgt.st = []; ev(B, { t: 'death', u: tgt.id }); msg(B, tgt.name + ' повержен.'); if (tgt.side === 'e') B.killed.push(tgt);
+    } else if (tgt.side === 'e' && tgt.role && (tgt.role === 'boss' || tgt.role === 'mini') && tgt.phase === 1 && tgt.hp <= tgt.maxHp * 0.5) {
+      tgt.phase = 2; addSt(B, tgt, tgt, 'enrage', 99); ev(B, { t: 'phase', u: tgt.id }); msg(B, tgt.name + ' впадает в ярость!');
+    }
+    return v;
+  }
+  function heal(B, src, tgt, amount, silent, raw) {
+    if (!tgt.alive) return 0;
+    let v = amount; if (!raw) v *= 1 + (tgt.mods.healIn || 0) / 100;
+    v = Math.round(Math.min(v, tgt.maxHp - tgt.hp)); if (v <= 0) return 0;
+    tgt.hp += v; ev(B, { t: 'heal', u: tgt.id, v }); if (!silent) msg(B, tgt.name + ' +' + v + ' HP'); return v;
+  }
+  const stMod = (u, k) => { let s = 0; u.st.forEach(x => { const d = D.ST[x.id]; if (d[k]) s += d[k]; }); return s; };
+
+  function dmgCalc(B, att, tgt, eff, skill, spent) {
+    const stat = att[eff.s || 'atk'];
+    let m = eff.m; if (eff.rcMul) m += eff.rcMul * spent;
+    let base = stat * m; if (eff.fromTaken) { base += att.takenSince * eff.fromTaken; att.takenSince = 0; }
+    const el = eff.el || 'phys', notes = [];
+    const skb = (att.skb && att.skb[skill.id]) || 0; base *= 1 + skb / 100;
+    let mul = 1 + (att.mods.dmg || 0) / 100 + (att.mods['dmg_' + el] || 0) / 100 + stMod(att, 'dealt');
+    if (tgt.tags.includes('beast') && att.mods.beastDmg) mul += att.mods.beastDmg / 100;
+    if (att.mods.execute && tgt.hp < tgt.maxHp * 0.3) mul += att.mods.execute / 100;
+    if (eff.ifLow && tgt.hp < tgt.maxHp * eff.ifLow) mul *= eff.lowMul;
+    if (eff.ifAny && tgt.st.some(isDeb)) mul *= eff.ifMul;
+    if (tgt.weak.includes(el)) { mul *= 1.35; notes.push('weak'); } else if (tgt.resist.includes(el)) { mul *= 0.6; notes.push('res'); }
+    if (skill.id === 'h_smite' && tgt.tags.includes('undead')) mul *= 1.5;
+    let react = null;
+    if (el === 'bolt' && has(tgt, 'wet')) { mul *= 1.4; react = 'Проводимость'; rmSt(tgt, 'wet'); }
+    else if (el === 'ice' && has(tgt, 'wet')) { react = 'Заморозка'; rmSt(tgt, 'wet'); tgt._freeze = true; }
+    else if (el === 'fire' && has(tgt, 'chill')) { mul *= 1.3; react = 'Таяние'; rmSt(tgt, 'chill'); }
+    let cc = att.crit + (eff.crit || 0) + stMod(att, 'crit'); const crit = B.rng() * 100 < cc; if (crit) { mul *= att.critDmg; if (has(att, 'focus')) rmSt(att, 'focus'); }
+    const defv = (eff.s === 'mag' ? tgt.res : tgt.def) * (1 - (eff.pierce || 0)) * (1 + stMod(tgt, 'def'));
+    const K = 50 + 4 * tgt.lv, mit = K / (K + Math.max(0, defv));
+    let tk = 1 + (tgt.mods.taken || 0) / 100 + stMod(tgt, 'taken') + (eff.s === 'mag' ? (tgt.mods.magTaken || 0) : (tgt.mods.physTaken || 0)) / 100;
+    tk = Math.max(0.2, tk);
+    const out = base * mul * mit * tk * (0.93 + B.rng() * 0.14);
+    return { v: Math.max(1, Math.round(out)), crit, notes, react };
+  }
+
+  // ───── Применение навыка ─────
+  function targetsFor(B, u, sk, tid) {
+    const own = alive(side(B, u)), en = alive(opp(B, u)), t = sk.tgt;
+    if (t === 'foes') return en; if (t === 'self') return [u]; if (t === 'allies' || t === 'eallies') return own;
+    if (t === 'rfoe') return en;
+    if (t === 'dead') { const x = side(B, u).find(y => y.id === tid && !y.alive) || side(B, u).find(y => !y.alive); return x ? [x] : []; }
+    if (t === 'ally' || t === 'eally') { const x = own.find(y => y.id === tid) || own.slice().sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0]; return x ? [x] : []; }
+    // foe
+    let x = en.find(y => y.id === tid); if (!x) x = en[0];
+    if (u.side === 'e') { const tn = en.find(y => has(y, 'taunt')); if (tn) x = tn; }
+    else { const tn = en.find(y => has(y, 'taunt')); if (tn && !x) x = tn; }
+    return x ? [x] : [];
+  }
+  function applyStatus(B, u, tgt, eff, skill) {
+    if (eff.p != null && eff.p < 1 && B.rng() > eff.p) return;
+    const id = eff.id; let pow = 0;
+    if (D.ST[id].k === 'dot') pow = Math.max(u.atk, u.mag) * ({ burn: 0.42, poison: 0.4, bleed: 0.36 }[id]) * (1 + (u.mods.dmg || 0) / 100 + (u.mods['dmg_' + D.ST[id].el] || 0) / 100) * (1 + ((u.skb && u.skb[skill.id]) || 0) / 200);
+    if (id === 'regen') pow = u.hpow * (eff.pow || 0.5) * (1 + ((u.skb && u.skb[skill.id]) || 0) / 100);
+    if (id === 'shield') pow = (u[eff.s === 'heal' ? 'hpow' : eff.s] || u.hpow) * (eff.pow || 1) * (eff.s === 'def' ? 1 : 1) * (eff.s === 'heal' ? 1 : 1) * (1 + ((u.skb && u.skb[skill.id]) || 0) / 100);
+    if (D.ST[id].k === 'ctrl' && tgt.role === 'boss' && id !== 'chill') { if (B.rng() < 0.6) { ev(B, { t: 'txt', u: tgt.id, s: 'Сопротивление' }); return; } }
+    if (D.ST[id].k === 'ctrl' && tgt.role === 'mini' && B.rng() < 0.3) { ev(B, { t: 'txt', u: tgt.id, s: 'Сопротивление' }); return; }
+    addSt(B, u, tgt, id, (eff.dur || 2) + (tgt === u && D.ST[id].k !== 'ctrl' && eff.to === 'self' ? 0 : 0), pow);
+  }
+  C.skillOf = (u, id) => (u.ov && u.ov[id]) || SKL(id);
+  C.canUse = function (B, u, id) {
+    const sk = C.skillOf(u, id); if (!sk) return 'нет навыка';
+    if ((u.cds[id] || 0) > 0) return 'перезарядка ' + u.cds[id];
+    if (sk.mp && u.mp < sk.mp) return 'мало энергии';
+    if (sk.rc && u.rc < sk.rc) return 'мало ресурса';
+    if (sk.rcAll && u.rc < 1) return 'нет комбо';
+    if (sk.tgt === 'dead' && !side(B, u).some(x => !x.alive)) return 'некого возвращать';
+    return '';
+  };
+  function doSkill(B, u, sk, tid) {
+    let targets = targetsFor(B, u, sk, tid); if (!targets.length) return;
+    let spent = 0;
+    if (sk.mp) u.mp -= sk.mp; if (sk.rc) { u.rc -= sk.rc; spent = sk.rc; } if (sk.rcAll) { spent = u.rc; u.rc = 0; }
+    if (sk.cd) u.cds[sk.id] = sk.cd + 0;
+    ev(B, { t: 'skill', u: u.id, id: sk.id, n: sk.n, ic: sk.ic, tg: targets.map(x => x.id) });
+    msg(B, u.name + ': «' + sk.n + '»');
+    let dealt = 0;
+    const dealOne = (tgt, eff) => {
+      if (!tgt.alive) return;
+      let T = tgt, mult = 1;
+      if (u.side === 'e' && sk.tgt === 'foe') { const cv = alive(B.party).find(x => has(x, 'cover') && x !== tgt); if (cv && !has(tgt, 'taunt')) { T = cv; mult = 0.75; ev(B, { t: 'txt', u: cv.id, s: 'Прикрыл!' }); } }
+      const eva = clamp(T.eva + stMod(T, 'eva'), 0, 80);
+      if (!eff.sure && B.rng() * 100 < eva) { ev(B, { t: 'miss', u: T.id }); msg(B, T.name + ' уклоняется'); return; }
+      const r = dmgCalc(B, u, T, eff, sk, spent);
+      let v = Math.round(r.v * mult);
+      if (r.react) { ev(B, { t: 'txt', u: T.id, s: r.react + '!' }); msg(B, 'Реакция: ' + r.react); }
+      const real = hurt(B, T, v, eff.el || 'phys', u); dealt += real;
+      ev(B, { t: 'dmg', u: T.id, from: u.id, v: real, crit: r.crit, el: eff.el || 'phys', notes: r.notes });
+      msg(B, '→ ' + T.name + ' −' + real + (r.crit ? ' (крит!)' : '') + (r.notes.includes('weak') ? ' (слабость)' : r.notes.includes('res') ? ' (стойкость)' : ''));
+      if (T._freeze && T.alive) { T._freeze = false; addSt(B, u, T, 'freeze', 1); }
+      if (eff.drain && real) heal(B, u, u, real * eff.drain, true);
+      if (u.mods.lifesteal && real) heal(B, u, u, real * u.mods.lifesteal / 100, true);
+      if (T.alive && u.side !== T.side && (eff.s !== 'mag') && T.mods.thorns) { const th = Math.round(real * T.mods.thorns / 100); if (th > 0) { hurt(B, u, th, 'phys', T, true); ev(B, { t: 'dmg', u: u.id, from: T.id, v: th, thorn: 1 }); } }
+      if (T.alive && eff.s !== 'mag' && T.mods.counter && B.rng() * 100 < T.mods.counter && u.alive) { const cdm = Math.max(1, Math.round(T.atk * 0.6 * 100 / (100 + u.def * 0.5))); hurt(B, u, cdm, 'phys', T, true); ev(B, { t: 'dmg', u: u.id, from: T.id, v: cdm, thorn: 1 }); msg(B, T.name + ' контратакует −' + cdm); }
+    };
+    for (const eff of sk.fx) {
+      if (!u.alive && eff.k !== 'dmg') break;
+      const to = eff.to === 'self' ? [u] : eff.to === 'allies' ? alive(side(B, u)) : targets;
+      switch (eff.k) {
+        case 'dmg': {
+          const hits = eff.hits || 1;
+          for (let i = 0; i < hits; i++) {
+            if (sk.tgt === 'rfoe') { const en = alive(opp(B, u)); if (!en.length) break; dealOne(en[Math.floor(B.rng() * en.length)], eff); }
+            else targets.forEach(t => dealOne(t, eff));
+          }
+          break;
+        }
+        case 'heal': to.forEach(t => { const v = u.hpow * eff.m * (1 + ((u.skb && u.skb[sk.id]) || 0) / 100) * (u.hero ? B.potionK * 0 + 1 : 1); heal(B, u, t, v); }); break;
+        case 'healPct': to.forEach(t => heal(B, u, t, t.maxHp * eff.v * (eff.to === 'self' ? 1 : 1))); break;
+        case 'st': to.forEach(t => { if (t.alive) applyStatus(B, u, t, eff, sk); }); break;
+        case 'mp': to.forEach(t => { t.mp = Math.min(t.maxMp, t.mp + eff.v); }); break;
+        case 'rc': { const c = D.CLASSES[u.cls]; if (u.hero || u.compSlot) { let g = eff.v; if (u.rcMax === 5) g = eff.v + (B.rng() < (u.mods.rcGain || 0) * 0.12 ? 1 : 0); else g = Math.round(eff.v * (1 + (u.mods.rcGain || 0) / 20)); u.rc = clamp(u.rc + g, 0, u.rcMax); } break; }
+        case 'cleanse': to.forEach(t => { t.st = t.st.filter(s => !isDeb(s)); ev(B, { t: 'txt', u: t.id, s: 'Очищение' }); }); break;
+        case 'steal': { const g = Math.round(3 + 1.6 * targets[0].lv); B.stolen += g; ev(B, { t: 'txt', u: u.id, s: '+' + g + ' зол.' }); break; }
+        case 'revive': to.forEach(t => { if (!t.alive) { t.alive = true; t.hp = Math.round(t.maxHp * eff.v); t.gauge = 40; ev(B, { t: 'revive', u: t.id }); msg(B, t.name + ' возвращён к жизни!'); } }); break;
+        case 'summon': {
+          if (alive(B.foes).length >= 4) break; const lv = u.lv - 1; const nu = C.unitFromEnemy(eff.id, Math.max(1, lv), u.tier, false, 'e' + (B.nextId++) + 's'); nu.summoned = true; nu.gauge = 30;
+          B.foes.push(nu); B.units.push(nu); intent(B, nu); ev(B, { t: 'summon', u: nu.id }); msg(B, u.name + ' призывает: ' + nu.name); break;
+        }
+      }
+    }
+    // реакция «Заморозка» уже обработана; ярость на полученный урон не нужна тут
+    if (u.alive && dealt > 0 && u.hero && D.CLASSES[u.cls].rc.hit) { /* зарезервировано */ }
+  }
+
+  // ───── Действия ─────
+  C.act = function (B, u, a) {
+    if (B.over || B.cur !== u) return false;
+    a = a || { t: 'basic' };
+    if (a.t === 'skill') {
+      const why = C.canUse(B, u, a.id); if (why) { a = { t: 'basic', tid: a.tid }; } else { doSkill(B, u, C.skillOf(u, a.id), a.tid); }
+    }
+    if (a.t === 'basic') {
+      const b = D.BASIC[u.cls] || D.BASIC.warrior; const sk = { id: 'basic', n: b.n, ic: b.ic, tgt: 'foe', fx: b.fx };
+      if (u.side === 'e') sk.fx = [{ k: 'dmg', s: 'atk', m: 1 }];
+      doSkill(B, u, sk, a.tid);
+    } else if (a.t === 'enemy') {
+      const sk = SKL(a.id); doSkill(B, u, sk, a.tid);
+    } else if (a.t === 'guard') {
+      addSt(B, u, u, 'guard', 2); u.mp = Math.min(u.maxMp, u.mp + 6); u.rc = clamp(u.rc + (u.rcMax === 5 ? 0 : 8), 0, u.rcMax); ev(B, { t: 'skill', u: u.id, n: 'Защита', ic: '🛡️', tg: [u.id] }); msg(B, u.name + ' встаёт в защиту');
+    } else if (a.t === 'item') {
+      const c = D.CONS[a.id]; if (!c || !(B.cons[a.id] > 0)) return false;
+      B.cons[a.id]--; B.used = B.used || {}; B.used[a.id] = (B.used[a.id] || 0) + 1;
+      ev(B, { t: 'skill', u: u.id, n: c.n, ic: c.ic, tg: [u.id] }); msg(B, u.name + ' использует ' + c.n);
+      if (c.heal || c.mp || c.cleanse) {
+        const tgt = side(B, u).find(x => x.id === a.tid && x.alive) || u;
+        if (c.heal) heal(B, u, tgt, tgt.maxHp * c.heal * B.potionK); if (c.mp) { tgt.mp = Math.min(tgt.maxMp, tgt.mp + Math.round(tgt.maxMp * c.mp * B.potionK)); ev(B, { t: 'txt', u: tgt.id, s: '+энергия' }); }
+        if (c.cleanse) tgt.st = tgt.st.filter(s => !isDeb(s));
+      } else if (c.dmg) {
+        const tl = c.aoe ? alive(B.foes) : [alive(B.foes).find(x => x.id === a.tid) || alive(B.foes)[0]];
+        tl.forEach(t => { const v0 = (26 + 8 * u.lv) * c.dmg * B.bombK; let v = v0; if (t.weak.includes(c.el)) v *= 1.35; else if (t.resist.includes(c.el)) v *= 0.6; v = Math.round(v * (0.95 + B.rng() * 0.1)); const real = hurt(B, t, v, c.el, u); ev(B, { t: 'dmg', u: t.id, from: u.id, v: real, el: c.el }); msg(B, '→ ' + t.name + ' −' + real); if (c.st && t.alive) addSt(B, u, t, c.st, 2); });
+      }
+    } else if (a.t === 'flee') {
+      if (B.opts.noFlee) { msg(B, 'Бежать нельзя!'); } else if (B.rng() < 0.6) { B.over = 'flee'; msg(B, 'Отряд отступает.'); return true; } else msg(B, 'Не удалось сбежать!');
+    }
+    endTurn(B, u);
+    return true;
+  };
+
+  // ───── ИИ ─────
+  function intent(B, e) {
+    if (!e.alive) return;
+    const foes = alive(B.party), own = alive(B.foes);
+    if (!foes.length) return;
+    const list = [];
+    e.sk.forEach(id => {
+      const sk = SKL(id); let w = 1;
+      if (sk.tgt === 'eally') { const low = own.filter(x => x.hp < x.maxHp * 0.65); w = low.length ? 4 : 0; }
+      else if (sk.tgt === 'eallies') { w = own.every(x => has(x, 'rally')) ? 0 : 1.2; }
+      else if (sk.tgt === 'self') { const f = sk.fx[0]; if (f.k === 'summon') w = own.length < 3 && e.turns % 3 === 2 ? 3 : (own.length < 3 ? 0.4 : 0); else if (f.k === 'healPct') w = e.hp < e.maxHp * 0.6 ? 3 : 0; else w = has(e, f.id) ? 0 : (e.hp < e.maxHp * 0.7 ? 1.4 : 0.6); }
+      else if (sk.tgt === 'foes') w = foes.length > 1 ? 1.5 + foes.length * 0.3 : 0.6;
+      if (sk.tele) { w = e.lastTele ? 0 : (e.turns >= 1 ? 1.2 : 0); }
+      if (e.phase === 2 && (sk.tele || sk.tgt === 'foes')) w *= 1.4;
+      if (w > 0) list.push([id, w]);
+    });
+    if (!list.length) list.push([e.sk[0], 1]);
+    const pick = list[B.rng.weighted(list.map(x => x[1]))][0], sk = SKL(pick);
+    let tid = null;
+    if (sk.tgt === 'foe') {
+      const tn = foes.find(x => has(x, 'taunt'));
+      if (tn) tid = tn.id; else { const ws = foes.map(x => 1 + (1 - x.hp / x.maxHp) * 1.5 + (['mage', 'healer', 'rogue'].includes(x.cls) ? 0.5 : 0) + (x.hero ? 0.15 : 0)); tid = foes[B.rng.weighted(ws)].id; }
+    }
+    e.intent = { id: pick, tid };
+  }
+  C.intent = intent;
+  function enemyAct(B, e) {
+    if (e.charging) { const a = e.charging; e.charging = null; e.lastTele = true; let tid = a.tid; if (!alive(B.party).find(x => x.id === tid)) tid = alive(B.party)[0].id; return { t: 'enemy', id: a.id, tid }; }
+    const it = e.intent || { id: e.sk[0] }; let sk = SKL(it.id);
+    if (sk.tele) { e.charging = it; e.lastTele = false; ev(B, { t: 'charge', u: e.id, id: it.id }); msg(B, e.name + ' накапливает силу: «' + sk.n + '»!'); return { t: 'wait' }; }
+    e.lastTele = false;
+    let tid = it.tid; if (sk.tgt === 'foe') { const tn = alive(B.party).find(x => has(x, 'taunt')); if (tn) tid = tn.id; else if (!alive(B.party).find(x => x.id === tid)) tid = alive(B.party)[0].id; }
+    return { t: 'enemy', id: it.id, tid };
+  }
+  const squish = (u) => u.maxHp;
+
+  function estimate(B, u, sk) {
+    // Оценка полезности навыка для ИИ игрока-стороны
+    const foes = alive(opp(B, u)), own = alive(side(B, u)); let score = 0;
+    const nF = foes.length; const mpFrac = u.mp / u.maxMp; const spentRc = sk.rcAll ? u.rc : sk.rc || 0;
+    const lowestAlly = own.slice().sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0], lowFrac = lowestAlly.hp / lowestAlly.maxHp;
+    const wantsAoe = sk.tgt === 'foes' || sk.tgt === 'rfoe';
+    sk.fx.forEach(f => {
+      if (f.k === 'dmg') {
+        const hits = f.hits || 1; let m = f.m + (f.rcMul ? f.rcMul * spentRc : 0); let n = sk.tgt === 'foes' ? nF : 1; let el = f.el || 'phys';
+        const wk = foes.filter(x => x.weak.includes(el)).length / nF, rs = foes.filter(x => x.resist.includes(el)).length / nF;
+        let s = 18 * m * hits * (1 + (n - 1) * 0.75) * (1 + 0.35 * wk - 0.4 * rs);
+        if (f.ifLow && foes.some(x => x.hp < x.maxHp * f.ifLow)) s *= 1.6; if (f.ifAny && foes.some(x => x.st.some(isDeb))) s *= 1.3;
+        if (el === 'bolt' && foes.some(x => has(x, 'wet'))) s *= 1.3; if (f.fromTaken) s *= 1 + Math.min(1, u.takenSince / (u.maxHp * 0.4));
+        score += s;
+      } else if (f.k === 'heal') {
+        if (sk.tgt === 'allies') { const hurtN = own.filter(x => x.hp < x.maxHp * 0.75).length; const need = own.reduce((a, x) => a + (x.maxHp - x.hp), 0); score += hurtN >= 2 || lowFrac < 0.5 ? 55 * Math.min(1.6, need / (u.hpow * f.m * own.length * 1.1) + 0.5) : 0; }
+        else score += lowFrac < 0.6 ? 70 * (1 - lowFrac) + 25 : lowFrac < 0.78 ? 12 : 0;
+      } else if (f.k === 'healPct') { const me = u.hp / u.maxHp; score += me < 0.55 ? 60 : 0; }
+      else if (f.k === 'revive') score += own.length < side(B, u).length ? 80 : 0;
+      else if (f.k === 'cleanse') score += own.some(x => x.st.some(isDeb)) ? 28 : 0;
+      else if (f.k === 'st') {
+        const id = f.id, kind = D.ST[id].k;
+        if (kind === 'buff' || kind === 'hot') {
+          const tg = f.to === 'self' || sk.tgt === 'self' ? [u] : own;
+          const miss = tg.filter(x => !has(x, id)).length;
+          if (!miss) return;
+          const base = { rally: 26, guard: 16, taunt: 24, cover: 24, shield: 28, haste: 20, focus: 12, evade: 14, defUp: 14, bless: 22, regen: lowFrac < 0.85 ? 26 : 0 }[id] || 10;
+          let b = base * (tg.length > 1 ? 1 + miss * 0.3 : 1);
+          if ((id === 'taunt' || id === 'cover') && own.length < 2) b *= 0.4; if ((id === 'guard' || id === 'shield') && lowFrac > 0.9 && u.turns < 2) b *= 0.7;
+          if (id === 'rally' || id === 'bless') b *= nF > 0 ? 1 : 0; score += b;
+        } else if (kind === 'ctrl') score += 12 * (sk.tgt === 'foes' ? nF : 1) * (f.p || 1);
+        else { const need = foes.filter(x => !has(x, id) || id === 'wet').length; score += (kind === 'dot' ? 14 : 9) * Math.min(sk.tgt === 'foes' ? nF : 1, need) * (f.p == null ? 1 : f.p); }
+      } else if (f.k === 'mp') score += mpFrac < 0.4 ? 10 : 2;
+      else if (f.k === 'rc') score += 2;
+      else if (f.k === 'steal') score += 3;
+    });
+    const cost = (sk.mp || 0);
+    if (u.compSlot === undefined && cost) score *= 1 - Math.min(0.35, cost * 0.006);
+    return score;
+  }
+  C.choose = function (B, u) {
+    if (u.side === 'e') return enemyAct(B, u);
+    const foes = alive(B.foes); const own = alive(B.party);
+    // зелья
+    if (u.hero && (u.hp < u.maxHp * 0.3)) { const p = ['pot_hp3', 'pot_hp2', 'pot_hp1'].find(x => B.cons[x] > 0); if (p && !(u.cls === 'healer' && u.mp >= 10)) return { t: 'item', id: p, tid: u.id }; }
+    if (u.hero && u.mp < u.maxMp * 0.12 && u.cls !== 'warrior' && u.cls !== 'rogue') { const p = ['pot_mp2', 'pot_mp1'].find(x => B.cons[x] > 0); if (p) return { t: 'item', id: p, tid: u.id }; }
+    let best = null, bs = 0;
+    u.sk.forEach(id => {
+      if (C.canUse(B, u, id)) return; const sk = C.skillOf(u, id); let s = estimate(B, u, sk);
+      if (s > bs) { bs = s; best = { t: 'skill', id }; }
+    });
+    // базовая атака
+    const baseScore = (u.cls === 'healer' || u.cls === 'mage' ? 16 : 17);
+    const mpLow = u.mp < 8;
+    if (!best || bs < baseScore * (mpLow ? 0.5 : 1)) {
+      if (u.hero && u.hp < u.maxHp * 0.4 && !B.opts.noGuard) return { t: 'guard' };
+      best = { t: 'basic' };
+    }
+    // выбор цели
+    const sk = best.t === 'skill' ? C.skillOf(u, best.id) : { tgt: 'foe' };
+    if (sk.tgt === 'foe') {
+      const tn = foes.find(x => has(x, 'taunt'));
+      const t = tn || foes.slice().sort((a, b) => {
+        const sa = (a.hp) * (a.role === 'swarm' ? 0.7 : 1) - (a.tags.includes('spirit') && a.role === 'caster' ? 40 : 0) - (a.role === 'support' ? 60 : 0), sb = (b.hp) * (b.role === 'swarm' ? 0.7 : 1) - (b.role === 'support' ? 60 : 0) - (b.tags.includes('spirit') && b.role === 'caster' ? 40 : 0);
+        return sa - sb;
+      })[0];
+      // стихийная слабость
+      if (!tn && best.t === 'skill') { const el = (sk.fx.find(f => f.k === 'dmg') || {}).el; if (el) { const w = foes.find(x => x.weak.includes(el)); if (w) { best.tid = w.id; return best; } } }
+      best.tid = t.id;
+    } else if (sk.tgt === 'ally') best.tid = own.slice().sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0].id;
+    else if (sk.tgt === 'dead') best.tid = side(B, u).find(x => !x.alive).id;
+    return best;
+  };
+  // «wait» — враг копит силу
+  const _act = C.act;
+  C.act = function (B, u, a) { if (a && a.t === 'wait') { endTurn(B, u); return true; } return _act(B, u, a); };
+
+  // ───── Награды ─────
+  C.rewards = function (slot, B, ctx) {
+    const h = slot.hero, rng = ctx.rng, mods = ctx.mods; const out = { xp: 0, gold: 0, mats: {}, items: [] };
+    const xk = 1 + (mods.xp || 0) / 100;
+    B.killed.forEach(e => {
+      if (e.summoned) return;
+      let xp = (12 + 7 * e.lv) * D.ROLES[e.role].xp * (e.elite ? 1.4 : 1) * (1 + (ctx.tier.mul - 1) * 0.3); const diff = h.level - e.lv; if (diff > 3) xp *= Math.max(0.15, 1 - 0.2 * (diff - 3));
+      out.xp += Math.round(xp * xk);
+      const l = E.rollLoot(rng, slot, e, { mods, tier: ctx.tier }); out.gold += l.gold; for (const k in l.mats) out.mats[k] = (out.mats[k] || 0) + l.mats[k]; out.items.push(...l.items);
+    });
+    out.gold += B.stolen; return out;
+  };
+
+  // ───── Вылазка: узлы ─────
+  C.nodeEnemies = function (run, node, idx) {
+    const d = D.DUN[run.did]; const lv0 = E.dungeonLv(d, run.tier, node.f);
+    const bump = node.t === 'mini' ? 1 : node.t === 'boss' ? 2 : 0;
+    return node.e.map((eid, i) => C.unitFromEnemy(eid, Math.min(40, lv0 + bump + (node.elite && i === 0 ? 1 : 0)), run.tier, !!(node.elite && i === 0), 'e' + i));
+  };
+  C.startNodeBattle = function (slot, opts) {
+    const run = slot.run, node = run.nodes[run.node]; const P = C.unitFromSlot(slot); const party = [P];
+    (slot.party || []).forEach(cid => { if (D.COMPANIONS[cid] && party.length < 3) { const hf = run.comp && run.comp[cid] != null ? run.comp[cid] : 1; party.push(C.unitFromComp(cid, slot.hero.level, hf)); } });
+    const foes = C.nodeEnemies(run, node);
+    const rng = E.rng((run.seed + run.node * 977 + run.kills * 31) >>> 0);
+    const B = C.create(party, foes, rng, Object.assign({ cons: slot.cons }, opts, { noFlee: node.t === 'boss' }));
+    B.cons = slot.cons; const m = P.mods; B.potionK = 1 + (m.potion || 0) / 100; B.bombK = 1 + (m.bomb || 0) / 100; B.node = node;
+    return B;
+  };
+  // Завершение боя: применяет результаты к слоту/вылазке. Возвращает отчёт.
+  C.finishBattle = function (slot, B) {
+    const run = slot.run, node = run.nodes[run.node], P = B.party[0]; const d = E.derive(slot);
+    const rep = { result: B.over, xp: 0, gold: 0, mats: {}, items: [], lvUp: 0 };
+    run.hp = P.alive ? P.hp : 1; run.mp = P.mp;
+    B.party.slice(1).forEach(c => { run.comp[c.id] = c.alive ? c.hp / c.maxHp : 0.5; });
+    if (B.used) for (const k in B.used) { /* потрачено в slot.cons напрямую */ }
+    if (B.over === 'win') {
+      const rng = E.rng((run.seed + 5 + run.node * 131 + run.kills) >>> 0);
+      const r = C.rewards(slot, B, { rng, mods: d.mods, tier: D.TIERS[run.tier] });
+      rep.xp = r.xp; rep.gold = r.gold; rep.mats = r.mats; rep.items = r.items; run.kills += B.killed.length; slot.stats.kills += B.killed.length;
+      run.bag.gold += r.gold; run.bag.xp += r.xp; for (const k in r.mats) run.bag.mats[k] = (run.bag.mats[k] || 0) + r.mats[k]; r.items.forEach(it => run.bag.items.push(it));
+      rep.lvUp = E.addXp(slot, r.xp);
+      const dd = E.derive(slot); run.hp = Math.min(dd.maxHp, Math.round(run.hp + dd.maxHp * 0.1 * 1)); run.mp = Math.min(dd.maxMp, Math.round(run.mp + dd.maxMp * 0.15));
+      if (rep.lvUp) { run.hp = Math.min(dd.maxHp, run.hp + Math.round((dd.maxHp - d.maxHp))); run.mp = Math.min(dd.maxMp, run.mp + (dd.maxMp - d.maxMp)); }
+      if (node.t === 'boss') {
+        const wasFirst = !slot.prog.boss[run.did];
+        slot.prog.boss[run.did] = true; slot.prog.cleared[run.did] = Math.max(slot.prog.cleared[run.did] || 0, run.tier + 1);
+        if (wasFirst) { slot.hero.bossPts = (slot.hero.bossPts || 0) + 1; rep.firstClear = true; }
+        slot.stats.wins++; rep.bossDown = true;
+      }
+      run.node++;
+    } else if (B.over === 'lose') {
+      slot.stats.deaths++; rep.dead = true;
+    }
+    slot.rev++; return rep;
+  };
+  // Событие-узел
+  C.resolveEvent = function (slot, choice) {
+    const run = slot.run, node = run.nodes[run.node]; const d = E.derive(slot); const rng = E.rng((run.seed + run.node * 4421) >>> 0);
+    const res = { ev: node.ev, text: '', gold: 0, mats: {}, items: [] };
+    const addBag = (g, m, its) => { run.bag.gold += g || 0; for (const k in (m || {})) run.bag.mats[k] = (run.bag.mats[k] || 0) + m[k]; (its || []).forEach(i => run.bag.items.push(i)); };
+    const L = E.dungeonLv(D.DUN[run.did], run.tier, node.f);
+    if (node.ev === 'chest') {
+      const g = Math.round((12 + 6 * L) * (1 + (d.mods.gold || 0) / 100)); const it = E.genItem(rng, { il: L, rarity: E.rollRarity(rng, D.TIERS[run.tier].loot * 1.5 * (1 + (d.mods.drop || 0) / 100), 0), base: rng.pick(D.CLASSES[slot.hero.cls].weapons.concat(D.BASE_IDS.filter(k => !D.BASES[k].wt))) });
+      const m = {}; const mk = rng.pick(['dust', 'herb_g', 'ore_cu', 'cloth']); m[mk] = rng.int(1, 3); res.text = 'В сундуке — золото, добыча и ' + it.nm + '.'; res.gold = g; res.mats = m; res.items = [it]; addBag(g, m, [it]);
+    } else if (node.ev === 'rest') {
+      run.hp = Math.min(d.maxHp, Math.round(run.hp + d.maxHp * 0.45)); run.mp = Math.min(d.maxMp, Math.round(run.mp + d.maxMp * 0.5)); Object.keys(run.comp).forEach(k => run.comp[k] = Math.min(1, (run.comp[k] || 0) + 0.45)); res.text = 'Вы переводите дух у костра. Здоровье +45%, энергия +50%.';
+    } else if (node.ev === 'shrine') {
+      const c = choice || 'bless';
+      if (c === 'bless') { slot.buffs = slot.buffs || []; slot.buffs.push({ id: 'shrine' + run.node, m: { dmg: 8, def: 8 }, food: false }); res.text = 'Алтарь Лиры отзывается: до конца вылазки +8% урона и брони.'; }
+      else if (c === 'heal') { run.hp = Math.min(d.maxHp, Math.round(run.hp + d.maxHp * 0.6)); run.mp = Math.min(d.maxMp, run.mp + Math.round(d.maxMp * 0.3)); res.text = 'Тёплый свет затягивает раны: здоровье +60%.'; }
+      else { const g = Math.round(20 + 9 * L); run.hp = Math.max(1, Math.round(run.hp - d.maxHp * 0.15)); addBag(g); res.gold = g; res.text = 'Вы отдаёте каплю крови и получаете ' + g + ' золота.'; }
+    } else if (node.ev.startsWith('gather')) {
+      const G = D.GATHER_EV[node.ev], pid = G.prof; const mine = (slot.hero.prof1 === pid || slot.hero.prof2 === pid);
+      const lv = E.profLv(slot, pid), gk = (1 + (d.mods.gather || 0) / 100) * (1 + lv * 0.06);
+      const n = mine ? 3 : 1; const got = {};
+      for (let i = 0; i < n; i++) { const dr = G.drops[rng.weighted(G.drops.map(x => x[3]))]; let q = rng.int(dr[1], dr[2]); if (!mine) q = Math.min(1, q); else q = Math.max(0, Math.round(q * gk)); if (q > 0) got[dr[0]] = (got[dr[0]] || 0) + q; }
+      if (mine) { const up = E.profXp(slot, pid, 14 + node.f * 4); res.lvUp = up; slot.stats.gathered++; res.text = G.n + ': вы знаете, где искать — добыча богата!'; } else res.text = G.n + ': без навыков удаётся взять лишь немного.';
+      res.mats = got; addBag(0, got);
+    }
+    run.node++; slot.rev++; return res;
+  };
+  C.heroPeek = function (slot) { return C.unitFromSlot(slot); };
+  if (typeof module !== 'undefined') module.exports = RPG;
+})();
