@@ -122,7 +122,7 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
   const fws = fc.map((x) => x.fw); check('VN: одинаковый размер голов (±8%)', Math.max(...fws) / Math.min(...fws) < 1.08, fws.map((x) => Math.round(x)).join('/'));
   const xs = fc.map((x) => x.fcx).sort((a, b) => a - b); check('VN: слоты лево/центр/право', Math.abs(xs[0] - 66) < 14 && Math.abs(xs[1] - 195) < 14 && Math.abs(xs[2] - 324) < 14, xs.map(Math.round).join('/'));
   check('VN: герой слева', fc[0].f.startsWith('hero_') && Math.abs(fc[0].fcx - xs[0]) < 1);
-  check('VN: головы в кадре, низ спрайта уходит под диалог', fc.every((x) => x.fcy - 0.7 * x.fw > -6 && x.fcy < 600 && x.bottom >= x.dlgTop + 4), fc.map((x) => `${Math.round(x.fcy)}/${Math.round(x.bottom)}>${Math.round(x.dlgTop)}`).join(' '));
+  check('VN: головы в кадре, низ спрайта уходит под диалог', fc.every((x) => x.fcy - 0.7 * x.fw > -6 && x.fcy + 0.65 * x.fw < x.dlgTop && x.bottom >= x.dlgTop + 4), fc.map((x) => `${Math.round(x.fcy)}/${Math.round(x.bottom)}>${Math.round(x.dlgTop)}`).join(' '));
   check('VN: говорящий поверх остальных', fc.filter((x) => /\btalk\b/.test(x.cls)).length === 1 && Number(fc.find((x) => /\btalk\b/.test(x.cls)).z) > Math.max(...fc.filter((x) => !/\btalk\b/.test(x.cls)).map((x) => Number(x.z))));
   const br0 = await ev(() => { window.__br = document.getAnimations().filter((a) => a.animationName === 'breathe'); window.__brT = window.__br.map((a) => a.currentTime); return window.__br.length; });
   check('VN: дыхание у спрайтов (breathe) запущено', br0 >= 3, String(br0));

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Импорт героя (не вырезание фона: исходники — настоящие PNG с альфой 1024×1536): /workspace/vn-art/newhero (обычный облик, cid hero) и /workspace/vn-art/newdemon (форма Короля, cid hero_demon)
 -> assets/vn/hero_<mood>.webp / hero_demon_<mood>.webp. Обновляет только записи героя в manifest.json (portraits/dim/src/pre/av/v); остальные портреты не трогает.
-Ключевые свойства (v2.5.2):
+Ключевые свойства (v2.5.3: портрет ДО ПОЯСА, как бюсты остальных; v2.5.2: общий кадр):
   • ОДИН кадр на все эмоции формы: общий bbox объединения альф всех эмоций → одинаковый размер холста, масштаб и якорь (плечи/ноги не прыгают при смене эмоции);
   • родное разрешение исходника (никакого даунскейла): файл = кроп исходника 1:1, webp q=92, alpha_quality=100;
   • лицо (fx, fy, fw) — консенсус каскада lbpcascade_animeface по всем эмоциям и ОДНО значение для всех файлов формы; логические единицы раскладки: лицо = 240 (как у остальных бюстов);
-  • dim = [w, h, 1, fx, fy, fw, x0, y0, vh, fs]: vh — «видимая высота» кадра в логических единицах (герой в рост до бёдер, ниже — под диалогом), fs — масштаб файла к логическим единицам.
+  • dim = [w, h, 1, fx, fy, fw, x0, y0, vh, fs]: vh — видимая высота кадра (= h: кадр уже обрезан по поясу), fs — масштаб файла к логическим единицам.
 Запуск: python3 tools/import-hero.py normal|demon"""
 import os, sys, json, hashlib
 from PIL import Image
@@ -20,7 +20,7 @@ CASCADE = cv2.CascadeClassifier(os.path.join(HERE, 'data', 'lbpcascade_animeface
 MOODS = ['neutral', 'angry', 'sad', 'smirk', 'shy', 'surprised']
 Q, AQ = 92, 100
 FACE_W = 240.0          # лицо в логических единицах раскладки (как у остальных бюстов)
-BODY_FW = 3.8           # от центра лица вниз до линии «под диалогом» — в ширинах лица (бёдра/верх бедра)
+BODY_FW = 2.9           # от центра лица вниз до нижней кромки кадра — в ширинах лица: портрет ДО ПОЯСА (линия пояса ≈2.7 fw)
 
 def detect_faces(raw):
     bg = Image.new('RGB', raw.size, (128, 128, 128)); bg.paste(raw, mask=raw.getchannel('A'))
@@ -38,12 +38,13 @@ assert dets, 'лицо не найдено'
 fx, fy, fw = (float(np.median([d[i] for d in dets])) for i in range(3))
 print('лицо (исходные px): центр (%.0f, %.0f) ширина %.0f по %d детекциям' % (fx, fy, fw, len(dets)))
 # общий кадр: объединение альф всех эмоций (+ отступ)
-bbs = [im.getchannel('A').point(lambda v: 255 if v > 8 else 0).getbbox() for im in RAW.values()]
 W0, H0 = RAW['neutral'].size; pad = 4
-x0 = max(0, min(b[0] for b in bbs) - pad); y0 = max(0, min(b[1] for b in bbs) - pad); x1 = min(W0, max(b[2] for b in bbs) + pad); y1 = min(H0, max(b[3] for b in bbs) + pad)
+y1 = min(H0, int(round(fy + BODY_FW * fw)))                                   # общая нижняя кромка: пояс
+bbs = [im.getchannel('A').crop((0, 0, W0, y1)).point(lambda v: 255 if v > 8 else 0).getbbox() for im in RAW.values()]
+x0 = max(0, min(b[0] for b in bbs) - pad); y0 = max(0, min(b[1] for b in bbs) - pad); x1 = min(W0, max(b[2] for b in bbs) + pad)
 cw, ch = x1 - x0, y1 - y0; K = FACE_W / fw
 dims = [round(cw * K), round(ch * K), 1, round((fx - x0) * K), round((fy - y0) * K), round(FACE_W), round(x0 * K), round(y0 * K), 0, round(1 / K, 4)]
-dims[8] = min(dims[1], round(dims[4] + BODY_FW * FACE_W))
+dims[8] = dims[1]
 print('кадр %dx%d px (из %dx%d) -> логические %dx%d, K=%.3f, видимая высота vh=%d' % (cw, ch, W0, H0, dims[0], dims[1], K, dims[8]))
 
 man_path = os.path.join(OUT, 'manifest.json'); man = json.load(open(man_path))
