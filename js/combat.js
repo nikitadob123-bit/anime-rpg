@@ -3,7 +3,7 @@
   const RPG = globalThis.RPG || (globalThis.RPG = {});
   const D = RPG.D, E = RPG.E;
   const C = RPG.C = {};
-  C.TUNE = { hp: 2.0, atk: 3.2, lateHp: 2.6, lateAtk: 1.3, lateFrom: 30, lateBoss: 0.9 };
+  C.TUNE = { hp: 2.0, atk: 3.2, lateHp: 2.6, lateAtk: 1.3, lateFrom: 30, lateBoss: 0.9, bossPlus: 1.2, bossPlusFrom: 50, bossPlusTo: 90, hitCap: [0.3, 0.12], hitCapFrom: 30, hitCapTo: 80, actCapMul: 3 };   // hitCap: макс. доля HP босса за один удар (от ур. 30: 30% → к ур. 80: 12%) — боссы поздних арок не умирают с одного-двух ударов; за одно действие (многоударный навык) — не более ×3 от лимита удара   // bossPlus: доп. HP боссов поздних арок (до +120% к ур. 90+), минибоссов — вдвое меньше
   const SKL = (id) => D.SKILLS[id] || D.ESK[id];
   const clamp = E.clamp;
   const isDeb = (s) => { const k = D.ST[s.id].k; return k === 'debuff' || k === 'dot' || k === 'ctrl'; };
@@ -45,7 +45,8 @@
     const t = D.ENEMIES[eid], R = D.ROLES[t.role], tm = D.TIERS[tier || 0].mul, L = lv;
     const ramp = Math.min(1, (L + 1) / 12), th = 1 + (C.TUNE.hp - 1) * ramp, ta = 1 + (C.TUNE.atk - 1) * ramp;
     const lt = Math.max(1, L / C.TUNE.lateFrom), lh = Math.pow(lt, C.TUNE.lateHp + (t.role === 'boss' ? C.TUNE.lateBoss : t.role === 'mini' ? C.TUNE.lateBoss * 0.6 : 0)), la = Math.pow(lt, C.TUNE.lateAtk);
-    const hp = (30 + 22 * L + 1.0 * L * L) * R.hp * tm * (elite ? 1.35 : 1) * th * lh, atk = (8 + 3.4 * L) * R.atk * (1 + (tm - 1) * 0.55) * (elite ? 1.15 : 1) * ta * la, def = (4 + 2.6 * L) * R.def;
+    const bp = t.role === 'boss' || t.role === 'mini' ? 1 + C.TUNE.bossPlus * (t.role === 'mini' ? 0.5 : 1) * Math.max(0, Math.min(1, (L - C.TUNE.bossPlusFrom) / (C.TUNE.bossPlusTo - C.TUNE.bossPlusFrom))) : 1;
+    const hp = (30 + 22 * L + 1.0 * L * L) * R.hp * tm * (elite ? 1.35 : 1) * th * lh * bp, atk = (8 + 3.4 * L) * R.atk * (1 + (tm - 1) * 0.55) * (elite ? 1.15 : 1) * ta * la, def = (4 + 2.6 * L) * R.def;
     const u = base({ id: idn, side: 'e', eid, role: t.role, name: (elite ? 'Закалённый ' : '') + t.n.replace(/^(.)/, (m, a) => elite ? a.toLowerCase() : a), lv: L, ic: t.ic, tags: t.tags.slice(), weak: t.weak || [], resist: t.res || [], elite: !!elite, ai: true, tier: tier || 0 },
       { maxHp: Math.round(hp), maxMp: 999, atk, mag: atk, hpow: atk, def, res: def * 0.9, spd: (10 + L * 0.25) * R.spd, crit: 5, critDmg: 1.5, eva: t.role === 'skirm' ? 8 : 2 });
     u.sk = t.sk.slice(); u.mp = 999; u.maxMp = 999; u.phase = 1; u.el = t.el || null; u.sub = { statRes: t.role === 'boss' ? 30 : t.role === 'mini' ? 12 : 0, resEl: {} }; return u;
@@ -152,6 +153,7 @@
     v = Math.max(0, Math.round(v));
     const rf = has(tgt, 'reflect'); if (rf && !dot && src && src.alive && src.side !== tgt.side && v > 0) { const back = Math.round(v * rf.pow * 1.5); v = Math.round(v * (1 - rf.pow)); ev(B, { t: 'txt', u: tgt.id, s: 'Обращено!' }); msg(B, tgt.name + ' обращает урон на ' + src.name + ' (' + back + ')'); const rr = hurt(B, src, back, 'arcane', null, true); ev(B, { t: 'dmg', u: src.id, from: tgt.id, v: rr, thorn: 1 }); }
     if (has(tgt, 'immortal') && tgt.hp - v < 1) { const cut = Math.max(0, tgt.hp - 1); tgt.immDebt = (tgt.immDebt || 0) + (v - cut); v = cut; if (!tgt._immTxt) { tgt._immTxt = 1; ev(B, { t: 'txt', u: tgt.id, s: 'Бессмертен!' }); } }
+    if (v > 0 && tgt.side === 'e' && tgt.role === 'boss' && tgt.lv >= C.TUNE.hitCapFrom) { const k = clamp((tgt.lv - C.TUNE.hitCapFrom) / (C.TUNE.hitCapTo - C.TUNE.hitCapFrom), 0, 1), cap = Math.max(1, Math.round(tgt.maxHp * (C.TUNE.hitCap[0] + (C.TUNE.hitCap[1] - C.TUNE.hitCap[0]) * k))); if (v > cap) v = cap; if (tgt._seq !== B.actSeq) { tgt._seq = B.actSeq; tgt._acc = 0; } const room = Math.max(0, cap * C.TUNE.actCapMul - tgt._acc); if (v > room) v = Math.round(room); tgt._acc += v; }
     tgt.hp -= v; tgt.takenSince += v; tgt.takenTot = (tgt.takenTot || 0) + v;
     if (v > 0 && tgt.side === 'a') { const c = D.CLASSES[tgt.cls]; if (c && !dot && tgt.hero) tgt.rc = clamp(tgt.rc + (c.rc.taken || 0), 0, tgt.rcMax); }
     if (tgt.hp <= 0) {
@@ -328,7 +330,9 @@
   }
 
   // ───── Действия ─────
+  C._hurt = hurt;   // для тестов баланса
   C.act = function (B, u, a) {
+    B.actSeq = (B.actSeq || 0) + 1;
     if (B.over || B.cur !== u) return false;
     a = a || { t: 'basic' };
     if (a.t === 'skill') {

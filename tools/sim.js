@@ -11,8 +11,8 @@ if (process.env.TUNE) Object.assign(C.TUNE, JSON.parse(process.env.TUNE));
 const BUILDS = {
   mantra: { n: 'Мантра Силы (Плоть+Мантры)', br: [1, 6, 0, 5, 9, 2, 3, 4, 7, 8], key: ['P14', 'P15', 'P30', 'M24', 'P33', 'M26'], w: { str: 3, vit: 2, agi: 1, luk: 1 }, uniq: 'ironwill', crew: ['gen1', 'grak', 'gen4'] },
   dark: { n: 'Тьма и Энтропия', br: [2, 3, 0, 6, 5, 9, 7, 8, 1, 4], key: ['D13', 'E21', 'E25', 'D24', 'E24', 'D16'], w: { int: 3, spi: 2, wis: 1, luk: 1 }, uniq: 'phoenix', crew: ['gen1', 'gen2', 'gen4'] },
-  dominion: { n: 'Власть и Тирания', br: [4, 9, 0, 5, 6, 3, 2, 7, 8, 1], key: ['V18', 'V14', 'T19', 'T21', 'V13'], w: { cha: 2, int: 2, spi: 2, vit: 1 }, uniq: 'dawnsong', crew: ['gen1', 'gen4', 'gen2'] },
-  devour: { n: 'Пожирание и Кровь', br: [7, 5, 0, 1, 8, 6, 9, 2, 3, 4], key: ['G16', 'C17', 'G27', 'P33', 'C14'], w: { str: 2, vit: 2, agi: 1, luk: 1 }, uniq: 'ironwill', crew: ['gen1', 'grak', 'gen2'] },
+  dominion: { n: 'Власть и Тирания', br: [4, 9, 0, 5, 6, 3, 2, 7, 8, 1], key: ['V18', 'V14', 'T19', 'T21', 'V13'], w: { str: 3, cha: 2, vit: 1 }, uniq: 'dawnsong', crew: ['gen1', 'gen4', 'gen2'] },
+  devour: { n: 'Пожирание и Кровь', br: [7, 5, 0, 1, 8, 6, 9, 2, 3, 4], key: ['G16', 'C17', 'G27', 'P33', 'C14'], w: { str: 3, vit: 2, agi: 1, luk: 1 }, uniq: 'ironwill', crew: ['gen1', 'grak', 'gen2'] },
   blades: { n: 'Клинки Бездны', br: [8, 0, 6, 7, 1, 5, 9, 2, 3, 4], key: ['B18', 'B19', 'B20', 'M28', 'B30'], w: { agi: 3, str: 2, luk: 2 }, uniq: 'shadowdance', crew: ['gen4', 'gen1', 'gen2'] }
 };
 const CREW_AT = [[1, 'gen1'], [1, 'grak'], [4, 'gen4'], [6, 'gen2'], [9, 'gen3'], [12, 'gen5'], [16, 'gen7'], [20, 'gen6']];
@@ -110,6 +110,7 @@ function simBuild(bk, seed) {
 
 const avg = (a) => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
 if (process.argv.includes('--log')) { for (const bk of Object.keys(BUILDS)) { const { log, stat, slot } = simBuild(bk, 1); console.log(bk, stat, 'ур.', slot.hero.level); console.log(log.map((l) => l.did + '/' + l.tier + (l.r === 'win' ? '+' : '-') + 'L' + l.lv).join(' ')); } process.exit(0); }
+if (process.env.SIM_PROBE) { module.exports = { simBuild, BUILDS, RPG: globalThis.RPG }; return; }
 const rep = {};
 console.log('Симуляция баланса: автобой (Король Демонов + Свита до 3), ' + N + ' прогонов на билд; контент выбирается по уровню героя\n');
 for (const bk of Object.keys(BUILDS)) {

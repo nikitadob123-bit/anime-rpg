@@ -36,6 +36,12 @@ t('lint ловит ошибки: говорящий, настроение, от�
   ['неизвестный говорящий', 'неизвестное настроение', 'запрещённая лексика', 'нет title', 'неизвестный фон', 'нет reward', 'вариант без флага', 'не по-русски'].forEach((m) => assert(o.includes(m), 'не поймана ошибка: ' + m + '\n' + o.slice(0, 800)));
 });
 
+t('баланс: босс ур.80 не теряет за один удар больше 12% HP, а за действие — больше 36%; минибоссы/обычные враги без лимита', () => {
+  const s = mk(); const P = C.unitFromSlot(s); const B = C.create([P], [C.unitFromEnemy(D.DUN.nowhere.boss, 80, 0, false, 'e0')], E.rng(3), { auto: true, noFlee: true }); const boss = B.foes[0];
+  assert(boss.maxHp > 1e6, 'HP босса ' + boss.maxHp); B.actSeq = 7; const hp0 = boss.hp; const hurtFn = C._hurt; hurtFn(B, boss, boss.maxHp, null, P); assert(hp0 - boss.hp <= Math.round(boss.maxHp * 0.12) + 1, 'один удар'); hurtFn(B, boss, boss.maxHp, null, P); hurtFn(B, boss, boss.maxHp, null, P); hurtFn(B, boss, boss.maxHp, null, P); assert(hp0 - boss.hp <= Math.round(boss.maxHp * 0.36) + 2, 'за действие'); B.actSeq = 8; hurtFn(B, boss, boss.maxHp, null, P); assert(hp0 - boss.hp > boss.maxHp * 0.36, 'новое действие — новый лимит');
+  const lo = C.unitFromEnemy(D.DUN.nowhere.boss, 80, 0, false, 'e1'), lo2 = C.unitFromEnemy(D.DUN.nowhere.boss, 40, 0, false, 'e2'); assert(lo.maxHp > lo2.maxHp * 4);
+});
+
 console.log('Прохождение сюжета (сцены → бои → награды)');
 t('после гл.3 текущая глава — 4; арка 1 даёт сцены 4…10 по цепочке', () => {
   const s = upTo3(); assert.strictEqual(ST.current(s), 4); assert.strictEqual(ST.doneCount(s), 3); assert.strictEqual(ST.sync(s), 3);
