@@ -1,0 +1,80 @@
+/* ═══ Нимб Мира: визуальная новелла, Свита, Сердца, ветки Силы ═══ */
+#nav{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}#nav::-webkit-scrollbar{display:none}
+#nav button{flex:0 0 auto;min-width:46px;padding-left:5px;padding-right:5px}
+.scrollx{overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}.scrollx::-webkit-scrollbar{display:none}.scrollx button{flex:0 0 auto;white-space:nowrap;padding:9px 11px}
+.seg.scrollx button.on{box-shadow:inset 0 -2px 0 var(--bc,var(--gold))}
+
+/* — фоны — */
+.vbg{position:absolute;inset:0;overflow:hidden;background:#05060f;transition:opacity .6s}.vbg.b2{opacity:0;z-index:0}.vbg.b2.in{opacity:1}
+.bg-courtyard{background:linear-gradient(180deg,#141a3a 0%,#3a3a6a 50%,#6a5a7a 82%,#2a2430 100%)}
+.bg-street_fest{background:linear-gradient(180deg,#1a1038 0%,#5a2a5a 45%,#e0904a 90%,#3a2418 100%)}
+.bg-void{background:radial-gradient(ellipse at 50% 60%,#2a2030 0%,#0a0810 55%,#000 100%)}
+.bg-void_dusk{background:linear-gradient(180deg,#05040a 0%,#2a1620 55%,#6a3a2a 100%)}
+.bg-camp{background:linear-gradient(180deg,#05071a 0%,#14204a 55%,#3a2a2a 88%,#1a1210 100%)}
+.bg-ruins{background:linear-gradient(180deg,#0a0c1e 0%,#2a2a48 60%,#4a3a3a 100%)}
+.bg-forest{background:linear-gradient(180deg,#040a0a 0%,#0e2a22 60%,#1a4a30 100%)}
+.bg-mines{background:linear-gradient(180deg,#0a0807 0%,#2a1c10 60%,#5a3a1c 100%)}
+.bg-swamp{background:linear-gradient(180deg,#060e0c 0%,#12302a 60%,#3a5a3a 100%)}
+.bg-spire{background:linear-gradient(180deg,#0a1630 0%,#3a6aa0 55%,#cfe4ff 100%)}
+.bg-cathedral{background:linear-gradient(180deg,#201020 0%,#6a3a5a 50%,#e8c8a0 100%)}
+.bg-hub{background:linear-gradient(180deg,#0b0c26 0%,#2a1a3a 55%,#4a2a40 100%)}
+.sil-ruins{position:absolute;left:0;right:0;bottom:0;height:34%;background:#07060e;clip-path:polygon(0 100%,0 60%,8% 52%,12% 70%,18% 40%,24% 62%,30% 48%,36% 72%,44% 55%,52% 68%,60% 36%,66% 58%,74% 46%,82% 70%,90% 50%,100% 64%,100% 100%)}
+.vbg.in .sil,.vbg .sil{opacity:.95}
+.vfog{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 40%,transparent 40%,rgba(0,0,0,.55) 100%);z-index:1}
+
+/* — CG — */
+.vcg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity .8s;z-index:2;pointer-events:none}.vcg.on{opacity:1}
+.vcg.kb{animation:kb 22s ease-in-out infinite alternate}@keyframes kb{from{transform:scale(1.02)}to{transform:scale(1.12) translate(-1.5%,-1.5%)}}
+
+/* — сцена и персонажи — */
+.vstage{position:absolute;left:0;right:0;top:calc(var(--sat) + 36px);bottom:128px;z-index:3;pointer-events:none}
+.vact{position:absolute;bottom:0;width:84%;max-width:380px;opacity:0;transform:translateY(24px) scale(.98);transition:opacity .4s,transform .5s,filter .35s;filter:brightness(.42) saturate(.7)}
+.vact.in{opacity:1;transform:none}.vact.in:not(.talk){transform:translateY(8px) scale(.96)}
+.vact.talk{filter:none;z-index:3}
+.vact.pos-left{left:-22%}.vact.pos-right{right:-22%}.vact.pos-center{left:8%;width:80%;z-index:1}
+.vact .vsp{display:block;position:relative;width:100%;height:auto;max-height:100%;border-radius:0;background:transparent;object-fit:contain;object-position:bottom;animation:breathe 4.2s ease-in-out infinite;transform-origin:50% 100%;filter:drop-shadow(0 6px 14px rgba(0,0,0,.6))}
+.vact .vsp.xf{position:absolute;left:0;bottom:0;opacity:0;transition:opacity .35s;animation:none}.vact .vsp.xf.on{opacity:1}
+.vact.pop{animation:vpop .35s}.vact.talk .vsp.svgpor,.vact .svgpor{width:100%;aspect-ratio:256/320}
+@keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.012)}}
+@keyframes vpop{30%{transform:translateX(-6px) scale(1.02)}60%{transform:translateX(5px)}}
+.vact:not(.talk) .vsp{animation-duration:6s}
+
+/* — UI новеллы — */
+.vtop{position:absolute;top:calc(var(--sat) + 8px);right:10px;z-index:7;display:flex;gap:6px}
+.story .mini{padding:6px 11px;border-radius:99px;background:rgba(0,0,0,.55);border:1px solid var(--line);font-size:12px;color:#fff}.story .mini.on{border-color:var(--gold);color:var(--gold2)}
+.story .dlg{z-index:6;min-height:112px;left:8px;right:8px;bottom:calc(10px + var(--sab));padding:18px 14px 16px;background:linear-gradient(180deg,rgba(10,12,34,.86),rgba(5,6,18,.94))}
+.story .dlg .txt{min-height:68px;max-height:22dvh;font-size:15.5px}
+.story .schoice{z-index:8}
+.vlog{position:absolute;inset:0;z-index:12;display:none;background:rgba(3,4,12,.94);padding:calc(var(--sat) + 10px) 14px 20px;overflow-y:auto}.vlog.on{display:block}
+.vlog .lh{display:flex;justify-content:space-between;align-items:center;font-family:var(--serif);font-size:18px;margin-bottom:10px;position:sticky;top:0}.vlog p{margin:0 0 10px;font-size:14px;line-height:1.45;color:#dfe2ff}
+.story.desat .vact,.story.desat .vbg{filter:grayscale(1) contrast(1.1);transition:filter 1s}
+.flash.ent{background:#ddd}
+.story.halo::after{content:"";position:absolute;inset:0;z-index:9;pointer-events:none;background:radial-gradient(circle at 50% 22%,rgba(255,244,200,.85),rgba(255,220,120,.25) 40%,transparent 70%);animation:fl 1.6s}
+.story.silence .vbg,.story.silence .vact,.story.silence .vcg{filter:grayscale(1) brightness(.5);transition:filter .5s}
+.story.shk{animation:shk .5s}
+
+/* — портреты в списках: лицо крупно — */
+.por.xs,.por.sm{object-fit:cover;object-position:50% 14%;background:radial-gradient(circle at 50% 30%,#3a3260,#14163a)}
+.por.lg{aspect-ratio:1/1;object-fit:cover;object-position:50% 12%;background:radial-gradient(circle at 50% 30%,#3a3260,#14163a)}
+.por.xl{width:150px;height:170px;object-fit:cover;object-position:50% 12%}
+.svgpor{overflow:hidden}.svgpor svg{width:100%;height:100%;display:block}
+.silhouette .por{filter:brightness(0) contrast(2) opacity(.55)}.silhouette .svgpor{filter:brightness(0) opacity(.5)}
+.card.locked{opacity:.75}
+
+/* — Свита / Сердца — */
+.crewc.inparty{border-color:var(--gold)}.crewc .tag,.heart .tag{margin-left:2px}
+.partyrow{margin:6px 0}.pcell{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border-radius:12px;background:rgba(20,24,60,.6);border:1px solid var(--line);color:#fff}.pcell.empty{opacity:.5;justify-content:center;min-height:70px}.pcell span{font-size:22px}.pcell small{font-size:10.5px}
+.loy{display:block}.loy em{font-style:normal;font-size:11px}.bar.loy i{background:linear-gradient(90deg,#d8506a,#e8c04a,#6ad88a)}
+.bar.aff i{background:linear-gradient(90deg,#ff8aa8,#ff5a8a)}.affb{position:relative;margin:4px 0}.affb i{position:absolute;top:-2px;width:2px;height:10px;background:rgba(255,255,255,.55)}
+.heart.glow{border-color:#ff8aa8;box-shadow:0 0 18px rgba(255,120,160,.25)}
+.crewm{display:flex;flex-direction:column;gap:8px;max-height:78dvh;overflow-y:auto}.crewm .por.lg{width:96px;height:110px;aspect-ratio:auto}.eqgrid.three{grid-template-columns:repeat(3,1fr)}
+.toggle{padding:8px 0 0}.toggle input{width:20px;height:20px}
+.wrap{flex-wrap:wrap}
+
+/* — ветки Силы — */
+.tcol .tlv{position:absolute;left:0;font-size:9px;color:var(--dim)}.trow{position:relative;padding-left:16px}
+.node.concept{border-color:#c88aff;box-shadow:0 0 10px rgba(200,138,255,.35)}.node.fused{opacity:.45;text-decoration:line-through}
+.card.concept{border-color:#c88aff}.brinfo{border-left:3px solid var(--bc,var(--gold))}
+.tree.one .tcol{width:100%}
+.unit.ally .si b{font-size:9px}
+.btn.sk.conc,.sk.conc{border-color:#c88aff}

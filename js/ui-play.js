@@ -25,7 +25,7 @@
     const cl = s.prog.cleared[d.id] || 0; UI.prep = { did: d.id, tier: Math.min(cl, 3), buffs: {} }; UI.prepModal();
   };
   UI.prepModal = function () {
-    const s = UI.slot(), P = UI.prep, d = D.DUN[P.did], T = D.TIERS[P.tier], un = E.unlockedComps(s);
+    const s = UI.slot(), P = UI.prep, d = D.DUN[P.did], T = D.TIERS[P.tier], un = E.recruited(s);
     const lv0 = d.lv + T.lv, power = E.power(s);
     const tiers = D.TIERS.map((t, i) => { const ok = E.tierUnlocked(s, d.id, i); return `<button class="tchip ${P.tier === i ? 'on' : ''} ${ok ? '' : 'lockd'}" data-act="prepTier" data-i="${i}" data-quiet="1">${ok ? t.ic : '🔒'}<b>${t.n}</b><small>ур. ${d.lv + t.lv}+</small></button>`; }).join('');
     const comps = un.length ? un.filter((id) => !E.onMission(s, id)).map((id) => { const c = D.CREW[id], st = s.crew[id], on = s.party.includes(id); return `<button class="item ${on ? 'selitem' : ''}" data-act="prepComp" data-id="${id}" data-quiet="1">${UI.por(c.art, 'xs', false)}<span class="grow tl"><b>${c.n}</b> <small>${D.ARCH_N[c.arch]} · ур. ${st.lv} · ${D.loyTier(st.loy).n}</small></span>${on ? '<span class="ok">✔</span>' : ''}</button>`; }).join('') : '<div class="small dim">Подчинённые присоединятся по ходу сюжета.</div>';
@@ -47,10 +47,10 @@
     Object.keys(P.buffs).filter((k) => P.buffs[k]).forEach((k) => E.useConsOutside(s, k));
     const r = E.startRun(s, P.did, P.tier); if (r) { UI.toast(r, 'bad'); return; }
     UI.closeModal(); UI.save(true); UI.sfx('boom');
-    if (!UI.p.seenIntro[P.did] && D.INTROS[P.did]) { UI.p.seenIntro[P.did] = 1; UI.save(true); await UI.playLines(D.INTROS[P.did], { bg: bgForDun(P.did), replay: true, noTitle: true }); }
+    if (!UI.p.seenIntro[P.did] && D.INTROS && D.INTROS[P.did]) { UI.p.seenIntro[P.did] = 1; UI.save(true); await UI.playLines(D.INTROS[P.did], { bg: bgForDun(P.did), replay: true, noTitle: true }); }
     UI.render();
   };
-  const bgForDun = (did) => ({ mill: 'crypt', wood: 'forest', mines: 'mines', swamp: 'swamp_camp', spire: 'spire', cathedral: 'cathedral' }[did] || 'crypt');
+  const bgForDun = (did) => ({ mill: 'ruins', wood: 'forest', mines: 'mines', swamp: 'swamp', spire: 'spire', cathedral: 'cathedral' }[did] || 'ruins');
 
   // ───── Вылазка ─────
   const nodeIc = (n) => (n.t === 'ev' ? evIcon(n.ev) : n.t === 'boss' ? '👹' : n.t === 'mini' ? '💀' : n.elite ? '⚔️' : '🗡️');

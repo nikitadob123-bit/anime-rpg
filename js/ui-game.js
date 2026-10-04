@@ -3,9 +3,9 @@
   const RPG = globalThis.RPG, D = RPG.D, E = RPG.E, S = RPG.S, A = RPG.A, UI = RPG.UI;
   const { $, $$, esc, fmt } = UI;
   D.RACE_IDS = D.RACE_IDS || Object.keys(D.RACES);
-  const TABS = [['city', '🏰', 'Город'], ['story', '📖', 'Сюжет'], ['dun', '🗝️', 'Подземелья'], ['hero', '🧝', 'Герой'], ['skills', '🌟', 'Навыки'], ['prof', '⚒️', 'Ремесло'], ['inv', '🎒', 'Сумка'], ['set', '⚙️', 'Меню']];
+  const TABS = [['city', '🏰', 'Город'], ['story', '📖', 'Сюжет'], ['dun', '🗝️', 'Вылазки'], ['hero', '👑', 'Герой'], ['skills', '🌟', 'Силы'], ['crew', '🛡️', 'Свита'], ['hearts', '💞', 'Сердца'], ['prof', '⚒️', 'Ремесло'], ['inv', '🎒', 'Сумка'], ['set', '⚙️', 'Меню']];
   UI.TABS = TABS;
-  UI.sub = { skills: 'class', prof: null, inv: 'gear', filt: 'all', shop: 'gear' };
+  UI.sub = { skills: 'root', crew: null, hearts: null, prof: null, inv: 'gear', filt: 'all', shop: 'gear' };
   const rar = (it) => D.RARITY[it.r];
   const bar = (v, max, cl) => `<span class="bar ${cl || ''}"><i style="width:${Math.max(0, Math.min(100, v / max * 100))}%"></i></span>`;
   const matTxt = (m, slot) => Object.keys(m || {}).map((k) => { const have = (slot.mats[k] || 0), ok = have >= m[k]; return `<span class="mat ${ok ? 'ok' : 'no'}">${D.MATS[k].ic} ${D.MATS[k].n} ${have}/${m[k]}</span>`; }).join('');
@@ -30,17 +30,18 @@
     try { RPG.F.setMode(st.particles ? 'embers' : 'none'); } catch (e) { /* ignore */ }
   };
   // сцены, которые идут сами (после подземелья / начало 1 главы)
+  UI.isPre = (id) => { const st = D.STORY.find((x) => x.id === id); return !!(st && st.pre); };
   UI.autoStory = async function () {
     const s = UI.slot(); let guard = 6;
     while (guard--) {
-      const n = E.nextScene(s); if (!n || n.id === 'ch2_g') break;
+      const n = E.nextScene(s); if (!n || UI.isPre(n.id)) break;
       if (!(n.need && n.need.clear) && n.id !== 'ch1_a') break;
       await UI.playScene(n.id); UI.save(true);
     }
     if (UI.v === 'game') UI.render();
   };
   UI.nextStory = function (s) {
-    const n = D.STORY.find((x) => !s.story.done.includes(x.id) && x.id !== 'ch2_g');
+    const n = D.STORY.find((x) => !s.story.done.includes(x.id) && !UI.isPre(x.id));
     if (!n) return null; return { st: n, ok: E.sceneAvail(s, n.id) };
   };
 
@@ -61,26 +62,28 @@
   UI.tabs = {};
   // ═════ ГОРОД ═════
   UI.tabs.city = function (s) {
-    const h = s.hero, ns = UI.nextStory(s), comps = E.unlockedComps(s);
+    const h = s.hero, ns = UI.nextStory(s), un = E.recruited(s);
     let story;
-    if (!ns) story = `<div class="card story done"><b>Глава 2 завершена</b><div class="small dim">Безмолвие отступило — но не исчезло. Продолжение следует.</div></div>`;
+    if (!ns) story = `<div class="card story done"><b>Первая арка завершена</b><div class="small dim">Апостол Света пал. Врата Богов приоткрыты — но то, что за ними, ещё ждёт. Продолжение следует.</div></div>`;
     else if (ns.ok) story = `<div class="card story glow"><div class="small gold">Сюжет</div><b>${esc(D.SCENES[ns.st.id].t)}: ${esc(D.SCENES[ns.st.id].sub)}</b><button class="btn primary wide" data-act="playNext" id="btnStory">▶ Продолжить историю</button></div>`;
-    else story = `<div class="card story"><div class="small gold">Цель</div><b>${esc(D.SCENES[ns.st.id].t)}: ${esc(D.SCENES[ns.st.id].sub)}</b><div class="small dim">${esc(ns.st.hint || '')}</div><button class="btn ghost wide" data-act="tab" data-t="dun">К подземельям</button></div>`;
+    else story = `<div class="card story"><div class="small gold">Цель</div><b>${esc(D.SCENES[ns.st.id].t)}: ${esc(D.SCENES[ns.st.id].sub)}</b><div class="small dim">${esc(ns.st.hint || '')}</div><button class="btn ghost wide" data-act="tab" data-t="dun">К вылазкам</button></div>`;
     const run = s.run ? `<button class="card tap runbar" data-act="tab" data-t="dun"><b>⚔️ Вылазка идёт: ${D.DUN[s.run.did].n}</b><div class="small dim">Узел ${s.run.node + 1} из ${s.run.nodes.length}. Нажмите, чтобы продолжить.</div></button>` : '';
     const sp = E.sp(h) + E.up(h);
-    const party = comps.length ? `<div class="small dim">Спутники: ${s.party.map((c) => D.COMPANIONS[c].n).join(', ') || 'не выбраны'}</div>` : '';
-    return `<div class="hub"><div class="bg bg-hub"><div class="sil sil-village"></div><div class="lira"></div></div><div class="hubtxt"><h2>Лунный Брод</h2><p>Тихий городок у реки. Над ним — безмолвное кольцо Лиры.</p></div></div>
+    const party = un.length ? `<div class="small dim">Отряд: ${s.party.map((c) => D.CREW[c].n).join(', ') || 'не выбран'} · свободных вечеров: ${s.crewTalk || 0}</div>` : '';
+    const rp = UI.romPending ? UI.romPending(s) : 0;
+    return `<div class="hub"><div class="bg bg-hub"><div class="sil sil-ruins"></div></div><div class="hubtxt"><h2>Лагерь у руин Хельмора</h2><p>Город стёрт. Над пустотой — Нимб, что смотрит на вас.</p></div></div>
       ${story}${run}
       ${sp ? `<button class="card tap hint" data-act="tab" data-t="skills">🌟 Есть неиспользованные очки: <b>${sp}</b></button>` : ''}
+      ${rp ? `<button class="card tap hint" data-act="tab" data-t="hearts">💞 Новых сцен с героинями: <b>${rp}</b></button>` : ''}
       <div class="bgrid">
-        <button class="bld" data-act="shop" data-quiet="1"><span>🏪</span><b>Лавка</b><small>Снаряжение, зелья, материалы</small></button>
+        <button class="bld" data-act="shop" data-quiet="1"><span>🏪</span><b>Лавка</b><small>Снаряжение, зелья, подарки</small></button>
         <button class="bld" data-act="forge" data-quiet="1"><span>⚒️</span><b>Кузница</b><small>Улучшение до +${E.upCap(s)}</small></button>
-        <button class="bld" data-act="tavern" data-quiet="1"><span>🍺</span><b>Таверна</b><small>${comps.length ? 'Спутники и слухи' : 'Слухи'}</small></button>
-        <button class="bld" data-act="altar" data-quiet="1"><span>🕯️</span><b>Алтарь троп</b><small>Сброс навыков</small></button>
+        <button class="bld" data-act="tavern" data-quiet="1"><span>🔥</span><b>Костёр</b><small>Слухи и разговоры</small></button>
+        <button class="bld" data-act="altar" data-quiet="1"><span>🕯️</span><b>Алтарь троп</b><small>Сброс Сил</small></button>
       </div>${party}
       <div class="card small"><b>Подсказка дня</b><div class="dim">${tip()}</div><button class="btn ghost small" data-act="tutorial">📘 Обучение</button></div>`;
   };
-  const TIPS = ['Враги показывают намерение значком над собой. ⚠️ — готовится мощный удар: прикройтесь щитом или оглушите врага.', 'Стихии складываются: «Промокший» + молния = разряд; «Промокший» + лёд = заморозка; «Охлаждённый» + огонь = паровой взрыв.', 'Профессия «Травник/Шахтёр/Охотник/Рыбак» даёт больше добычи в событиях подземелий и позволяет ходить на промысел.', 'Еда и эликсиры действуют до конца вылазки — принимайте их перед входом.', 'Легендарные предметы выпадают с боссов на высоких сложностях. Лёд, молния и огонь — у каждого босса свои слабости.', 'Сложность растёт: пройдите подземелье на «Обычном», чтобы открыть «Героический», и дальше.', 'Очки Эха Лиры выдаются каждые 3 уровня и за первую победу над боссом.'];
+  const TIPS = ['Враги показывают намерение значком над собой. ⚠️ — готовится мощный удар: прикройтесь щитом или оглушите врага.', 'Стихии складываются: «Промокший» + молния = разряд; «Промокший» + лёд = заморозка; «Охлаждённый» + огонь = паровой взрыв.', 'Профессия «Травник/Шахтёр/Охотник/Рыбак» даёт больше добычи в событиях подземелий и позволяет ходить на промысел.', 'Еда и эликсиры действуют до конца вылазки — принимайте их перед входом.', 'Легендарные предметы выпадают с боссов на высоких сложностях. Лёд, молния и огонь — у каждого босса свои слабости.', 'Сложность растёт: пройдите подземелье на «Обычном», чтобы открыть «Героический», и дальше.', 'Мантра Силы: каждый ход боя удваивает атаку и защиту по значениям до боя — но только на этот бой.', 'Дуэли с героиней Света: победа открывает выбор — пощадить или убить. Пощажённая может присоединиться.', 'Верность Свиты растёт от решений в сюжете и подарков. Низкая верность — шанс, что подчинённый не послушается.', 'Свидания в «Сердцах» — тёплые и безопасные; они дают постоянные бонусы.'];
   const tip = () => TIPS[(new Date().getDate() + (UI.slot() ? UI.slot().stats.runs : 0)) % TIPS.length];
   UI.act.playNext = async () => { const s = UI.slot(), ns = UI.nextStory(s); if (!ns || !ns.ok) return; await UI.playScene(ns.st.id); UI.save(true); await UI.autoStory(); UI.refresh(false); };
   UI.act.tutorial = () => UI.tutorial();
@@ -88,13 +91,15 @@
   // ═════ ЛАВКА ═════
   UI.act.shop = () => { UI.sub.shop = UI.sub.shop || 'gear'; UI.shopModal(); };
   UI.shopModal = function () {
-    const s = UI.slot(), t = UI.sub.shop; const tb = [['gear', 'Снаряжение'], ['cons', 'Расходники'], ['mats', 'Материалы'], ['sell', 'Продать']];
+    const s = UI.slot(), t = UI.sub.shop; const tb = [['gear', 'Снаряжение'], ['cons', 'Расходники'], ['mats', 'Материалы'], ['gifts', 'Подарки'], ['sell', 'Продать']];
     let body = '';
     if (t === 'gear') {
       const disc = Math.min(30, E.collect(s).mods.discount || 0);
       body = E.shopStock(s).map((it, i) => { const p = Math.round(E.buyPrice(it) * (1 - disc / 100)); const usable = E.canUse(s.hero, it); return `<div class="item" style="--rc:${rar(it).c}"><span class="ico">${D.BASES[it.k].ic}</span><span class="grow tl"><b>${UI.itemName(it)}</b><small>${D.SLOTS[it.sl]} · ур.${it.il} ${UI.itemStats(it)}</small></span><button class="btn small ${s.gold >= p && usable ? 'primary' : 'ghost'}" data-act="buyGear" data-i="${i}" data-quiet="1">🪙 ${fmt(p)}</button></div>`; }).join('') + (disc ? `<div class="small dim">Скидка торговца: ${disc}%</div>` : '') + `<div class="small dim">Ассортимент растёт с каждым пройденным подземельем.</div>`;
     } else if (t === 'cons') {
       body = E.SHOP_CONS.map((id) => { const c = D.CONS[id], p = E.consBuy(id); return `<div class="item"><span class="ico">${c.ic}</span><span class="grow tl"><b>${c.n}</b> <small>есть: ${s.cons[id] || 0} · ${c.d}</small></span><button class="btn small ${s.gold >= p ? 'primary' : 'ghost'}" data-act="buyCons" data-id="${id}" data-quiet="1">🪙 ${p}</button></div>`; }).join('');
+    } else if (t === 'gifts') {
+      body = UI.giftShop(s);
     } else if (t === 'mats') {
       body = E.SHOP_MATS.map((id) => { const m = D.MATS[id], p = E.matBuy(id); return `<div class="item"><span class="ico">${m.ic}</span><span class="grow tl"><b>${m.n}</b> <small>в сумке: ${s.mats[id] || 0}</small></span><button class="btn small ${s.gold >= p ? 'primary' : 'ghost'}" data-act="buyMat" data-id="${id}" data-quiet="1">🪙 ${p}</button><button class="btn small ${s.gold >= p * 5 ? 'primary' : 'ghost'}" data-act="buyMat" data-id="${id}" data-n="5" data-quiet="1">×5</button></div>`; }).join('');
     } else {
@@ -103,7 +108,7 @@
         Object.keys(s.mats).filter((k) => s.mats[k] > 0 && D.MATS[k]).map((k) => `<div class="item"><span class="ico">${D.MATS[k].ic}</span><span class="grow tl"><b>${D.MATS[k].n}</b> <small>×${s.mats[k]}</small></span><button class="btn small ghost" data-act="sellMat" data-id="${k}" data-n="1" data-quiet="1">🪙 ${E.matSell(k)}</button><button class="btn small ghost" data-act="sellMat" data-id="${k}" data-n="99" data-quiet="1">все</button></div>`).join('') +
         s.inv.slice().sort((a, b) => b.r - a.r || b.il - a.il).map((it) => itemRow(it, 'sellItem', `<span class="btn small ghost">🪙 ${E.sellPrice(it)}</span>`)).join('') || '';
     }
-    UI.modal(`<div class="row center-v"><h3 class="grow m0">🏪 Лавка Тарры</h3><b>🪙 ${fmt(s.gold)}</b></div><div class="seg small">${tb.map(([k, n]) => `<button class="${t === k ? 'on' : ''}" data-act="shopTab" data-v="${k}" data-quiet="1">${n}</button>`).join('')}</div><div class="mlist">${body || '<div class="dim center pad">Пусто</div>'}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
+    UI.modal(`<div class="row center-v"><h3 class="grow m0">🏪 Лавка беженцев</h3><b>🪙 ${fmt(s.gold)}</b></div><div class="seg small">${tb.map(([k, n]) => `<button class="${t === k ? 'on' : ''}" data-act="shopTab" data-v="${k}" data-quiet="1">${n}</button>`).join('')}</div><div class="mlist">${body || '<div class="dim center pad">Пусто</div>'}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
   };
   const keepScroll = (fn) => { const l = $('.mlist'); const sc = l ? l.scrollTop : 0; fn(); const l2 = $('.mlist'); if (l2) l2.scrollTop = sc; };
   UI.act.shopTab = (el) => { UI.sub.shop = el.dataset.v; UI.shopModal(); };
@@ -126,27 +131,25 @@
   // ═════ ТАВЕРНА / АЛТАРЬ ═════
   UI.act.tavern = () => UI.tavernModal();
   UI.tavernModal = function () {
-    const s = UI.slot(), un = E.unlockedComps(s);
-    const comps = D.COMP_IDS.map((id) => { const c = D.COMPANIONS[id], ok = un.includes(id), on = s.party.includes(id); return `<button class="item ${on ? 'selitem' : ''} ${ok ? '' : 'lockd'}" data-act="togParty" data-id="${id}" data-quiet="1">${UI.por(c.portrait, 'xs', false)}<span class="grow tl"><b>${c.n}</b> <small>${D.CLASSES[c.cls].n}</small><small>${ok ? c.d : 'Закрыто: продвигайтесь по сюжету'}</small></span>${ok ? (on ? '<span class="ok">В отряде</span>' : '<span class="dim">Позвать</span>') : '🔒'}</button>`; }).join('');
-    const rumors = ['Говорят, в подвалах мельницы кто-то роет ход к самому сердцу города.', 'Старый Брум мечтает выковать клинок из упавшей звезды. Слышали? Он уже полгода ищет мифрильную руду.', 'Тика утверждает, что в Шепчущей чаще деревья переговариваются на языке, которого нет ни у одного народа.', 'Болотные огни зовут путников за собой. Не ходите. Или ходите, но с лекарем.', 'Если Лира замолчит совсем… нет, не буду. Мне ещё работать.'];
-    UI.modal(`<h3>🍺 «Сонный журавль»</h3><div class="small dim tl">Выберите до двух спутников. Они идут с вами в подземелья и сражаются сами.</div><div class="mlist">${comps}</div><div class="card small tl"><b>Слухи за столом</b><div class="dim">${rumors[(s.stats.runs + s.hero.level) % rumors.length]}</div></div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`);
+    const s = UI.slot();
+    const rumors = ['У Собора Пяти Богов с каждым днём больше стражи. Они боятся не вас, а того, что вы сделаете с их богами.', 'Говорят, героини Света бьют сильнее, когда рядом нет Апостола, — и слабее, когда им нечего защищать.', 'Беженцы шепчутся, что Нимб над руинами стал тоньше. Или это просто устали глаза.', 'Ильвара не спит. Просто лежит с открытым глазом и считает звёзды, которых нет.', 'Мантра Силы растёт с каждым ударом, но её цена — расчёт: кто ударит первым, тот и накопит больше.', 'Подчинённым нравится, когда о них помнят: слово у костра иногда стоит дороже меча.'];
+    UI.modal(`<h3>🔥 Костёр лагеря</h3><div class="small dim tl">Здесь собираются те, кто пошёл за вами. Вечера, проведённые у костра (${s.crewTalk || 0}), можно потратить на разговор — во вкладках «Свита» и «Сердца».</div><div class="mlist">${rumors.map((r) => `<div class="card small tl dim">«${r}»</div>`).join('')}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`);
   };
-  UI.act.togParty = (el) => { const s = UI.slot(), id = el.dataset.id; if (!E.unlockedComps(s).includes(id)) { UI.toast('Этот спутник ещё не с вами', 'bad'); return; } if (s.run) { UI.toast('Состав нельзя менять во время вылазки', 'bad'); return; } let p = s.party.slice(); if (p.includes(id)) p = p.filter((x) => x !== id); else { if (p.length >= 2) p.shift(); p.push(id); } E.setParty(s, p); UI.save(true); UI.tavernModal(); UI.refresh(); };
-  UI.act.altar = () => { const s = UI.slot(), c = E.respecCost(s.hero); UI.modal(`<h3>🕯️ Алтарь забытых троп</h3><div class="small tl dim">Лира помнит все пути. За плату она позволит выбрать их заново: очки вернутся к вам.</div><div class="row gap"><button class="btn ${s.gold >= c ? 'primary' : 'ghost'} grow" data-act="respec" data-w="c">Древо класса<br><small>🪙 ${fmt(c)}</small></button><button class="btn ${s.gold >= c ? 'primary' : 'ghost'} grow" data-act="respec" data-w="u">Древо Эха<br><small>🪙 ${fmt(c)}</small></button></div><div class="small dim">Профессии и класс изменить нельзя.</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`); };
+  UI.act.altar = () => { const s = UI.slot(), c = E.respecCost(s.hero); UI.modal(`<h3>🕯️ Алтарь забытых троп</h3><div class="small tl dim">Нимб помнит все пути. За плату она позволит выбрать их заново: очки вернутся к вам.</div><div class="row gap"><button class="btn ${s.gold >= c ? 'primary' : 'ghost'} grow" data-act="respec" data-w="c">Древо класса<br><small>🪙 ${fmt(c)}</small></button><button class="btn ${s.gold >= c ? 'primary' : 'ghost'} grow" data-act="respec" data-w="u">Древо Эха<br><small>🪙 ${fmt(c)}</small></button></div><div class="small dim">Профессии и класс изменить нельзя.</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`); };
   UI.act.respec = (el) => { const s = UI.slot(); if (s.run) { UI.toast('Не во время вылазки', 'bad'); return; } if (!E.respec(s, el.dataset.w)) { UI.toast('Не хватает золота', 'bad'); UI.sfx('err'); return; } UI.sfx('level'); UI.toast('Очки возвращены', 'ok'); UI.save(true); UI.closeModal(); UI.refresh(); };
 
   // ═════ СЮЖЕТ ═════
   UI.tabs.story = function (s) {
     const wcount = (id) => D.sceneWords ? D.sceneWords(id) : 0;
-    const items = D.STORY.map((st, i) => {
+    const items = D.STORY.filter((st) => !st.pre).map((st, i) => {
       const sc = D.SCENES[st.id], done = s.story.done.includes(st.id), ok = E.sceneAvail(s, st.id);
       const st2 = done ? '<span class="tag ok">прочитано</span>' : ok ? '<span class="tag new">новое</span>' : '<span class="tag">закрыто</span>';
-      const mid = st.id === 'ch2_g' && !done;
+      const mid = false;
       return `<div class="card chap ${done ? 'done' : ''} ${ok || done ? '' : 'lockd'}"><div class="row gap center-v"><div class="cn">${i}</div><div class="grow tl"><b>${esc(sc.t)}</b><div class="dim small">${esc(sc.sub)}</div></div>${st2}</div>${done ? `<button class="btn ghost small" data-act="replay" data-id="${st.id}">↺ Перечитать</button>` : ok && !mid ? `<button class="btn primary small" data-act="replay" data-id="${st.id}" data-real="1">▶ Читать</button>` : `<div class="small dim tl">${esc(mid ? 'Эта сцена произойдёт в Соборе Безмолвия.' : st.hint || '')}</div>`}</div>`;
     }).join('');
     const choices = [];
     D.STORY.forEach((st) => { if (!s.story.done.includes(st.id)) return; D.SCENES[st.id].lines.forEach((l) => { if (l[0] !== 'choice') return; const opt = l[1].find((o) => Object.keys(o.f || {}).length && Object.keys(o.f).every((k) => s.story.flags[k] === o.f[k])); if (opt) choices.push(`<li><b>${esc(D.SCENES[st.id].t)}:</b> ${esc(opt.t)}</li>`); }); });
-    return `<h2>Сюжет</h2><div class="small dim tl">«Лира Пепла» — Хроники Сиэль-Арны. Глава 1–2. Продолжение следует.</div>${items}<div class="card"><b>Ваши решения</b><ul class="perks small">${choices.join('') || '<li class="dim">Пока ничего не решено</li>'}</ul></div>`;
+    return `<h2>Сюжет</h2><div class="small dim tl">«Нимб Мира» — Арка 1: Король Демонов. Прочитанные сцены можно перечитать.</div>${items}<div class="card"><b>Ваши решения</b><ul class="perks small">${choices.join('') || '<li class="dim">Пока ничего не решено</li>'}</ul></div>`;
   };
   UI.act.replay = async (el) => { const id = el.dataset.id, s = UI.slot(), real = !!el.dataset.real && !s.story.done.includes(id); if (s.run && !real) { /* ok */ } await UI.playScene(id, !real); if (real) { UI.save(true); await UI.autoStory(); } UI.refresh(false); };
 
@@ -157,10 +160,10 @@
     const mods = Object.keys(c.mods).filter((k) => c.mods[k] && D.MODN[k]).map((k) => `<span class="chip">${c.mods[k] > 0 && !/aken/.test(k) ? '+' : ''}${Math.round(c.mods[k] * 10) / 10} ${(D.MODN[k]).replace(/\s*%$/, '')}${/%$/.test(D.MODN[k]) ? '%' : ''}</span>`).join('');
     const eq = Object.keys(D.SLOTS).map((sl) => { const it = s.eq[sl]; return `<button class="eqs" style="--rc:${it ? rar(it).c : '#444'}" data-act="${it ? 'itemOpen' : 'tab'}" data-id="${it ? it.id : ''}" data-t="inv"><span>${it ? D.BASES[it.k].ic : D.SLOT_IC[sl]}</span><small>${it ? esc(it.nm) + (it.up ? ' +' + it.up : '') : D.SLOTS[sl]}</small></button>`; }).join('');
     const st = s.stats;
-    return `<div class="herocard"><div class="bg bg-hero"></div>${UI.por(h.portrait, 'xl', false)}<div class="hinfo"><h2 class="m0">${esc(h.name)}</h2><div class="dim">${race.n} · ${cls.n} · ур. ${h.level}${h.level >= D.LEVEL_CAP ? ' (макс.)' : ''}</div><div class="dim small">Мощь ${fmt(E.power(s))}</div><div class="xpb">${bar(h.level >= D.LEVEL_CAP ? 1 : h.xp, h.level >= D.LEVEL_CAP ? 1 : D.xpNeed(h.level), 'xp')}<small>${h.level >= D.LEVEL_CAP ? 'МАКС' : fmt(h.xp) + ' / ' + fmt(D.xpNeed(h.level))}</small></div></div></div>
+    return `<div class="herocard"><div class="bg bg-hero"></div>${UI.por(h.portrait, 'xl', false)}<div class="hinfo"><h2 class="m0">${esc(h.name)}</h2><div class="dim">Король Демонов · ${race.n} · ур. ${h.level}${h.level >= D.LEVEL_CAP ? ' (макс.)' : ''}</div><div class="dim small">Мощь ${fmt(E.power(s))}</div><div class="xpb">${bar(h.level >= D.LEVEL_CAP ? 1 : h.xp, h.level >= D.LEVEL_CAP ? 1 : D.xpNeed(h.level), 'xp')}<small>${h.level >= D.LEVEL_CAP ? 'МАКС' : fmt(h.xp) + ' / ' + fmt(D.xpNeed(h.level))}</small></div></div></div>
       <div class="card"><b>Характеристики</b><div class="sbs">${rows}</div>${UI.statRow(d)}<div class="stats"><span>🎯 крит ${Math.round(d.crit)}%</span><span>💥 ×${d.critDmg.toFixed(2)}</span><span>🌀 укл. ${Math.round(d.eva)}%</span></div></div>
       <div class="card"><b>Снаряжение</b><div class="eqgrid">${eq}</div></div>
-      <div class="card"><b>${race.ic} ${race.pn}</b> <span class="dim small">(раса ${race.n})</span><div class="small tl dim">${race.pd}</div><b>${cls.ic} Перки класса</b><ul class="perks small">${cls.perks.map((p) => `<li><b>${p.n}</b> — ${p.d}</li>`).join('')}</ul><div class="small tl dim"><b>${cls.rc.n}:</b> копится в бою и усиливает навыки.</div></div>
+      <div class="card"><b>${race.ic} ${race.pn}</b> <span class="dim small">(прошлое: ${race.n})</span><div class="small tl dim">${race.pd}</div><b>${cls.ic} Перки класса</b><ul class="perks small">${cls.perks.map((p) => `<li><b>${p.n}</b> — ${p.d}</li>`).join('')}</ul><div class="small tl dim"><b>${cls.rc.n}:</b> копится в бою и усиливает навыки.</div></div>
       <div class="card"><b>Все бонусы</b><div class="chips">${mods || '<span class="dim">нет</span>'}</div></div>
       <div class="card small"><b>Путь</b><div class="dim">Вылазок: ${st.runs} · побед над боссами: ${st.wins} · поражений: ${st.deaths}<br>Врагов повержено: ${fmt(st.kills)} · создано: ${st.crafted} · добыто: ${st.gathered}<br>Заработано золота: ${fmt(st.goldEarned)} · время: ${Math.round((s.played || 0) / 60)} мин</div></div>`;
   };
@@ -169,7 +172,7 @@
   const nodeIcon = (n, u) => { if (n.e.unlock) return (D.SKILLS[n.e.unlock] || {}).ic || '✦'; if (n.e.fxAdd) return '💥'; if (n.e.sk) return '📈'; if (n.e.st) return '💪'; return '✦'; };
   UI.tabs.skills = function (s) {
     const h = s.hero, k = UI.sub.skills, sp = E.sp(h), up = E.up(h);
-    const head = `<div class="row gap"><div class="pts"><b>${sp}</b><small>очков навыков</small></div><div class="pts echo"><b>${up}</b><small>искр Эха</small></div></div><div class="seg small">${[['class', 'Класс'], ['echo', 'Эхо'], ['list', 'Приёмы']].map(([a, b]) => `<button class="${k === a ? 'on' : ''}" data-act="sub" data-k="skills" data-v="${a}" data-quiet="1">${b}</button>`).join('')}</div>`;
+    const head = `<div class="row gap"><div class="pts"><b>${sp}</b><small>очков навыков</small></div><div class="pts echo"><b>${up}</b><small>искр Нимба</small></div></div><div class="seg small">${[['class', 'Класс'], ['echo', 'Эхо'], ['list', 'Приёмы']].map(([a, b]) => `<button class="${k === a ? 'on' : ''}" data-act="sub" data-k="skills" data-v="${a}" data-quiet="1">${b}</button>`).join('')}</div>`;
     if (k === 'list') return head + skillList(s);
     const isU = k === 'echo', T = isU ? D.UNIQ[h.uniq] : D.TREES[h.cls], store = isU ? h.uspent : h.spent;
     const nodes = T.nodes, branches = isU ? [{ n: T.n, ic: T.ic }] : T.branches;
@@ -301,10 +304,10 @@
   UI.act.saveNow = () => { if (UI.save()) UI.toast('Сохранено', 'ok'); };
   UI.act.toSlots = () => { if (UI.slot() && UI.slot().run) UI.toast('Вылазка сохранена — вы вернётесь к ней', ''); UI.save(true); UI.go('slots'); };
   UI.act.toProfiles = () => { UI.save(true); UI.p = null; UI.go('title'); };
-  UI.act.credits = () => UI.modal(`<h3>Лира Пепла</h3><div class="mtext small tl">Оригинальная фэнтези-RPG: мир, герои, сюжет и интерфейс созданы специально для этой игры. Портреты — процедурные рисунки в аниме-стиле (SVG, отрисованные в WebP), музыка и звуки синтезируются в браузере.<br><br>Версия 1.0 · Глава 1–2 · работает офлайн (PWA).</div><button class="btn primary wide" data-act="closeModal">Закрыть</button>`);
+  UI.act.credits = () => UI.modal(`<h3>Нимб Мира</h3><div class="mtext small tl">Оригинальная тёмная фэнтези-RPG с визуальной новеллой: мир, герои, сюжет и интерфейс созданы специально для этой игры. Портреты и CG — нарисованный арт (WebP), музыка и звуки синтезируются в браузере.<br><br>Версия 2.0 · Арка 1 · работает офлайн (PWA). Романтические сцены — без откровенного содержания.</div><button class="btn primary wide" data-act="closeModal">Закрыть</button>`);
 
   // ═════ ОБУЧЕНИЕ ═════
-  const TUT = [['🏰', 'Добро пожаловать', 'Внизу — 8 вкладок: <b>Город</b> (сюжет, лавка, кузница), <b>Сюжет</b>, <b>Подземелья</b>, <b>Герой</b>, <b>Навыки</b>, <b>Ремесло</b>, <b>Сумка</b> и <b>Меню</b>. Красная точка у «Города» — новая сцена сюжета.'], ['⚔️', 'Бой', 'Бой идёт по шкале скорости: порядок ходов виден сверху. Выберите врага касанием, затем действие: атака, навык, предмет или защита. Над врагами — их <b>намерения</b>; ⚠️ значит «готовится мощный удар».'], ['🔥', 'Стихии и статусы', 'Огонь, лёд, молния, свет, тень. Враг «Промокший» получает больше от молнии и льда; «Охлаждённый» + огонь даёт паровой взрыв. Щитоносец прикрывает, Целитель лечит, Вор крадёт золото, Маг сносит всех сразу.'], ['🌟', 'Развитие', 'Каждый уровень — 1 очко в древо класса. Каждые 3 уровня и за первого босса — «искра Эха» для древа вашего уникального навыка. Узлы открываются по уровням и предусловиям.'], ['⚒️', 'Профессии', 'Основная и дополнительная профессии выбраны навсегда. Ремесленники создают снаряжение, зелья и чары из материалов. Добытчики получают больше в событиях подземелий и ходят на промысел.'], ['🗝️', 'Подземелья', 'Вылазка — цепочка боёв и событий. Убитые враги дают опыт, золото, снаряжение и материалы. Погибнув, вы теряете половину добычи. Пройдите подземелье, чтобы открыть более высокую сложность. Игра сохраняется сама.']];
+  const TUT = [['👑', 'Король Демонов', 'Вы — пробудившийся Король Демонов. Вкладки внизу (листайте вбок): <b>Город</b>, <b>Сюжет</b>, <b>Вылазки</b>, <b>Герой</b>, <b>Силы</b>, <b>Свита</b>, <b>Сердца</b>, <b>Ремесло</b>, <b>Сумка</b>, <b>Меню</b>. Красная точка у «Города» — новая сцена сюжета.'], ['⚔️', 'Бой', 'Бой идёт по шкале скорости: порядок ходов виден сверху. Выберите врага касанием, затем действие. Над врагами — их <b>намерения</b>; ⚠️ значит «готовится мощный удар». Кнопка 👥 — самому командовать Свитой.'], ['🌌', 'Мантра Силы', 'Узел Мантры в ветке «Плоть и Мощь»: каждый ход боя атака и защита удваиваются от значений ДО боя (до 3 раз). После боя всё сбрасывается. Начните бой с мощного первого удара — и дальше вы неостановимы.'], ['🌟', 'Ветки Силы', 'Шесть веток: Фактор Короля Демонов, Плоть и Мощь, Тьма и Разрушение, Энтропия, Власть и Подчинение, Проклятия и Пожирание. 2 очка за уровень. Некоторые узлы <b>сливаются</b> в концептуальные навыки — слитые узлы теряют свой эффект, но результат сильнее.'], ['🛡️', 'Свита и Сердца', 'Пленённые и пощажённые становятся подчинёнными: у них уровни, снаряжение, верность и задания (идут в реальном времени). Подарки, разговоры и свидания открывают сцены и постоянные бонусы.'], ['⚒️', 'Профессии', 'Основная и дополнительная профессии выбраны навсегда. Ремесленники создают снаряжение, зелья и чары из материалов, добытчики приносят больше ресурсов.']];
   UI.tutorial = function (i) {
     i = i || 0; const t = TUT[i];
     UI.modal(`<div class="tut"><div class="big-ic xl">${t[0]}</div><h3>${t[1]}</h3><div class="mtext tl">${t[2]}</div><div class="dots">${TUT.map((_, j) => `<i class="${j === i ? 'on' : ''}"></i>`).join('')}</div><div class="row gap"><button class="btn ghost grow" data-act="closeModal">Закрыть</button><button class="btn primary grow" data-act="tutNext" data-i="${i + 1}" id="btnTut">${i === TUT.length - 1 ? 'Готово' : 'Далее ›'}</button></div></div>`, { lock: true });

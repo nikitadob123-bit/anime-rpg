@@ -85,8 +85,8 @@
       return `<button class="card prof tap" data-act="pickProfile" data-id="${esc(s.id)}"><div class="av">${esc(s.avatar)}</div><div class="grow tl"><b>${esc(s.nick)}</b><div class="dim">${info}</div></div>${s.recovered ? '<span class="tag warn">из копии</span>' : ''}<span class="chev">›</span></button>`;
     }).join('');
     return `<div class="screen title">
-      <div class="logo"><div class="ring"></div><h1>Лира Пепла</h1><p>Хроники Сиэль-Арны</p></div>
-      <div class="plist">${cards || '<div class="dim center pad">Профилей ещё нет. Создайте первый — и Лира запоёт.</div>'}</div>
+      <div class="logo"><div class="ring"></div><h1>Нимб Мира</h1><p>Король Демонов пробуждается</p></div>
+      <div class="plist">${cards || '<div class="dim center pad">Профилей ещё нет. Создайте первый — и Король проснётся.</div>'}</div>
       <div class="col gap pad">
         <button class="btn primary big" data-act="newProfile" id="btnNewProfile">✦ Новый профиль</button>
         <button class="btn ghost" data-act="importProfile">Импорт по коду</button>
@@ -125,7 +125,7 @@
     const slots = p.slots.map((s, i) => {
       if (!s) return `<div class="card slot empty"><div class="sn">Слот ${i + 1}</div><div class="dim">Пусто</div><button class="btn primary" data-act="newHero" data-i="${i}">✦ Создать героя</button></div>`;
       const h = s.hero, ch = D.STORY.filter((x) => s.story.done.includes(x.id)).length;
-      return `<div class="card slot"><div class="sn">Слот ${i + 1}</div><div class="row gap">${UI.por(h.portrait, 'sm')}<div class="grow tl"><b>${esc(h.name)}</b><div class="dim">${D.RACES[h.race].n} · ${D.CLASSES[h.cls].n}</div><div class="dim">Ур. ${h.level} · глав: ${ch}/${D.STORY.length} · ${Math.round((s.played || 0) / 60)} мин</div></div></div>
+      return `<div class="card slot"><div class="sn">Слот ${i + 1}</div><div class="row gap">${UI.por(h.portrait, 'sm')}<div class="grow tl"><b>${esc(h.name)}</b><div class="dim">Король Демонов · ${D.RACES[h.race].n}</div><div class="dim">Ур. ${h.level} · глав: ${ch}/${D.STORY.length} · ${Math.round((s.played || 0) / 60)} мин</div></div></div>
         <div class="row gap"><button class="btn primary grow" data-act="playSlot" data-i="${i}">▶ Играть</button><button class="btn ghost" data-act="exportSlot" data-i="${i}" title="Экспорт">⇪</button><button class="btn ghost danger" data-act="delSlot" data-i="${i}" title="Удалить">🗑</button></div></div>`;
     }).join('');
     return `<div class="screen"><button class="back" data-act="toTitle">‹ Профили</button>
@@ -134,7 +134,7 @@
       <div class="card col gap"><b>Профиль</b>
         <div class="row gap wrap"><button class="btn ghost small" data-act="exportProfile">Экспорт профиля</button><button class="btn ghost small" data-act="importProfile">Импорт</button>${bak ? '<button class="btn ghost small" data-act="restoreBak">Восстановить копию</button>' : ''}<button class="btn ghost small danger" data-act="delProfile">Удалить профиль</button></div></div></div>`;
   };
-  UI.act.newHero = (el) => { UI.p.active = +el.dataset.i; UI.cr = { step: 0, name: '', sex: 'm', race: 'human', cls: 'warrior', portrait: 'human_m_1', uniq: 'phoenix', prof1: null, prof2: null, sel: 'main' }; UI.go('create'); };
+  UI.act.newHero = (el) => { UI.p.active = +el.dataset.i; UI.cr = { step: 0, name: '', race: 'o_orphan', uniq: 'phoenix', prof1: null, prof2: null, sel: 'main' }; UI.go('create'); };
   UI.act.playSlot = (el) => { UI.p.active = +el.dataset.i; UI.save(true); UI.enterGame(); };
   UI.act.delSlot = (el) => { const i = +el.dataset.i, s = UI.p.slots[i]; UI.confirm('Удалить героя?', `Герой «${esc(s.hero.name)}» (ур. ${s.hero.level}) будет удалён из слота ${i + 1}. Отменить нельзя — сделайте экспорт, если хотите сохранить копию.`, 'Удалить', () => { UI.p.slots[i] = null; S.save(UI.p); UI.render(); }, true); };
   UI.act.delProfile = () => UI.confirm('Удалить профиль?', `Профиль «${esc(UI.p.nick)}» и все его герои исчезнут навсегда.`, 'Удалить', () => { S.remove(UI.p.id); UI.p = null; UI.go('title'); }, true);
@@ -145,7 +145,7 @@
     UI.modal(`<h3>${title}</h3><div class="mtext small">Скопируйте код и сохраните где угодно. Импортируйте его на другом устройстве.</div><textarea id="codeBox" class="inp code" readonly rows="6">${esc(code)}</textarea><div class="row gap"><button class="btn primary grow" data-act="copyCode">Скопировать</button><button class="btn ghost grow" data-act="dlCode">Скачать .txt</button></div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`);
   };
   UI.act.copyCode = async () => { const t = $('#codeBox'); t.select(); try { await navigator.clipboard.writeText(t.value); } catch (e) { document.execCommand && document.execCommand('copy'); } UI.toast('Код скопирован', 'ok'); };
-  UI.act.dlCode = () => { const t = $('#codeBox').value; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], { type: 'text/plain' })); a.download = 'lira-popola-save.txt'; document.body.appendChild(a); a.click(); a.remove(); };
+  UI.act.dlCode = () => { const t = $('#codeBox').value; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], { type: 'text/plain' })); a.download = 'nimb-mira-save.txt'; document.body.appendChild(a); a.click(); a.remove(); };
   UI.act.exportSlot = (el) => UI.showCode('Экспорт героя', S.exportCode(UI.p, +el.dataset.i));
   UI.act.exportProfile = () => UI.showCode('Экспорт профиля', S.exportCode(UI.p));
   UI.act.importProfile = () => UI.modal(`<h3>Импорт по коду</h3><div class="mtext small">Вставьте код, начинающийся с «ARPG». Если такой профиль уже есть, будет создан отдельный.</div><textarea id="impBox" class="inp code" rows="6" placeholder="ARPG3.…"></textarea><div class="row gap"><button class="btn ghost grow" data-act="closeModal">Отмена</button><button class="btn primary grow" data-act="doImport" id="btnDoImport">Импортировать</button></div>`);
@@ -155,54 +155,39 @@
     UI.closeModal(); UI.p = r.p; UI.toast('Профиль «' + esc(r.p.nick) + '» импортирован', 'ok'); UI.go('slots');
   };
 
-  // ───── Создание персонажа ─────
-  const STEPS = ['Имя', 'Раса', 'Класс', 'Облик', 'Эхо', 'Ремесло', 'Итог'];
-  const NAMES = { human: [['Лэн', 'Сэй', 'Ориэн', 'Кадэн', 'Тэйр', 'Аскер'], ['Мира', 'Лина', 'Сэйра', 'Ота', 'Ивэль', 'Рэйна']], elf: [['Айлэн', 'Эрвин', 'Тиэль', 'Сэлвар'], ['Лиэль', 'Айрин', 'Сильвэ', 'Эйлэн']], dwarf: [['Торгрим', 'Бардан', 'Хольг', 'Керн'], ['Брунха', 'Тильда', 'Гарна', 'Дорка']], beast: [['Ракс', 'Вэйл', 'Тарр', 'Кеш'], ['Мирра', 'Тэша', 'Вилка', 'Нэйя']], demon: [['Азрэль', 'Кайл', 'Вэрон', 'Мордэ'], ['Лилит', 'Сэрафа', 'Нокс', 'Ведра']] };
-  UI.randName = () => { const c = UI.cr, L = NAMES[c.race][c.sex === 'm' ? 0 : 1]; return L[Math.floor(Math.random() * L.length)]; };
-  UI.crSlot = function () { const c = UI.cr; return E.newSlot({ name: c.name || 'Герой', sex: c.sex, race: c.race, cls: c.cls, portrait: c.portrait, uniq: c.uniq, prof1: c.prof1, prof2: c.prof2 }); };
+  // ───── Создание персонажа (Король Демонов) ─────
+  const STEPS = ['Имя', 'Прошлое', 'Отголосок', 'Ремесло', 'Итог'];
+  const NAMES = ['Кайрон', 'Арвен', 'Зарек', 'Лэн', 'Дариус', 'Моррен', 'Вальтор', 'Рэйн', 'Кассиан', 'Тэйр'];
+  UI.randName = () => NAMES[Math.floor(Math.random() * NAMES.length)];
+  UI.crSlot = function () { const c = UI.cr; return E.newSlot({ name: c.name || 'Король', race: c.race, uniq: c.uniq, prof1: c.prof1, prof2: c.prof2 }); };
   const bar = (v, max, cl) => `<span class="bar ${cl || ''}"><i style="width:${Math.min(100, v / max * 100)}%"></i></span>`;
   UI.statRow = (d) => `<div class="stats"><span>❤️ ${fmt(d.maxHp)}</span><span>💧 ${fmt(d.maxMp)}</span><span>⚔️ ${fmt(Math.max(d.atk, d.mag, d.hpow))}</span><span>🛡️ ${fmt(d.def)}</span><span>✨ ${fmt(d.res)}</span><span>💨 ${d.spd}</span></div>`;
-
   UI.vCreate = function () {
     const c = UI.cr, s = UI.crSlot(), d = E.derive(s);
-    const head = `<div class="crhead">${UI.por(c.portrait, 'sm', false)}<div class="grow tl"><b class="nm">${esc(c.name || 'Безымянный')}</b><div class="dim">${D.RACES[c.race].n} · ${D.CLASSES[c.cls].n}${c.uniq ? ' · ' + D.UNIQ[c.uniq].ic + ' ' + D.UNIQ[c.uniq].n : ''}</div>${UI.statRow(d)}</div></div>`;
+    const head = `<div class="crhead">${UI.por('hero', 'sm', false)}<div class="grow tl"><b class="nm">${esc(c.name || 'Безымянный')}</b><div class="dim">Король Демонов · ${D.ORIGINS[c.race].n}${c.uniq ? ' · ' + D.UNIQ[c.uniq].ic + ' ' + D.UNIQ[c.uniq].n : ''}</div>${UI.statRow(d)}</div></div>`;
     const dots = `<div class="steps">${STEPS.map((n, i) => `<button class="stp ${i === c.step ? 'on' : ''} ${i < c.step ? 'done' : ''}" data-act="crGo" data-i="${i}" data-quiet="1"><i>${i + 1}</i><span>${n}</span></button>`).join('')}</div>`;
-    const body = [crName, crRace, crClass, crLook, crEcho, crProf, crFinal][c.step](c, s, d);
+    const body = [crName, crOrigin, crEcho, crProf, crFinal][c.step](c, s, d);
     const last = c.step === STEPS.length - 1;
     return `<div class="screen create"><div class="crtop"><button class="back" data-act="crCancel">‹ Выйти</button>${head}${dots}</div><div class="crbody">${body}</div>
       <div class="crfoot"><button class="btn ghost" data-act="crPrev" ${c.step === 0 ? 'disabled' : ''}>‹ Назад</button>${last ? '<button class="btn primary grow" data-act="crFinish" id="btnCrFinish">Начать путь ✦</button>' : '<button class="btn primary grow" data-act="crNext" id="btnCrNext">Далее ›</button>'}</div></div>`;
   };
   function crName(c) {
-    return `<h3>Как вас зовут?</h3><input id="crName" class="inp" maxlength="16" placeholder="Имя героя" value="${esc(c.name)}" autocomplete="off">
+    return `<div class="card row gap">${UI.por('hero', 'lg', false)}<div class="grow tl small"><b>Король Демонов</b><br>Вы очнулись на руинах, где вчера стоял город. Вместе с памятью вернулась сила, которую когда-то боялись боги. Выберите, кем вы были до пробуждения.</div></div>
+      <h3>Как вас зовут?</h3><input id="crName" class="inp" maxlength="16" placeholder="Имя" value="${esc(c.name)}" autocomplete="off">
       <button class="btn ghost small" data-act="crRand">🎲 Случайное имя</button>
-      <h3>Пол героя</h3><div class="seg"><button class="${c.sex === 'm' ? 'on' : ''}" data-act="crSex" data-v="m">♂ Мужчина</button><button class="${c.sex === 'f' ? 'on' : ''}" data-act="crSex" data-v="f">♀ Женщина</button></div>
-      <div class="dim small">От пола зависят только портреты: все классы и расы доступны всем.</div>`;
+      <div class="dim small">Герой — мужчина, Король Демонов. Вся сила — в ветках Силы, а не в классах.</div>`;
   }
-  function crRace(c) {
-    return `<h3>Раса</h3>` + D.RACE_IDS.map((id) => {
-      const r = D.RACES[id], st = Object.keys(r.st).filter((k) => r.st[k]).map((k) => `<span class="chip">${D.STAT_N[k]} ${r.st[k] > 0 ? '+' : ''}${r.st[k]}</span>`).join('');
-      return `<button class="card opt ${c.race === id ? 'sel' : ''}" data-act="crRaceSet" data-id="${id}" data-quiet="1"><div class="row gap center-v"><span class="big-ic">${r.ic}</span><b class="grow tl">${r.n}</b>${c.race === id ? '<span class="ok">✔</span>' : ''}</div><div class="chips">${st}</div><div class="pas"><b>${r.pn}.</b> ${r.pd}</div><div class="dim small tl">${r.lore}</div></button>`;
+  function crOrigin(c) {
+    return `<h3>Прошлое — кем вы были в Хельморе</h3>` + D.ORIGIN_IDS.map((id) => {
+      const r = D.ORIGINS[id], st = Object.keys(r.st).filter((k) => r.st[k]).map((k) => `<span class="chip">${D.STAT_N[k]} ${r.st[k] > 0 ? '+' : ''}${r.st[k]}</span>`).join('');
+      return `<button class="card opt ${c.race === id ? 'sel' : ''}" data-act="crRaceSet" data-id="${id}" data-quiet="1"><div class="row gap center-v"><span class="big-ic">${r.ic}</span><b class="grow tl">${r.n}</b>${c.race === id ? '<span class="ok">✔</span>' : ''}</div><div class="chips">${st}</div><div class="dim small tl">${r.lore}</div><div class="pas tl"><b>${r.pn}:</b> ${r.pd}</div></button>`;
     }).join('');
-  }
-  function crClass(c) {
-    return `<h3>Класс</h3>` + D.CLASS_IDS.map((id) => {
-      const k = D.CLASSES[id], r = D.RACES[c.race];
-      const bs = D.STATS.map((st) => `<div class="sb"><span>${D.STAT_N[st]}</span>${bar(k.base[st] + (r.st[st] || 0), 20)}<em>${k.base[st] + (r.st[st] || 0)}</em></div>`).join('');
-      const sk = k.start.map((x) => `${D.SKILLS[x].ic} ${D.SKILLS[x].n}`).join(' · ');
-      return `<button class="card opt ${c.cls === id ? 'sel' : ''}" data-act="crClassSet" data-id="${id}" data-quiet="1"><div class="row gap center-v"><span class="big-ic">${k.ic}</span><div class="grow tl"><b>${k.n}</b><div class="dim small">${k.role}</div></div>${c.cls === id ? '<span class="ok">✔</span>' : ''}</div><div class="dim small tl">${k.desc}</div><div class="sbs">${bs}</div>
-        <div class="pas tl"><b>Ресурс:</b> ${k.rc.n} · <b>Древо:</b> ${D.TREES[id].nodes.length} узлов, 3 ветки</div><ul class="perks">${k.perks.map((p) => `<li><b>${p.n}</b> — ${p.d}</li>`).join('')}</ul><div class="dim small tl">Старт: ${sk}</div></button>`;
-    }).join('');
-  }
-  function crLook(c) {
-    const list = RPG.PORTRAITS.filter((p) => p.race === c.race && p.sex === c.sex);
-    return `<h3>Внешность</h3><div class="seg"><button class="${c.sex === 'm' ? 'on' : ''}" data-act="crSex" data-v="m">♂ Мужчины</button><button class="${c.sex === 'f' ? 'on' : ''}" data-act="crSex" data-v="f">♀ Женщины</button></div>
-      <div class="dim small">${D.RACES[c.race].n}: три героя на выбор. Расу можно сменить на шаге 2.</div><div class="pgrid">${list.map((p) => `<button class="pcard ${c.portrait === p.id ? 'sel' : ''}" data-act="crPor" data-id="${p.id}" data-quiet="1">${UI.por(p.id, 'lg')}<span>${p.n || 'Вариант ' + (p.v + 1)}</span></button>`).join('')}</div>`;
   }
   function crEcho(c) {
-    return `<h3>Эхо Лиры — начальный навык</h3><div class="dim small">У каждого Эха — свой активный приём и древо из 7 узлов (до 3 рангов). Очки выдаются каждые 3 уровня и за боссов.</div>` + D.UNIQ_IDS.map((id) => {
+    return `<h3>Отголосок Нимба — стартовый приём</h3><div class="dim small">Осколок силы, что остался в крови после пробуждения. У каждого — активный приём и древо из 7 узлов (до 3 рангов). Очки выдаются каждые 3 уровня и за боссов.</div>` + D.UNIQ_IDS.map((id) => {
       const u = D.UNIQ[id], open = c.uniq === id;
       const nodes = u.nodes.map((n) => `<li><b>${n.n}</b> <span class="dim">(т.${n.t}, до ${n.max} р.)</span> — ${D.nodeDesc(n.e)}</li>`).join('');
-      return `<button class="card opt ${open ? 'sel' : ''}" data-act="crUniq" data-id="${id}" data-quiet="1"><div class="row gap center-v"><span class="big-ic">${u.ic}</span><div class="grow tl"><b>${u.n}</b><div class="dim small">${D.ELEMS[u.el].ic} ${D.ELEMS[u.el].n}</div></div>${open ? '<span class="ok">✔</span>' : ''}</div><div class="tl small">${u.d}</div><div class="pas tl"><b>${u.act.n}</b> · ${u.act.mp} эн. · пер. ${u.act.cd} — ${u.act.d}</div>${open ? `<ul class="perks small">${nodes}</ul>` : '<div class="dim small tl">Нажмите, чтобы выбрать и увидеть древо</div>'}</button>`;
+      return `<button class="card opt ${open ? 'sel' : ''}" data-act="crUniq" data-id="${id}" data-quiet="1"><div class="row gap center-v"><span class="big-ic">${u.ic}</span><div class="grow tl"><b>${u.n}</b><div class="dim small">${D.ELEMS[u.el].ic} ${D.ELEMS[u.el].n}</div></div>${open ? '<span class="ok">✔</span>' : ''}</div><div class="small tl">${u.d}</div>${open ? `<div class="pas tl"><b>Приём «${u.act.n}»:</b> ${u.act.d || ''}</div><ul class="perks small">${nodes}</ul>` : ''}</button>`;
     }).join('');
   }
   function crProf(c) {
@@ -215,12 +200,12 @@
       <div class="pfgrid">${grid}</div>${info}`;
   }
   function crFinal(c, s, d) {
-    const k = D.CLASSES[c.cls], r = D.RACES[c.race], u = D.UNIQ[c.uniq];
+    const r = D.ORIGINS[c.race], u = D.UNIQ[c.uniq];
     const miss = []; if (!c.name.trim()) miss.push('имя'); if (!c.prof1) miss.push('основная профессия'); if (!c.prof2) miss.push('дополнительная профессия');
-    return `<h3>Итог</h3><div class="card row gap">${UI.por(c.portrait, 'lg', false)}<div class="grow tl"><h2 class="m0">${esc(c.name || '—')}</h2><div class="dim">${r.n} · ${k.n}</div><div class="small">${r.ic} ${r.pn}: ${r.pd}</div></div></div>
+    return `<h3>Итог</h3><div class="card row gap">${UI.por('hero', 'lg', false)}<div class="grow tl"><h2 class="m0">${esc(c.name || '—')}</h2><div class="dim">Король Демонов · ${r.n}</div><div class="small">${r.ic} ${r.pn}: ${r.pd}</div></div></div>
       <div class="card"><b>Характеристики</b><div class="sbs">${D.STATS.map((st) => `<div class="sb"><span>${D.STAT_N[st]}</span>${bar(d[st], 25)}<em>${d[st]}</em></div>`).join('')}</div>${UI.statRow(d)}</div>
-      <div class="card small tl"><b>Перки класса:</b> ${k.perks.map((p) => p.n).join(', ')}<br><b>Эхо:</b> ${u.ic} ${u.n} — ${u.act.n}<br><b>Профессии:</b> ${c.prof1 ? D.PROFS[c.prof1].ic + ' ' + D.PROFS[c.prof1].n : '—'} (осн.), ${c.prof2 ? D.PROFS[c.prof2].ic + ' ' + D.PROFS[c.prof2].n : '—'} (доп.)</div>
-      ${miss.length ? `<div class="warnbox">Не хватает: ${miss.join(', ')}.</div>` : '<div class="warnbox">Профессии нельзя будет поменять. Остальное — только через древо навыков.</div>'}`;
+      <div class="card small tl"><b>Сила:</b> шесть Веток Силы Короля Демонов, Мантра Силы и «Фактор Короля Демонов».<br><b>Отголосок:</b> ${u.ic} ${u.n} — ${u.act.n}<br><b>Профессии:</b> ${c.prof1 ? D.PROFS[c.prof1].ic + ' ' + D.PROFS[c.prof1].n : '—'} (осн.), ${c.prof2 ? D.PROFS[c.prof2].ic + ' ' + D.PROFS[c.prof2].n : '—'} (доп.)</div>
+      ${miss.length ? `<div class="warnbox">Не хватает: ${miss.join(', ')}.</div>` : '<div class="warnbox">Профессии нельзя будет поменять. Остальное — только через ветки Силы.</div>'}`;
   }
   const keepName = () => { const i = $('#crName'); if (i) UI.cr.name = i.value; };
   const rerender = () => { const sc = $('.crbody') ? $('.crbody').scrollTop : 0; UI.render(); const b = $('.crbody'); if (b) b.scrollTop = sc; };
@@ -229,16 +214,12 @@
   UI.act.crNext = () => {
     keepName(); const c = UI.cr;
     if (c.step === 0 && c.name.trim().length < 2) { UI.toast('Имя — от 2 символов', 'bad'); UI.sfx('err'); return; }
-    if (c.step === 5 && (!c.prof1 || !c.prof2)) { UI.toast('Выберите основную и дополнительную профессии', 'bad'); UI.sfx('err'); return; }
+    if (c.step === 3 && (!c.prof1 || !c.prof2)) { UI.toast('Выберите основную и дополнительную профессии', 'bad'); UI.sfx('err'); return; }
     c.step++; UI.render();
   };
   UI.act.crCancel = () => UI.confirm('Выйти из создания?', 'Выбор не сохранится.', 'Выйти', () => UI.go('slots'));
   UI.act.crRand = () => { UI.cr.name = UI.randName(); const i = $('#crName'); if (i) i.value = UI.cr.name; keepName(); const h = $('.crhead .nm'); if (h) h.textContent = UI.cr.name; };
-  const fixPortrait = () => { const c = UI.cr, p = RPG.PORTRAIT_BY_ID[c.portrait]; if (!p || p.race !== c.race || p.sex !== c.sex) c.portrait = `${c.race}_${c.sex}_1`; };
-  UI.act.crSex = (el) => { keepName(); UI.cr.sex = el.dataset.v; fixPortrait(); rerender(); };
-  UI.act.crRaceSet = (el) => { keepName(); UI.cr.race = el.dataset.id; fixPortrait(); rerender(); };
-  UI.act.crClassSet = (el) => { UI.cr.cls = el.dataset.id; rerender(); };
-  UI.act.crPor = (el) => { UI.cr.portrait = el.dataset.id; rerender(); };
+  UI.act.crRaceSet = (el) => { keepName(); UI.cr.race = el.dataset.id; rerender(); };
   UI.act.crUniq = (el) => { UI.cr.uniq = el.dataset.id; rerender(); };
   UI.act.crSelSlot = (el) => { UI.cr.sel = el.dataset.v; rerender(); };
   UI.act.crProf = (el) => {
@@ -250,9 +231,9 @@
   UI.act.crFinish = () => {
     keepName(); const c = UI.cr;
     if (c.name.trim().length < 2) { UI.toast('Введите имя', 'bad'); c.step = 0; UI.render(); return; }
-    if (!c.prof1 || !c.prof2) { UI.toast('Выберите обе профессии', 'bad'); c.step = 5; UI.render(); return; }
-    UI.confirm('Подтвердить выбор?', `Профессии <b>${D.PROFS[c.prof1].n}</b> (основная) и <b>${D.PROFS[c.prof2].n}</b> (дополнительная) закрепляются <b>навсегда</b>. Имя, расу и класс изменить также будет нельзя.`, 'Подтверждаю', () => {
-      const slot = E.newSlot({ name: c.name.trim(), sex: c.sex, race: c.race, cls: c.cls, portrait: c.portrait, uniq: c.uniq, prof1: c.prof1, prof2: c.prof2, now: Date.now() });
+    if (!c.prof1 || !c.prof2) { UI.toast('Выберите обе профессии', 'bad'); c.step = 3; UI.render(); return; }
+    UI.confirm('Подтвердить выбор?', `Профессии <b>${D.PROFS[c.prof1].n}</b> (основная) и <b>${D.PROFS[c.prof2].n}</b> (дополнительная) закрепляются <b>навсегда</b>.`, 'Начать', () => {
+      const slot = E.newSlot({ name: c.name.trim(), race: c.race, uniq: c.uniq, prof1: c.prof1, prof2: c.prof2, now: Date.now() });
       slot.hero.profLocked = true; slot.tut = { newGame: 1 };
       UI.p.slots[UI.p.active] = slot; UI.t0 = Date.now(); UI.save(true); UI.cr = null; UI.sfx('win'); UI.enterGame(true);
     });

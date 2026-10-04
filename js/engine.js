@@ -326,8 +326,5 @@
     if (g.sp) slot.hero.bossPts = (slot.hero.bossPts || 0) + g.sp;
     if (g.item === 'tear') { const it = E.genItem(E.rng(777), { base: 'amulet', il: 14, rarity: 4 }); it.nm = 'Слеза Осколка'; it.st.hp = (it.st.hp || 0) + 60; it.st.res = (it.st.res || 0) + 20; E.addItem(slot, it); }
   };
-  E.finishScene = function (slot, id) { if (!slot.story.done.includes(id)) { slot.story.done.push(id); slot.rev++; } if (!slot.party.length) slot.party = E.unlockedComps(slot).slice(0, 2); };
-  E.unlockedComps = (slot) => D.COMP_IDS.filter(id => { const n = D.COMPANIONS[id].need; return !!slot.story.flags[n]; });
-  E.setParty = function (slot, ids) { const ok = E.unlockedComps(slot); slot.party = ids.filter(x => ok.includes(x)).slice(0, 2); };
   E.fmtText = (s, slot) => String(s).replace(/\{name\}/g, slot.hero.name).replace(/\{echo\}/g, slot.hero.uniq ? D.UNIQ[slot.hero.uniq].n : 'Отголосок');
 })();
