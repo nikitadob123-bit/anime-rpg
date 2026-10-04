@@ -1,0 +1,253 @@
+{
+ "cg": {
+  "cg_demon_king": "cg_demon_king.webp",
+  "cg_halo_city": "cg_halo_city.webp"
+ },
+ "dim": {
+  "apostle_neutral.webp": [
+   1280,
+   720,
+   1
+  ],
+  "cg_demon_king.webp": [
+   853,
+   1280,
+   0
+  ],
+  "cg_halo_city.webp": [
+   1280,
+   853,
+   0
+  ],
+  "gen1_happy.webp": [
+   1280,
+   720,
+   1
+  ],
+  "gen1_neutral.webp": [
+   913,
+   720,
+   1
+  ],
+  "gen2_neutral.webp": [
+   743,
+   720,
+   1
+  ],
+  "gen3_neutral.webp": [
+   594,
+   720,
+   1
+  ],
+  "gen4_neutral.webp": [
+   618,
+   720,
+   1
+  ],
+  "gen5_neutral.webp": [
+   735,
+   720,
+   1
+  ],
+  "gen6_neutral.webp": [
+   1221,
+   720,
+   1
+  ],
+  "gen7_neutral.webp": [
+   1243,
+   720,
+   1
+  ],
+  "gen8_neutral.webp": [
+   794,
+   720,
+   1
+  ],
+  "gen9_neutral.webp": [
+   1055,
+   720,
+   1
+  ],
+  "hero1_neutral.webp": [
+   1280,
+   720,
+   1
+  ],
+  "hero2_neutral.webp": [
+   934,
+   720,
+   1
+  ],
+  "hero3_neutral.webp": [
+   605,
+   720,
+   1
+  ],
+  "hero_neutral.webp": [
+   764,
+   720,
+   1
+  ],
+  "sister_happy.webp": [
+   1280,
+   720,
+   1
+  ],
+  "sister_neutral.webp": [
+   537,
+   720,
+   1
+  ],
+  "sub_brum_neutral.webp": [
+   1004,
+   720,
+   1
+  ],
+  "sub_garm_neutral.webp": [
+   1208,
+   720,
+   1
+  ],
+  "sub_grak_neutral.webp": [
+   1079,
+   720,
+   1
+  ],
+  "sub_skril_neutral.webp": [
+   845,
+   720,
+   1
+  ],
+  "sub_tik_neutral.webp": [
+   687,
+   720,
+   1
+  ],
+  "sub_vesper_neutral.webp": [
+   823,
+   720,
+   1
+  ]
+ },
+ "portraits": {
+  "apostle": {
+   "neutral": "apostle_neutral.webp"
+  },
+  "gen1": {
+   "happy": "gen1_happy.webp",
+   "neutral": "gen1_neutral.webp"
+  },
+  "gen2": {
+   "neutral": "gen2_neutral.webp"
+  },
+  "gen3": {
+   "neutral": "gen3_neutral.webp"
+  },
+  "gen4": {
+   "neutral": "gen4_neutral.webp"
+  },
+  "gen5": {
+   "neutral": "gen5_neutral.webp"
+  },
+  "gen6": {
+   "neutral": "gen6_neutral.webp"
+  },
+  "gen7": {
+   "neutral": "gen7_neutral.webp"
+  },
+  "gen8": {
+   "neutral": "gen8_neutral.webp"
+  },
+  "gen9": {
+   "neutral": "gen9_neutral.webp"
+  },
+  "hero": {
+   "neutral": "hero_neutral.webp"
+  },
+  "hero1": {
+   "neutral": "hero1_neutral.webp"
+  },
+  "hero2": {
+   "neutral": "hero2_neutral.webp"
+  },
+  "hero3": {
+   "neutral": "hero3_neutral.webp"
+  },
+  "sister": {
+   "happy": "sister_happy.webp",
+   "neutral": "sister_neutral.webp"
+  },
+  "sub_brum": {
+   "neutral": "sub_brum_neutral.webp"
+  },
+  "sub_garm": {
+   "neutral": "sub_garm_neutral.webp"
+  },
+  "sub_grak": {
+   "neutral": "sub_grak_neutral.webp"
+  },
+  "sub_skril": {
+   "neutral": "sub_skril_neutral.webp"
+  },
+  "sub_tik": {
+   "neutral": "sub_tik_neutral.webp"
+  },
+  "sub_vesper": {
+   "neutral": "sub_vesper_neutral.webp"
+  }
+ },
+ "pre": [
+  "apostle_neutral.webp",
+  "cg_demon_king.webp",
+  "cg_halo_city.webp",
+  "gen1_neutral.webp",
+  "gen2_neutral.webp",
+  "gen3_neutral.webp",
+  "gen4_neutral.webp",
+  "gen5_neutral.webp",
+  "gen6_neutral.webp",
+  "gen7_neutral.webp",
+  "gen8_neutral.webp",
+  "gen9_neutral.webp",
+  "hero1_neutral.webp",
+  "hero2_neutral.webp",
+  "hero3_neutral.webp",
+  "hero_neutral.webp",
+  "sister_neutral.webp",
+  "sub_brum_neutral.webp",
+  "sub_garm_neutral.webp",
+  "sub_grak_neutral.webp",
+  "sub_skril_neutral.webp",
+  "sub_tik_neutral.webp",
+  "sub_vesper_neutral.webp"
+ ],
+ "src": {
+  "apostle_neutral.webp": "k2-446389-1791093892",
+  "cg_demon_king.webp": "k2-2701866-1791093676",
+  "cg_halo_city.webp": "k2-2551886-1791093676",
+  "gen1_happy.webp": "k2-252631-1791094054",
+  "gen1_neutral.webp": "k2-251187-1791093770",
+  "gen2_neutral.webp": "k2-243528-1791093770",
+  "gen3_neutral.webp": "k2-217851-1791093770",
+  "gen4_neutral.webp": "k2-246460-1791093770",
+  "gen5_neutral.webp": "k2-205747-1791093831",
+  "gen6_neutral.webp": "k2-330262-1791093831",
+  "gen7_neutral.webp": "k2-340788-1791093831",
+  "gen8_neutral.webp": "k2-299263-1791093831",
+  "gen9_neutral.webp": "k2-297662-1791093831",
+  "hero1_neutral.webp": "k2-362185-1791093892",
+  "hero2_neutral.webp": "k2-269120-1791093892",
+  "hero3_neutral.webp": "k2-211428-1791093892",
+  "hero_neutral.webp": "k2-205929-1791093770",
+  "sister_happy.webp": "k2-294792-1791094054",
+  "sister_neutral.webp": "k2-182583-1791093892",
+  "sub_brum_neutral.webp": "k2-289659-1791093962",
+  "sub_garm_neutral.webp": "k2-298735-1791093962",
+  "sub_grak_neutral.webp": "k2-276481-1791093962",
+  "sub_skril_neutral.webp": "k2-246712-1791093962",
+  "sub_tik_neutral.webp": "k2-187296-1791093962",
+  "sub_vesper_neutral.webp": "k2-202151-1791093962"
+ },
+ "v": "7fc88744"
+}
