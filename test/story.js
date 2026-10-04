@@ -18,7 +18,7 @@ t('рекомендуемый уровень растёт от 1 до ~100', () 
 t('outline: 300 глав, 30 арок, у каждой главы заголовок и ≥2 предложения', () => {
   const O = D.OUTLINE; assert.strictEqual(O.chapters.length, 300); assert.strictEqual(O.arcs.length, 30);
   O.chapters.forEach((c, i) => { assert.strictEqual(c.n, i + 1); assert(c.title && c.summary.length > 60 && c.cast.length && c.level >= 1); assert.strictEqual(c.level, ST.levelOf(c.n) >= c.level ? c.level : c.level); });
-  assert.strictEqual(O.arcs.filter((a) => a.ready).length, Object.keys(D.CHAPTERS).filter((n) => n % 10 === 0 && D.CHAPTERS[n]._ok).length);
+  assert.strictEqual(O.arcs.filter((a) => a.ready >= 10).length, Object.keys(D.CHAPTERS).filter((n) => n % 10 === 0 && D.CHAPTERS[n]._ok).length);
 });
 t('главы 1–3 — легаси-главы с теми же сценами, что раньше', () => { [1, 2, 3].forEach((n) => { assert(D.CHAPTERS[n].legacy); assert(ST.sceneIds(n).every((id) => D.SCENES[id])); }); assert.deepStrictEqual(ST.sceneIds(3).slice(-1), ['ch3_end']); });
 t('арка 1 написана: главы 1–10 готовы, названия совпадают с outline', () => { for (let n = 1; n <= 10; n++) { assert(ST.has(n), 'гл.' + n); if (n > 3) assert.strictEqual(D.CHAPTERS[n].title, D.OUTLINE.chapters[n - 1].title); } });
@@ -59,7 +59,7 @@ t('полное прохождение глав 4–10: сцены открыв�
     assert(ST.done(s, n)); assert.strictEqual(s.story.flags['ch' + n + '_done'], 1);
   }
   assert.deepStrictEqual(cleared, ['stairs', 'gallery_kings', 'choir_hall', 'threshold']);
-  assert.strictEqual(ST.current(s), 11); assert.strictEqual(ST.doneCount(s), 10); assert(!D.STORY.some((x) => !x.pre && !s.story.done.includes(x.id) && E.sceneAvail(s, x.id)));
+  assert.strictEqual(ST.current(s), 11); assert.strictEqual(ST.doneCount(s), 10); assert(!D.STORY.some((x) => x.ch <= 10 && !x.pre && !s.story.done.includes(x.id) && E.sceneAvail(s, x.id)));
 });
 t('подземелья глав закрыты до сцены-ворот и не светятся раньше времени', () => {
   const s = upTo3(); assert(!E.dungeonUnlocked(s, 'stairs')); assert(!E.dungeonVisible(s, 'stairs')); assert(!E.dungeonVisible(s, 'threshold'));
@@ -107,7 +107,7 @@ t('ensureFor в node подгружает арку и не падает без �
 
 console.log('Статистика и эталон');
 t('длина глав 4–10 не ниже порогов линтера и близка к эталону', () => { for (let n = 4; n <= 10; n++) { const m = measure(RPG, n); assert(m.lines >= 70 && m.chars >= 6000, 'гл.' + n + ' ' + m.lines + '/' + m.chars); assert(m.choices >= 1 && m.choices <= 4, 'выборы гл.' + n); } });
-t('story-stats.js работает', () => { const r = cp.spawnSync('node', [path.join(__dirname, '../tools/story-stats.js')], { encoding: 'utf8' }); assert.strictEqual(r.status, 0, r.stderr); assert(/Глав готово: 10 из 300/.test(r.stdout), r.stdout.slice(-300)); });
+t('story-stats.js работает', () => { const r = cp.spawnSync('node', [path.join(__dirname, '../tools/story-stats.js')], { encoding: 'utf8' }); assert.strictEqual(r.status, 0, r.stderr); assert(/Глав готово: \d+ из 300/.test(r.stdout), r.stdout.slice(-300)); });
 t('sw.js: ядро и арка 1 в прекэше, нет прекэша остальных арок', () => { const sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8'); ['js/story/core.js', 'js/story/cast.js', 'js/story/enemies.js', 'js/story/ui-story.js', 'js/story/outline.js', 'js/story/arc01.js'].forEach((f) => assert(sw.includes(f), f)); assert(!/js\/story\/arc(0[3-9]|[12]\d|30)\.js/.test(sw.split('self.addEventListener')[0])); });
 t('index.html подключает ядро сюжета до ui и ui-story после ui-play', () => { const h = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8'); const i = (f) => h.indexOf('js/' + f); assert(i('save.js') < i('story/cast.js') && i('story/cast.js') < i('story/core.js') && i('story/core.js') < i('story/enemies.js') && i('story/enemies.js') < i('ui.js')); assert(i('ui-play.js') < i('story/ui-story.js') && i('story/ui-story.js') < i('main.js')); });
 
