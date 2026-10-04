@@ -5,6 +5,7 @@ const ASSETS = [
   './', 'index.html', 'manifest.json', 'css/style.css', 'css/vn.css',
   'js/data-core.js', 'js/data-stats.js', 'js/data-maou.js', 'js/data-prof.js', 'js/data-world.js', 'js/data-world2.js', 'js/data-crew.js', 'js/data-theme.js', 'js/data-story.js', 'js/data-story2.js', 'js/data-story3.js', 'js/data-romance.js',
   'js/portrait.js', 'js/engine.js', 'js/stats.js', 'js/combat.js', 'js/crew.js', 'js/save.js', 'js/audio.js', 'js/fx.js', 'js/ui.js', 'js/ui-vn.js', 'js/ui-game.js', 'js/ui-hero.js', 'js/ui-crew.js', 'js/ui-play.js', 'js/main.js',
+  'js/story/cast.js', 'js/story/core.js', 'js/story/enemies.js', 'js/story/ui-story.js', 'js/story/outline.js', 'js/story/arc01.js',   // арки 3+ подгружаются при входе в арку и кэшируются при показе (в прекэше только арки 1–2)
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-192.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
   'assets/vn/manifest.json'
 ];
@@ -31,7 +32,7 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(caches.match(req, { ignoreSearch: true }).then((hit) => {
     if (hit) return hit;
     return fetch(req).then((res) => {
-      if (res && res.ok && /\/assets\/vn\//.test(url.pathname)) { const cp = res.clone(); caches.open(RUNTIME).then((c) => c.put(req, cp)); }
+      if (res && res.ok && (/\/assets\/vn\//.test(url.pathname) || /\/js\/story\/arc\d+\.js$/.test(url.pathname))) { const cp = res.clone(); caches.open(RUNTIME).then((c) => c.put(req, cp)); }
       return res;
     }).catch(() => (req.mode === 'navigate' ? caches.match('index.html') : Response.error()));
   }));
