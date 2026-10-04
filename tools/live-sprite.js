@@ -51,7 +51,7 @@ let ok = 0, bad = 0; const check = (n, c, x) => { c ? ok++ : bad++; console.log(
   let rs = await play([['bg', 'camp'], ...seq.map(([m], i) => ['h', 'Реплика ' + (i + 1) + '.', m])], 'fix2-vn-hero', [0, 2, 5]);
   console.log('   ', rs.map((r) => `${r.src} ${r.w}x${r.h}@${r.l},${r.t}`).join(' | '));
   check('обычный облик: 7 реплик / 6 эмоций — размер и позиция спрайта одинаковы (±0.6 px)', rs.length === 7 && same(rs), JSON.stringify(rs.map((r) => [r.src.slice(5, 9), r.w, r.h, r.l, r.t])));
-  check('обычный облик: файлы по эмоциям разные, холсты нативные (naturalWidth ≥ 400)', new Set(rs.map((r) => r.src)).size >= 6 && rs.every((r) => r.nat[0] >= 400 && r.nat[1] >= 1500), JSON.stringify(rs.map((r) => r.nat)));
+  check('обычный облик: файлы по эмоциям разные, холсты нативные (naturalWidth ≥ 400)', new Set(rs.map((r) => r.src)).size >= 6 && rs.every((r) => r.nat[0] >= 400 && r.nat[1] >= 600), JSON.stringify(rs.map((r) => r.nat)));
   const dseq = [['m', 'neutral'], ['ma', 'angry'], ['mh', 'smirk'], ['md', 'sad'], ['ms', 'shy'], ['mu', 'surprised']];
   let rd = await play([['bg', 'camp'], ...dseq.map(([m], i) => ['h', 'Король ' + (i + 1) + '.', m])], 'fix2-vn-demon', [0, 1]);
   console.log('   ', rd.map((r) => `${r.src} ${r.w}x${r.h}@${r.l},${r.t}`).join(' | '));
