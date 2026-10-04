@@ -1,105 +1,23 @@
 {
  "mantra": {
-  "build": "Мантра Силы (Плоть+Корень)",
+  "build": "Мантра Силы (Плоть+Мантры)",
   "avgLevel": 100,
   "winRateByTier": [
    1,
    1,
    1,
-   0.93,
-   0.89,
+   1,
+   1,
    1
   ],
   "runsPerGame": 91.7,
-  "actionsPerBattle": 11.9,
-  "gold": 418029,
+  "actionsPerBattle": 3.9,
+  "gold": 386190,
   "crewAvgLevel": 100,
   "firstClear": {
    "mill": {
     "runs": 1,
-    "lv": 3.8
-   },
-   "wood": {
-    "runs": 2,
-    "lv": 6
-   },
-   "mines": {
-    "runs": 3,
-    "lv": 7
-   },
-   "swamp": {
-    "runs": 5,
-    "lv": 10
-   },
-   "spire": {
-    "runs": 7,
-    "lv": 12
-   },
-   "cathedral": {
-    "runs": 10.3,
-    "lv": 15.3
-   },
-   "chapel": {
-    "runs": 16.5,
-    "lv": 20.2
-   },
-   "ossuary": {
-    "runs": 28.3,
-    "lv": 28.1
-   },
-   "crater": {
-    "runs": 38.3,
-    "lv": 35.5
-   },
-   "tempest": {
-    "runs": 49.5,
-    "lv": 44.8
-   },
-   "sunken": {
-    "runs": 60.1,
-    "lv": 56.7
-   },
-   "garden": {
-    "runs": 69,
-    "lv": 66.5
-   },
-   "citadel": {
-    "runs": 76.8,
-    "lv": 76.6
-   },
-   "abyss": {
-    "runs": 83.8,
-    "lv": 87.1
-   },
-   "nowhere": {
-    "runs": 90.2,
-    "lv": 97.3
-   }
-  },
-  "runsToL30": 31,
-  "runsToL100": 91.7,
-  "reachedL100": "6/6",
-  "maxHp": 12371
- },
- "dark": {
-  "build": "Тьма и Разрушение",
-  "avgLevel": 100,
-  "winRateByTier": [
-   1,
-   1,
-   1,
-   1,
-   1,
-   1
-  ],
-  "runsPerGame": 92.7,
-  "actionsPerBattle": 9,
-  "gold": 432188,
-  "crewAvgLevel": 100,
-  "firstClear": {
-   "mill": {
-    "runs": 1,
-    "lv": 4
+    "lv": 3.7
    },
    "wood": {
     "runs": 2,
@@ -122,61 +40,95 @@
     "lv": 15
    },
    "chapel": {
-    "runs": 16.4,
-    "lv": 20.8
+    "runs": 16,
+    "lv": 20.3
    },
    "ossuary": {
-    "runs": 27.8,
-    "lv": 28.1
+    "runs": 27.9,
+    "lv": 28.2
    },
    "crater": {
-    "runs": 38,
-    "lv": 35.5
+    "runs": 38.3,
+    "lv": 35.7
    },
    "tempest": {
-    "runs": 48.8,
-    "lv": 44.3
+    "runs": 49,
+    "lv": 44.7
    },
    "sunken": {
-    "runs": 60,
-    "lv": 56.7
+    "runs": 60.3,
+    "lv": 56.8
    },
    "garden": {
-    "runs": 69.3,
+    "runs": 69.5,
     "lv": 66.6
    },
    "citadel": {
-    "runs": 77.5,
-    "lv": 76.8
+    "runs": 77.1,
+    "lv": 76.5
    },
    "abyss": {
-    "runs": 84.4,
-    "lv": 87
+    "runs": 84.3,
+    "lv": 87.3
    },
    "nowhere": {
-    "runs": 90.9,
-    "lv": 97.1
+    "runs": 90.2,
+    "lv": 97.2
    }
   },
-  "runsToL30": 30.5,
-  "runsToL100": 92.7,
-  "reachedL100": "6/6",
-  "maxHp": 11616
+  "runsToL30": 30.7,
+  "runsToL100": 91.7,
+  "reachedL100": "3/3",
+  "maxHp": 20875,
+  "heroTurnsPerBossByLevelBand": [
+   8.2,
+   3.1,
+   2.8,
+   1.6,
+   2
+  ],
+  "heroTurnsPerBattleByLevelBand": [
+   {
+    "band": "1-19",
+    "turns": 3,
+    "hpAtEnd": 0.99
+   },
+   {
+    "band": "20-39",
+    "turns": 1.5,
+    "hpAtEnd": 1
+   },
+   {
+    "band": "40-59",
+    "turns": 1.3,
+    "hpAtEnd": 1
+   },
+   {
+    "band": "60-79",
+    "turns": 1.1,
+    "hpAtEnd": 1
+   },
+   {
+    "band": "80-99",
+    "turns": 1.2,
+    "hpAtEnd": 1
+   }
+  ]
  },
- "dominion": {
-  "build": "Власть и Подчинение",
+ "dark": {
+  "build": "Тьма и Энтропия",
   "avgLevel": 100,
   "winRateByTier": [
    1,
    1,
    1,
    1,
-   0.99,
+   1,
    1
   ],
-  "runsPerGame": 92.2,
-  "actionsPerBattle": 20.2,
-  "gold": 641520,
+  "runsPerGame": 91.7,
+  "actionsPerBattle": 2.4,
+  "gold": 433153,
   "crewAvgLevel": 100,
   "firstClear": {
    "mill": {
@@ -212,37 +164,419 @@
     "lv": 28.1
    },
    "crater": {
-    "runs": 37.7,
-    "lv": 35.5
+    "runs": 38,
+    "lv": 35.7
+   },
+   "tempest": {
+    "runs": 48.7,
+    "lv": 44.3
+   },
+   "sunken": {
+    "runs": 59.5,
+    "lv": 56.4
+   },
+   "garden": {
+    "runs": 68.8,
+    "lv": 66.5
+   },
+   "citadel": {
+    "runs": 76.3,
+    "lv": 76.4
+   },
+   "abyss": {
+    "runs": 83,
+    "lv": 86.8
+   },
+   "nowhere": {
+    "runs": 89.4,
+    "lv": 97
+   }
+  },
+  "runsToL30": 30.7,
+  "runsToL100": 91.7,
+  "reachedL100": "3/3",
+  "maxHp": 13563,
+  "heroTurnsPerBossByLevelBand": [
+   4.3,
+   2.8,
+   2.4,
+   1.4,
+   2.6
+  ],
+  "heroTurnsPerBattleByLevelBand": [
+   {
+    "band": "1-19",
+    "turns": 1.5,
+    "hpAtEnd": 0.98
+   },
+   {
+    "band": "20-39",
+    "turns": 1.5,
+    "hpAtEnd": 1
+   },
+   {
+    "band": "40-59",
+    "turns": 1.2,
+    "hpAtEnd": 1
+   },
+   {
+    "band": "60-79",
+    "turns": 1.1,
+    "hpAtEnd": 1
+   },
+   {
+    "band": "80-99",
+    "turns": 1.5,
+    "hpAtEnd": 1
+   }
+  ]
+ },
+ "dominion": {
+  "build": "Власть и Тирания",
+  "avgLevel": 100,
+  "winRateByTier": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   0.83
+  ],
+  "runsPerGame": 86.7,
+  "actionsPerBattle": 23.1,
+  "gold": 615020,
+  "crewAvgLevel": 100,
+  "firstClear": {
+   "mill": {
+    "runs": 1,
+    "lv": 4
+   },
+   "wood": {
+    "runs": 2,
+    "lv": 6
+   },
+   "mines": {
+    "runs": 3,
+    "lv": 7
+   },
+   "swamp": {
+    "runs": 5,
+    "lv": 10
+   },
+   "spire": {
+    "runs": 7,
+    "lv": 12
+   },
+   "cathedral": {
+    "runs": 10,
+    "lv": 15
+   },
+   "chapel": {
+    "runs": 16,
+    "lv": 20.3
+   },
+   "ossuary": {
+    "runs": 27.9,
+    "lv": 28.2
+   },
+   "crater": {
+    "runs": 38.3,
+    "lv": 35.7
+   },
+   "tempest": {
+    "runs": 49.3,
+    "lv": 44.7
+   },
+   "sunken": {
+    "runs": 58.9,
+    "lv": 56.7
+   },
+   "garden": {
+    "runs": 67.2,
+    "lv": 66.8
+   },
+   "citadel": {
+    "runs": 74,
+    "lv": 77.3
+   },
+   "abyss": {
+    "runs": 79.7,
+    "lv": 87.3
+   },
+   "nowhere": {
+    "runs": 85.1,
+    "lv": 97.1
+   }
+  },
+  "runsToL30": 30.7,
+  "runsToL100": 86.7,
+  "reachedL100": "3/3",
+  "maxHp": 12993,
+  "heroTurnsPerBossByLevelBand": [
+   9.4,
+   10.8,
+   33.7,
+   51.7,
+   42.5
+  ],
+  "heroTurnsPerBattleByLevelBand": [
+   {
+    "band": "1-19",
+    "turns": 3.1,
+    "hpAtEnd": 0.99
+   },
+   {
+    "band": "20-39",
+    "turns": 3.6,
+    "hpAtEnd": 1
+   },
+   {
+    "band": "40-59",
+    "turns": 9.4,
+    "hpAtEnd": 0.99
+   },
+   {
+    "band": "60-79",
+    "turns": 11.9,
+    "hpAtEnd": 1
+   },
+   {
+    "band": "80-99",
+    "turns": 8.9,
+    "hpAtEnd": 1
+   }
+  ]
+ },
+ "devour": {
+  "build": "Пожирание и Кровь",
+  "avgLevel": 100,
+  "winRateByTier": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "runsPerGame": 92.7,
+  "actionsPerBattle": 15.4,
+  "gold": 415142,
+  "crewAvgLevel": 100,
+  "firstClear": {
+   "mill": {
+    "runs": 1,
+    "lv": 3.7
+   },
+   "wood": {
+    "runs": 2,
+    "lv": 6
+   },
+   "mines": {
+    "runs": 3,
+    "lv": 7
+   },
+   "swamp": {
+    "runs": 5,
+    "lv": 10
+   },
+   "spire": {
+    "runs": 7,
+    "lv": 12
+   },
+   "cathedral": {
+    "runs": 10,
+    "lv": 15
+   },
+   "chapel": {
+    "runs": 16.4,
+    "lv": 20.8
+   },
+   "ossuary": {
+    "runs": 28.1,
+    "lv": 28
+   },
+   "crater": {
+    "runs": 38,
+    "lv": 35.3
+   },
+   "tempest": {
+    "runs": 49.3,
+    "lv": 44.7
+   },
+   "sunken": {
+    "runs": 60.1,
+    "lv": 56.6
+   },
+   "garden": {
+    "runs": 69.3,
+    "lv": 66.9
+   },
+   "citadel": {
+    "runs": 77,
+    "lv": 76.6
+   },
+   "abyss": {
+    "runs": 84.3,
+    "lv": 87
+   },
+   "nowhere": {
+    "runs": 90.8,
+    "lv": 97.3
+   }
+  },
+  "runsToL30": 30.7,
+  "runsToL100": 92.7,
+  "reachedL100": "3/3",
+  "maxHp": 23774,
+  "heroTurnsPerBossByLevelBand": [
+   6.8,
+   12.8,
+   27.7,
+   17.9,
+   17.8
+  ],
+  "heroTurnsPerBattleByLevelBand": [
+   {
+    "band": "1-19",
+    "turns": 3.4,
+    "hpAtEnd": 1
+   },
+   {
+    "band": "20-39",
+    "turns": 5,
+    "hpAtEnd": 1
+   },
+   {
+    "band": "40-59",
+    "turns": 9.7,
+    "hpAtEnd": 0.99
+   },
+   {
+    "band": "60-79",
+    "turns": 7.2,
+    "hpAtEnd": 1
+   },
+   {
+    "band": "80-99",
+    "turns": 6.5,
+    "hpAtEnd": 1
+   }
+  ]
+ },
+ "blades": {
+  "build": "Клинки Бездны",
+  "avgLevel": 100,
+  "winRateByTier": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "runsPerGame": 92,
+  "actionsPerBattle": 2.5,
+  "gold": 413498,
+  "crewAvgLevel": 100,
+  "firstClear": {
+   "mill": {
+    "runs": 1,
+    "lv": 4
+   },
+   "wood": {
+    "runs": 2,
+    "lv": 6
+   },
+   "mines": {
+    "runs": 3,
+    "lv": 7
+   },
+   "swamp": {
+    "runs": 5,
+    "lv": 10
+   },
+   "spire": {
+    "runs": 7,
+    "lv": 12
+   },
+   "cathedral": {
+    "runs": 10,
+    "lv": 15
+   },
+   "chapel": {
+    "runs": 16,
+    "lv": 20.3
+   },
+   "ossuary": {
+    "runs": 27.7,
+    "lv": 28.1
+   },
+   "crater": {
+    "runs": 38,
+    "lv": 36
    },
    "tempest": {
     "runs": 48.7,
     "lv": 44.7
    },
    "sunken": {
-    "runs": 59.4,
-    "lv": 56.8
+    "runs": 59.6,
+    "lv": 56.5
    },
    "garden": {
-    "runs": 68.6,
-    "lv": 66.5
+    "runs": 69.2,
+    "lv": 66.6
    },
    "citadel": {
-    "runs": 77,
-    "lv": 76.8
+    "runs": 77.1,
+    "lv": 76.7
    },
    "abyss": {
-    "runs": 84.2,
-    "lv": 87.2
+    "runs": 84.3,
+    "lv": 86.9
    },
    "nowhere": {
     "runs": 90.4,
-    "lv": 97
+    "lv": 97.3
    }
   },
   "runsToL30": 30.3,
-  "runsToL100": 92.2,
-  "reachedL100": "6/6",
-  "maxHp": 10785
+  "runsToL100": 92,
+  "reachedL100": "3/3",
+  "maxHp": 13431,
+  "heroTurnsPerBossByLevelBand": [
+   5.1,
+   5.1,
+   6.1,
+   3.3,
+   3.7
+  ],
+  "heroTurnsPerBattleByLevelBand": [
+   {
+    "band": "1-19",
+    "turns": 2.2,
+    "hpAtEnd": 0.99
+   },
+   {
+    "band": "20-39",
+    "turns": 2.1,
+    "hpAtEnd": 1
+   },
+   {
+    "band": "40-59",
+    "turns": 2.3,
+    "hpAtEnd": 1
+   },
+   {
+    "band": "60-79",
+    "turns": 1.3,
+    "hpAtEnd": 1
+   },
+   {
+    "band": "80-99",
+    "turns": 1.4,
+    "hpAtEnd": 1
+   }
+  ]
  }
 }

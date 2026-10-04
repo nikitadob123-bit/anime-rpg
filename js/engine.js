@@ -50,6 +50,7 @@
     if (r >= n.max) return 'Максимальный ранг';
     if (u ? E.up(h) < 1 : E.sp(h) < 1) return u ? 'Нет искр Нимба' : 'Нет очков навыков';
     if (h.level < n.lv) return 'Нужен уровень ' + n.lv;
+    if (n.rr) for (const q in n.rr) if ((store[q] || 0) < n.rr[q]) { const rn = (u ? D.UNIQ[h.uniq].nodes : D.TREES[h.cls].nodes).find(x => x.id === q); return 'Нужен ранг ' + n.rr[q] + ': ' + (rn ? rn.n : q); }
     for (const q of n.req) if (!(store[q] > 0)) { const rn = (u ? D.UNIQ[h.uniq].nodes : D.TREES[h.cls].nodes).find(x => x.id === q); return 'Нужно: ' + (rn ? rn.n : q); }
     return '';
   };

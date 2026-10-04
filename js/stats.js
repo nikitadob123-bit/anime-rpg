@@ -88,12 +88,12 @@
   E.derive = function (slot, ctx) {
     const h = slot.hero, c = E.collect(slot, ctx), m = c.mods, s = c.stats, f = c.flat, L = h.level;
     // масштабируемые пассивки: зависят от статов/уровня, раскладываются в обычные моды
-    if (m.dmgPerWil) m.dmg = (m.dmg || 0) + m.dmgPerWil * s.spi / 10;
-    if (m.dmgPerInt) m.dmg = (m.dmg || 0) + m.dmgPerInt * s.int / 10;
-    if (m.dmgPerStr) m.dmg = (m.dmg || 0) + m.dmgPerStr * s.str / 10;
-    if (m.dmgPerLv) m.dmg = (m.dmg || 0) + m.dmgPerLv * L / 10;
-    if (m.hpPerLv) m.hp = (m.hp || 0) + m.hpPerLv * L / 10;
-    if (m.critPerLuk) m.crit = (m.crit || 0) + m.critPerLuk * s.luk / 10;
+    if (m.dmgPerWil) m.dmg = (m.dmg || 0) + m.dmgPerWil * s.spi / 25;
+    if (m.dmgPerInt) m.dmg = (m.dmg || 0) + m.dmgPerInt * s.int / 25;
+    if (m.dmgPerStr) m.dmg = (m.dmg || 0) + m.dmgPerStr * s.str / 25;
+    if (m.dmgPerLv) m.dmg = (m.dmg || 0) + m.dmgPerLv * L / 20;
+    if (m.hpPerLv) m.hp = (m.hp || 0) + m.hpPerLv * L / 20;
+    if (m.critPerLuk) m.crit = (m.crit || 0) + m.critPerLuk * s.luk / 25;
     const pc = (k) => 1 + (m[k] || 0) / 100;
     const d = { lv: L, mods: m, skb: c.skb, by: c.by, sby: c.sby };
     D.STATS.forEach((k) => { d[k] = Math.round(s[k]); });

@@ -235,7 +235,10 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
   await click('#nav button[data-t="skills"]');
   await click('.node.can'); await click('#btnLearn'); sl = await slot();
   check('узел ветки изучен', Object.keys(sl.hero.spent).length === 1, JSON.stringify(sl.hero.spent));
-  for (let b = 0; b < 6; b++) { await act('sub', `[data-v="b${b}"]`); await page.waitForTimeout(80); check('ветка ' + b + ' отрисована', await page.locator('.node').count() >= 14); if (b === 1) await shot('14-skills-flesh'); }
+  for (let b = 0; b < 10; b++) { await act('sub', `[data-v="b${b}"]`); await page.waitForTimeout(80); check('ветка ' + b + ' отрисована (граф, 30+ узлов)', await page.locator('.node').count() >= 30); if (b === 1) await shot('skills-graph-flesh'); if (b === 2) await shot('skills-graph-dark'); }
+  check('все 10 веток видны сразу (переключатель)', await page.locator('.bchip').count() === 10);
+  await act('sub', '[data-v="conc"]'); await page.waitForTimeout(100); check('раздел «Концепты»: 28+ карточек', await page.locator('.ccard').count() >= 28); await shot('skills-concepts'); await noOverflow('концепты');
+  await act('sub', '[data-v="b0"]');
   await act('sub', '[data-v="echo"]'); await click('.node.can'); await click('#btnLearn'); sl = await slot();
   check('узел Отголоска изучен', Object.keys(sl.hero.uspent).length === 1); await shot('15-skills-echo');
   await act('sub', '[data-v="list"]'); await shot('15b-skills-list');

@@ -3,7 +3,7 @@
   const RPG = globalThis.RPG || (globalThis.RPG = {});
   const D = RPG.D, E = RPG.E;
   const C = RPG.C = {};
-  C.TUNE = { hp: 2.0, atk: 3.2, lateHp: 1.0, lateAtk: 0.9, lateFrom: 30 };
+  C.TUNE = { hp: 2.0, atk: 3.2, lateHp: 2.6, lateAtk: 1.3, lateFrom: 30, lateBoss: 0.9 };
   const SKL = (id) => D.SKILLS[id] || D.ESK[id];
   const clamp = E.clamp;
   const isDeb = (s) => { const k = D.ST[s.id].k; return k === 'debuff' || k === 'dot' || k === 'ctrl'; };
@@ -44,7 +44,7 @@
   C.unitFromEnemy = function (eid, lv, tier, elite, idn) {
     const t = D.ENEMIES[eid], R = D.ROLES[t.role], tm = D.TIERS[tier || 0].mul, L = lv;
     const ramp = Math.min(1, (L + 1) / 12), th = 1 + (C.TUNE.hp - 1) * ramp, ta = 1 + (C.TUNE.atk - 1) * ramp;
-    const lt = Math.max(1, L / C.TUNE.lateFrom), lh = Math.pow(lt, C.TUNE.lateHp), la = Math.pow(lt, C.TUNE.lateAtk);
+    const lt = Math.max(1, L / C.TUNE.lateFrom), lh = Math.pow(lt, C.TUNE.lateHp + (t.role === 'boss' ? C.TUNE.lateBoss : t.role === 'mini' ? C.TUNE.lateBoss * 0.6 : 0)), la = Math.pow(lt, C.TUNE.lateAtk);
     const hp = (30 + 22 * L + 1.0 * L * L) * R.hp * tm * (elite ? 1.35 : 1) * th * lh, atk = (8 + 3.4 * L) * R.atk * (1 + (tm - 1) * 0.55) * (elite ? 1.15 : 1) * ta * la, def = (4 + 2.6 * L) * R.def;
     const u = base({ id: idn, side: 'e', eid, role: t.role, name: (elite ? 'Закалённый ' : '') + t.n.replace(/^(.)/, (m, a) => elite ? a.toLowerCase() : a), lv: L, ic: t.ic, tags: t.tags.slice(), weak: t.weak || [], resist: t.res || [], elite: !!elite, ai: true, tier: tier || 0 },
       { maxHp: Math.round(hp), maxMp: 999, atk, mag: atk, hpow: atk, def, res: def * 0.9, spd: (10 + L * 0.25) * R.spd, crit: 5, critDmg: 1.5, eva: t.role === 'skirm' ? 8 : 2 });
@@ -55,7 +55,9 @@
   C.create = function (party, foes, rng, opts) {
     const B = { party, foes, units: party.concat(foes), rng, log: [], ev: [], over: null, cur: null, opts: opts || {}, stolen: 0, nextId: 1, cons: opts && opts.cons || {}, round: 0, potionK: (opts && opts.potionK) || 1, bombK: (opts && opts.bombK) || 1, killed: [] };
     B.units.forEach(u => { u.gauge = rng() * 35 + (u.sub && u.sub.init || 0); if (u.mods.startShield) addSt(B, u, u, 'shield', 5, u.maxHp * u.mods.startShield / 100); if (u.mods.startHaste) addSt(B, u, u, 'haste', u.mods.startHaste + 1); u.reviveUsed = false; });
-    B.units.forEach(u => { u.takenTot = 0; u.erased = 0; if (u.mods.mantra > 0 && u.side === 'a') { u.m0 = { atk: u.atk, def: u.def, spd: u.spd }; u.mst = 0; } });
+    B.units.forEach(u => { u.takenTot = 0; u.erased = 0; u.kills = 0; u.devStack = 0; u.immDebt = 0; if ((u.mods.mantra > 0 || u.mods.mantraMag > 0 || u.mods.mantraTime > 0) && u.side === 'a') { u.m0 = { atk: u.atk, def: u.def, spd: u.spd, mag: u.mag, res: u.res, hpow: u.hpow }; u.mst = 0; u.mgs = 0; } });
+    B.law = {};
+    B.units.forEach(u => { if (u.side === 'a' && u.mods.tyrant > 0) alive(B.foes).forEach(e => { addSt(B, u, e, 'tyrant', 99); e.gauge -= 20 * Math.min(2, u.mods.tyrant); }); });
     foes.forEach(e => intent(B, e));
     return B;
   };
@@ -102,10 +104,11 @@
   function startTurn(B, u) {
     u.turns++; u.skip = false;
     if (u.m0 && u.alive) {
-      u.mst = Math.min(u.mods.mantra, u.mst + 1); const k = Math.pow(2, u.mst);
-      u.atk = u.m0.atk * k; u.def = u.m0.def * k; u.spd = u.m0.spd * (1 + 0.12 * u.mst);
-      const ms = has(u, 'mantra'); if (ms) { ms.pow = u.mst; ms.dur = 99; } else u.st.push({ id: 'mantra', dur: 99, pow: u.mst, src: u.id });
-      ev(B, { t: 'txt', u: u.id, s: 'Мантра ×' + k }); msg(B, u.name + ': Мантра Силы ×' + k);
+      const cap = (v) => Math.max(0, Math.min(8, v || 0));
+      if (u.mods.mantra > 0) { u.mst = Math.min(cap(u.mods.mantra), u.mst + 1); const k = Math.pow(2, u.mst); u.atk = u.m0.atk * k; u.def = u.m0.def * k; ev(B, { t: 'txt', u: u.id, s: 'Мантра ×' + k }); msg(B, u.name + ': Мантра Силы ×' + k); }
+      if (u.mods.mantraMag > 0) { u.mgs = Math.min(cap(u.mods.mantraMag), u.mgs + 1); const k = Math.pow(2, u.mgs); u.mag = u.m0.mag * k; u.res = u.m0.res * k; u.hpow = u.m0.hpow * k; ev(B, { t: 'txt', u: u.id, s: 'Разум ×' + k }); msg(B, u.name + ': Мантра Разума ×' + k); }
+      u.spd = u.m0.spd * (1 + 0.12 * u.mst + (u.mods.mantraTime > 0 ? 0.2 * Math.min(cap(u.mods.mantraTime), u.turns) : 0));
+      const ms = has(u, 'mantra'); if (ms) { ms.pow = u.mst + u.mgs; ms.dur = 99; } else u.st.push({ id: 'mantra', dur: 99, pow: u.mst + u.mgs, src: u.id });
     }
     if (u.side === 'e' && u.turns > 10) { u.atk *= 1.07; u.mag *= 1.07; if (u.turns === 11) msg(B, u.name + ' теряет терпение…'); }
     for (const id in u.cds) if (u.cds[id] > 0) { u.cds[id]--; if (u.cds[id] > 0 && u.sub && u.sub.cdr && B.rng() * 100 < u.sub.cdr) u.cds[id]--; }
@@ -114,17 +117,19 @@
     (has(u, 'regen') ? [has(u, 'regen')] : []).forEach(s => heal(B, { id: s.src, hpow: s.pow }, u, s.pow, true, true));
     u.st.filter(s => D.ST[s.id].k === 'dot').forEach(s => { if (!u.alive) return; const v = Math.max(1, Math.round(s.pow * (1 - clamp(u.sub && u.sub.tenac || 0, 0, 70) / 100))); hurt(B, u, v, D.ST[s.id].el, null, true); ev(B, { t: 'dot', u: u.id, id: s.id, v }); msg(B, u.name + ': ' + D.ST[s.id].n + ' −' + v); });
     if (!u.alive) return;
-    const c = has(u, 'stun') || has(u, 'freeze');
+    const c = has(u, 'stun') || has(u, 'freeze') || has(u, 'stop');
     if (c) { u.skip = true; msg(B, u.name + ' пропускает ход (' + D.ST[c.id].n + ')'); ev(B, { t: 'skip', u: u.id, id: c.id }); rmSt(u, c.id); }
     const dm = has(u, 'dominate');
     if (dm && u.alive) {
-      rmSt(u, 'dominate'); u.skip = true; const others = alive(side(B, u)).filter(x => x !== u);
+      u.skip = true; const others = alive(side(B, u)).filter(x => x !== u);
       if (others.length) { const t = others[Math.floor(B.rng() * others.length)]; const v = Math.max(1, Math.round(u.atk * 1.25 * 100 / (100 + t.def * 0.5))); const real = hurt(B, t, v, 'phys', null); ev(B, { t: 'dmg', u: t.id, from: u.id, v: real }); msg(B, u.name + ' подчинён и бьёт своих: ' + t.name + ' −' + real); }
       else msg(B, u.name + ' подчинён и стоит как вкопанный');
       ev(B, { t: 'skip', u: u.id, id: 'dominate' });
     }
   }
   function endTurn(B, u) {
+    if (u.hero && B.law) for (const k in B.law) { B.law[k]--; if (B.law[k] <= 0) delete B.law[k]; }
+    const imm = has(u, 'immortal'); if (imm && imm.dur <= 1 && u.alive && u.immDebt > 0) { const debt = Math.round(u.immDebt * 0.5); u.immDebt = 0; ev(B, { t: 'txt', u: u.id, s: 'Расплата −' + debt }); msg(B, u.name + ': расплата за бессмертие −' + debt); hurt(B, u, debt, 'phys', null, true); }
     u.st.forEach(s => s.dur--); u.st = u.st.filter(s => s.dur > 0 && !(s.id === 'shield' && s.pow <= 0));
     if (u.alive && u.side === 'e') intent(B, u);
     if (u.alive && u.side === 'a') { u.mp = Math.min(u.maxMp, u.mp + 2 + (u.mods.mpRegen || 0)); }
@@ -145,11 +150,14 @@
     if (!dot && v > 0 && tgt.mods.erase && (tgt.erased || 0) < tgt.mods.erase) { tgt.erased++; ev(B, { t: 'txt', u: tgt.id, s: 'Стёрто!' }); msg(B, 'Удар по ' + tgt.name + ' стёрт из реальности'); return 0; }
     if (!dot) v = absorb(B, tgt, v);
     v = Math.max(0, Math.round(v));
+    const rf = has(tgt, 'reflect'); if (rf && !dot && src && src.alive && src.side !== tgt.side && v > 0) { const back = Math.round(v * rf.pow * 1.5); v = Math.round(v * (1 - rf.pow)); ev(B, { t: 'txt', u: tgt.id, s: 'Обращено!' }); msg(B, tgt.name + ' обращает урон на ' + src.name + ' (' + back + ')'); const rr = hurt(B, src, back, 'arcane', null, true); ev(B, { t: 'dmg', u: src.id, from: tgt.id, v: rr, thorn: 1 }); }
+    if (has(tgt, 'immortal') && tgt.hp - v < 1) { const cut = Math.max(0, tgt.hp - 1); tgt.immDebt = (tgt.immDebt || 0) + (v - cut); v = cut; if (!tgt._immTxt) { tgt._immTxt = 1; ev(B, { t: 'txt', u: tgt.id, s: 'Бессмертен!' }); } }
     tgt.hp -= v; tgt.takenSince += v; tgt.takenTot = (tgt.takenTot || 0) + v;
     if (v > 0 && tgt.side === 'a') { const c = D.CLASSES[tgt.cls]; if (c && !dot && tgt.hero) tgt.rc = clamp(tgt.rc + (c.rc.taken || 0), 0, tgt.rcMax); }
     if (tgt.hp <= 0) {
+      if (tgt.mods.secondLife && !tgt.slUsed) { tgt.slUsed = true; tgt.hp = Math.round(tgt.maxHp * Math.min(0.9, 0.35 + tgt.mods.secondLife * 0.15)); tgt.st = tgt.st.filter(x => !isDeb(x)); addSt(B, tgt, tgt, 'immortal', 2); ev(B, { t: 'revive', u: tgt.id }); msg(B, tgt.name + ': Вторая жизнь!'); return v; }
       if ((tgt.mods.reviveOnce || tgt.mods.reviveFull) && !tgt.reviveUsed) { tgt.reviveUsed = true; tgt.hp = Math.round(tgt.maxHp * (tgt.mods.reviveFull ? 1 : 0.3)); if (tgt.mods.reviveFull) tgt.st = tgt.st.filter(x => !isDeb(x)); ev(B, { t: 'revive', u: tgt.id }); msg(B, tgt.name + ' возрождается!'); return v; }
-      tgt.hp = 0; tgt.alive = false; tgt.st = []; ev(B, { t: 'death', u: tgt.id }); msg(B, tgt.name + ' повержен.'); if (tgt.side === 'e') { B.killed.push(tgt); if (src && src.alive && src.mods) { if (src.mods.killRc) src.rc = clamp(src.rc + src.mods.killRc, 0, src.rcMax); if (src.mods.killMp) src.mp = Math.min(src.maxMp, src.mp + src.mods.killMp); } if (src && src.alive && src.mods && src.mods.devour) { heal(B, src, src, src.maxHp * src.mods.devour / 100, true, true); src.mp = Math.min(src.maxMp, src.mp + Math.round(src.maxMp * src.mods.devour / 200)); ev(B, { t: 'txt', u: src.id, s: 'Пожрано' }); } }
+      tgt.hp = 0; tgt.alive = false; tgt.st = []; ev(B, { t: 'death', u: tgt.id }); msg(B, tgt.name + ' повержен.'); if (tgt.side === 'e') { B.killed.push(tgt); if (src) src.kills = (src.kills || 0) + 1; if (src && src.alive && src.mods) { if (src.mods.killRc) src.rc = clamp(src.rc + src.mods.killRc, 0, src.rcMax); if (src.mods.killMp) src.mp = Math.min(src.maxMp, src.mp + src.mods.killMp); } if (src && src.alive && src.mods && src.mods.devour) { heal(B, src, src, src.maxHp * src.mods.devour / 100, true, true); src.mp = Math.min(src.maxMp, src.mp + Math.round(src.maxMp * src.mods.devour / 200)); ev(B, { t: 'txt', u: src.id, s: 'Пожрано' }); } }
     } else if (tgt.side === 'e' && tgt.role && (tgt.role === 'boss' || tgt.role === 'mini') && tgt.phase === 1 && tgt.hp <= tgt.maxHp * 0.5) {
       tgt.phase = 2; addSt(B, tgt, tgt, 'enrage', 99); ev(B, { t: 'phase', u: tgt.id }); msg(B, tgt.name + ' впадает в ярость!');
     }
@@ -157,6 +165,7 @@
   }
   function heal(B, src, tgt, amount, silent, raw) {
     if (!tgt.alive) return 0;
+    if (B.law && B.law.noheal > 0 && tgt.side === 'e') return 0;
     let v = amount; if (!raw) v *= 1 + (tgt.mods.healIn || 0) / 100;
     v = Math.round(Math.min(v, tgt.maxHp - tgt.hp)); if (v <= 0) return 0;
     tgt.hp += v; ev(B, { t: 'heal', u: tgt.id, v }); if (!silent) msg(B, tgt.name + ' +' + v + ' HP'); return v;
@@ -175,6 +184,9 @@
     if (asub.bossDmg && (tgt.role === 'boss' || tgt.role === 'mini')) mul += asub.bossDmg / 100;
     const am = att.mods; if (am.lowDmg && att.hp < att.maxHp * 0.3) mul += am.lowDmg / 100; if (am.fullDmg && att.hp > att.maxHp * 0.8) mul += am.fullDmg / 100; if (am.openDmg && att.turns <= 2) mul += am.openDmg / 100;
     if (am.perCrew) mul += am.perCrew / 100 * Math.max(0, alive(side(B, att)).length - 1); if (am.debuffDmg && tgt.st.some(isDeb)) mul += am.debuffDmg / 100;
+    if (am.killStack) mul += am.killStack / 100 * Math.min(10, att.kills || 0); if (am.growDmg) mul += am.growDmg / 100 * Math.min(12, Math.max(0, att.turns - 1));
+    if (am.foeDmg) mul += am.foeDmg / 100 * alive(opp(B, att)).length; if (att.devStack) mul += 0.06 * Math.min(20, att.devStack);
+    if (am.dmgMul) mul *= 1 + am.dmgMul / 100; if (tgt.role === 'boss' && am.bossMul) mul *= 1 + am.bossMul / 100;
     if (eff.ifLow && tgt.hp < tgt.maxHp * eff.ifLow) mul *= eff.lowMul;
     if (eff.ifAny && tgt.st.some(isDeb)) mul *= eff.ifMul;
     if (tgt.weak.includes(el)) { mul *= 1.35; notes.push('weak'); } else if (tgt.resist.includes(el)) { mul *= 0.6; notes.push('res'); }
@@ -185,14 +197,14 @@
     if (el === 'bolt' && has(tgt, 'wet')) { mul *= 1.4; react = 'Проводимость'; rmSt(tgt, 'wet'); }
     else if (el === 'ice' && has(tgt, 'wet')) { react = 'Заморозка'; rmSt(tgt, 'wet'); tgt._freeze = true; }
     else if (el === 'fire' && has(tgt, 'chill')) { mul *= 1.3; react = 'Таяние'; rmSt(tgt, 'chill'); }
-    let cc = att.crit + (eff.crit || 0) + stMod(att, 'crit'); let crit = B.rng() * 100 < cc; if (crit && att.side === 'e' && B.law && B.law.nocrit > 0) crit = false; if (crit) { mul *= 1 + (att.critDmg - 1) * (1 - clamp(tsub.tenac || 0, 0, 70) / 100); if (has(att, 'focus')) rmSt(att, 'focus'); }
+    let cc = att.crit + (eff.crit || 0) + stMod(att, 'crit'); let crit = B.rng() * 100 < cc || (am.markCrit > 0 && has(tgt, 'mark')); if (crit && att.side === 'e' && B.law && B.law.nocrit > 0) crit = false; if (crit) { mul *= 1 + (att.critDmg - 1) * (1 - clamp(tsub.tenac || 0, 0, 70) / 100); if (has(att, 'focus')) rmSt(att, 'focus'); }
     const penK = Math.min(0.9, (eff.pierce || 0) + ((eff.s === 'mag' ? asub.penMag : asub.pen) || 0) / 100); const defv = (eff.s === 'mag' ? tgt.res : tgt.def) * (1 - penK) * (1 + stMod(tgt, 'def'));
     const K = 50 + 4 * tgt.lv, mit = K / (K + Math.max(0, defv));
     let tk = 1 + (tgt.mods.taken || 0) / 100 + stMod(tgt, 'taken') + (eff.s === 'mag' ? (tgt.mods.magTaken || 0) : (tgt.mods.physTaken || 0)) / 100;
     if (tgt.mods.lowTaken && tgt.hp < tgt.maxHp * 0.3) tk -= tgt.mods.lowTaken / 100;
     tk = Math.max(0.2, tk);
     const out = base * mul * mit * tk * (0.93 + B.rng() * 0.14);
-    return { v: Math.max(1, Math.round(out)), crit, notes, react };
+    return { v: Math.max(1, Math.min(9e12, Math.round(out))), crit, notes, react };
   }
 
   // ───── Применение навыка ─────
@@ -211,13 +223,14 @@
   function applyStatus(B, u, tgt, eff, skill) {
     if (eff.p != null && eff.p < 1 && B.rng() > eff.p) return;
     const id = eff.id; let pow = 0;
-    if (tgt.sub && tgt.sub.statRes && ['debuff', 'ctrl', 'dot'].includes(D.ST[id].k) && tgt.side !== u.side && B.rng() * 100 < tgt.sub.statRes) { ev(B, { t: 'txt', u: tgt.id, s: 'Сопротивление' }); return; }
+    if (id !== 'stop' && tgt.sub && tgt.sub.statRes && ['debuff', 'ctrl', 'dot'].includes(D.ST[id].k) && tgt.side !== u.side && B.rng() * 100 < tgt.sub.statRes) { ev(B, { t: 'txt', u: tgt.id, s: 'Сопротивление' }); return; }
     if (tgt.side !== u.side && B.law && B.law.noctrl > 0 && D.ST[id].k === 'ctrl' && u.side === 'e') return;
     if (D.ST[id].k === 'dot') pow = Math.max(u.atk, u.mag) * ({ burn: 0.42, poison: 0.4, bleed: 0.36 }[id]) * (1 + (u.mods.dmg || 0) / 100 + (u.mods['dmg_' + D.ST[id].el] || 0) / 100) * (1 + ((u.skb && u.skb[skill.id]) || 0) / 200);
     if (id === 'regen') pow = u.hpow * (eff.pow || 0.5) * (1 + ((u.skb && u.skb[skill.id]) || 0) / 100);
     if (id === 'shield') pow = (u[eff.s === 'heal' ? 'hpow' : eff.s] || u.hpow) * (eff.pow || 1) * (eff.s === 'def' ? 1 : 1) * (eff.s === 'heal' ? 1 : 1) * (1 + ((u.skb && u.skb[skill.id]) || 0) / 100);
-    if (D.ST[id].k === 'ctrl' && tgt.role === 'boss' && id !== 'chill') { if (B.rng() < 0.6) { ev(B, { t: 'txt', u: tgt.id, s: 'Сопротивление' }); return; } }
-    if (D.ST[id].k === 'ctrl' && tgt.role === 'mini' && B.rng() < 0.3) { ev(B, { t: 'txt', u: tgt.id, s: 'Сопротивление' }); return; }
+    if (eff.pow != null && !pow) pow = eff.pow;
+    if (D.ST[id].k === 'ctrl' && tgt.role === 'boss' && id !== 'chill' && id !== 'stop') { if (B.rng() < 0.6) { ev(B, { t: 'txt', u: tgt.id, s: 'Сопротивление' }); return; } }
+    if (D.ST[id].k === 'ctrl' && tgt.role === 'mini' && id !== 'stop' && B.rng() < 0.3) { ev(B, { t: 'txt', u: tgt.id, s: 'Сопротивление' }); return; }
     addSt(B, u, tgt, id, (eff.dur || 2) + (tgt === u && D.ST[id].k !== 'ctrl' && eff.to === 'self' ? 0 : 0), pow);
   }
   C.skillOf = (u, id) => (u.ov && u.ov[id]) || SKL(id);
@@ -232,16 +245,16 @@
     if (sk.tgt === 'dead' && !side(B, u).some(x => !x.alive)) return 'некого возвращать';
     return '';
   };
-  function doSkill(B, u, sk, tid) {
-    let targets = targetsFor(B, u, sk, tid); if (!targets.length) return;
+  function doSkill(B, u, sk, tid, opts) {
+    opts = opts || {}; let targets = targetsFor(B, u, sk, tid); if (!targets.length) return;
     let spent = 0;
-    if (sk.mp) u.mp -= mpCost(u, sk); if (sk.rc) { u.rc -= sk.rc; spent = sk.rc; } if (sk.rcAll) { spent = u.rc; u.rc = 0; }
-    if (sk.cd) u.cds[sk.id] = sk.cd + 0;
+    if (!opts.free) { if (sk.mp) u.mp -= mpCost(u, sk); if (sk.rc) { u.rc -= sk.rc; spent = sk.rc; } if (sk.rcAll) { spent = u.rc; u.rc = 0; } if (sk.cd) u.cds[sk.id] = sk.cd + 0; if (sk.hpCost) u.hp = Math.max(1, u.hp - Math.round(u.maxHp * sk.hpCost)); }
+    if (u.side === 'a' && sk.id !== 'basic' && !sk.noEcho) { u.lastSk = sk.id; u.lastTid = tid; }
     ev(B, { t: 'skill', u: u.id, id: sk.id, n: sk.n, ic: sk.ic, tg: targets.map(x => x.id) });
     msg(B, u.name + ': «' + sk.n + '»');
     let dealt = 0;
     const dealOne = (tgt, eff, scale, noDbl) => {
-      if (!tgt.alive) return; scale = scale || 1;
+      if (!tgt.alive) return; scale = (scale || 1) * (opts.scale || 1);
       let T = tgt, mult = 1;
       if (u.side === 'e' && sk.tgt === 'foe') { const cv = alive(B.party).find(x => has(x, 'cover') && x !== tgt); if (cv && !has(tgt, 'taunt')) { T = cv; mult = 0.75; ev(B, { t: 'txt', u: cv.id, s: 'Прикрыл!' }); } }
       const eva = clamp(T.eva + stMod(T, 'eva') - (u.sub && u.sub.acc || 0), 0, 80);
@@ -256,6 +269,7 @@
       if (T._freeze && T.alive) { T._freeze = false; addSt(B, u, T, 'freeze', 1); }
       if (!noDbl && T.alive && u.sub && u.sub.dbl && B.rng() * 100 < u.sub.dbl) { ev(B, { t: 'txt', u: u.id, s: 'Двойной удар!' }); dealOne(T, eff, 0.5, true); }
       if (eff.drain && real) heal(B, u, u, real * eff.drain, true);
+      if (real && has(u, 'pact')) heal(B, u, u, real * 0.3, true, true);
       if (u.mods.lifesteal && real) heal(B, u, u, real * u.mods.lifesteal / 100, true);
       if (T.alive && u.side !== T.side && (eff.s !== 'mag') && T.mods.thorns) { const th = Math.round(real * T.mods.thorns / 100); if (th > 0) { hurt(B, u, th, 'phys', T, true); ev(B, { t: 'dmg', u: u.id, from: T.id, v: th, thorn: 1 }); } }
       if (T.alive && eff.s !== 'mag' && T.mods.counter && B.rng() * 100 < T.mods.counter && u.alive) { const cdm = Math.max(1, Math.round(T.atk * 0.6 * 100 / (100 + u.def * 0.5))); hurt(B, u, cdm, 'phys', T, true); ev(B, { t: 'dmg', u: u.id, from: T.id, v: cdm, thorn: 1 }); msg(B, T.name + ' контратакует −' + cdm); }
@@ -282,11 +296,29 @@
           en.forEach(t => { const real = hurt(B, t, Math.round(T * eff.m * 100 / (100 + t.res * 0.1)), 'arcane', u); ev(B, { t: 'dmg', u: t.id, from: u.id, v: real, el: 'arcane' }); msg(B, '→ ' + t.name + ' −' + real + ' (реверс)'); });
           heal(B, u, u, T * eff.heal, true, true); u.takenTot = 0; break;
         }
+        case 'hpCost': u.hp = Math.max(1, u.hp - Math.round(u.maxHp * eff.v)); break;
+        case 'law': { B.law = B.law || {}; (eff.ids || [eff.id]).forEach(id => { B.law[id] = Math.max(B.law[id] || 0, eff.dur || 2); }); ev(B, { t: 'txt', u: u.id, s: 'Закон!' }); msg(B, u.name + ' объявляет закон: ' + (eff.n || '') ); break; }
+        case 'timestop': { alive(opp(B, u)).forEach(t => { addSt(B, u, t, 'stop', eff.dur || 1); }); u.gauge += eff.extra == null ? 100 : eff.extra; ev(B, { t: 'txt', u: u.id, s: 'Время остановлено' }); msg(B, 'Время остановлено — враги замерли'); break; }
+        case 'decree': { alive(opp(B, u)).forEach(t => { t.gauge = Math.min(t.gauge, 0) - (eff.delay == null ? 70 : eff.delay); addSt(B, u, t, 'vuln', eff.dur || 3); addSt(B, u, t, 'weak', eff.dur || 3); }); ev(B, { t: 'txt', u: u.id, s: 'Приказ мира' }); msg(B, 'Приказ мира: враги отброшены назад'); break; }
+        case 'erase': targets.forEach(t => {
+          if (!t.alive) return; const big = t.role === 'boss' || t.role === 'mini'; const thr = eff.thr || 0.35;
+          if (!big && t.hp <= t.maxHp * thr) { t.st = []; ev(B, { t: 'txt', u: t.id, s: 'Стёрт!' }); msg(B, t.name + ' стёрт из реальности'); hurt(B, t, t.hp + 1e9, 'arcane', u, true); ev(B, { t: 'dmg', u: t.id, from: u.id, v: 0, el: 'arcane', notes: [] }); }
+          else if (big) { const v = Math.min(t.maxHp * (eff.boss || 0.12), Math.max(u.mag, u.atk) * 14); const real = hurt(B, t, Math.round(v), 'arcane', u, true); ev(B, { t: 'dmg', u: t.id, from: u.id, v: real, el: 'arcane', notes: [] }); msg(B, '→ ' + t.name + ' −' + real + ' (стирание)'); }
+          else dealOne(t, { k: 'dmg', s: 'mag', m: eff.m || 4, el: 'arcane' }, 1);
+        }); break;
+        case 'devour': targets.forEach(t => {
+          if (!t.alive) return; const big = t.role === 'boss' || t.role === 'mini';
+          if (!big && t.hp <= t.maxHp * (eff.thr || 0.3)) { t.st = []; msg(B, u.name + ' пожирает ' + t.name); ev(B, { t: 'txt', u: t.id, s: 'Пожран!' }); hurt(B, t, t.hp + 1e9, 'dark', u, true); u.devStack = (u.devStack || 0) + 1; heal(B, u, u, u.maxHp * (eff.heal || 0.2), true, true); u.mp = Math.min(u.maxMp, u.mp + Math.round(u.maxMp * 0.1)); }
+          else { dealOne(t, { k: 'dmg', s: 'atk', m: eff.m || 3, drain: 0.5 }, 1); }
+        }); break;
+        case 'strip': alive(opp(B, u)).forEach(t => { t.st = t.st.filter(s => !(D.ST[s.id].k === 'buff' || D.ST[s.id].k === 'hot') || false); ev(B, { t: 'txt', u: t.id, s: 'Раскол' }); }); break;
+        case 'mantraUp': if (u.m0) { if (u.mods.mantra > 0) u.mst = Math.min(8, u.mst + (eff.v || 1)); if (u.mods.mantraMag > 0) u.mgs = Math.min(8, u.mgs + (eff.v || 1)); ev(B, { t: 'txt', u: u.id, s: 'Мантра +' + (eff.v || 1) }); } break;
+        case 'echo': { const id = u.lastSk; if (!id || id === sk.id) break; const s2 = C.skillOf(u, id); if (!s2 || s2.noEcho) break; let tid2 = u.lastTid; ev(B, { t: 'txt', u: u.id, s: 'Эхо: ' + s2.n }); msg(B, 'Эхо Королей повторяет «' + s2.n + '»'); doSkill(B, u, s2, tid2, { free: true, scale: eff.m || 0.7 }); break; }
         case 'cleanse': to.forEach(t => { t.st = t.st.filter(s => !isDeb(s)); ev(B, { t: 'txt', u: t.id, s: 'Очищение' }); }); break;
         case 'steal': { const g = Math.round(3 + 1.6 * targets[0].lv); B.stolen += g; ev(B, { t: 'txt', u: u.id, s: '+' + g + ' зол.' }); break; }
         case 'revive': to.forEach(t => { if (!t.alive) { t.alive = true; t.hp = Math.round(t.maxHp * eff.v); t.gauge = 40; ev(B, { t: 'revive', u: t.id }); msg(B, t.name + ' возвращён к жизни!'); } }); break;
         case 'summon': {
-          if (alive(B.foes).length >= 4) break; const lv = u.lv - 1; const nu = C.unitFromEnemy(eff.id, Math.max(1, lv), u.tier, false, 'e' + (B.nextId++) + 's'); nu.summoned = true; nu.gauge = 30;
+          if (alive(B.foes).length >= 4 || (B.law && B.law.nosummon > 0)) break; const lv = u.lv - 1; const nu = C.unitFromEnemy(eff.id, Math.max(1, lv), u.tier, false, 'e' + (B.nextId++) + 's'); nu.summoned = true; nu.gauge = 30;
           B.foes.push(nu); B.units.push(nu); intent(B, nu); ev(B, { t: 'summon', u: nu.id }); msg(B, u.name + ' призывает: ' + nu.name); break;
         }
       }
@@ -307,7 +339,7 @@
       if (u.side === 'e') sk.fx = [{ k: 'dmg', s: 'atk', m: 1 }];
       doSkill(B, u, sk, a.tid);
     } else if (a.t === 'enemy') {
-      const sk = SKL(a.id); doSkill(B, u, sk, a.tid);
+      let sk = SKL(a.id); if (B.law && B.law.nocast > 0 && u.side === 'e') sk = { id: 'basic', n: 'Удар', ic: '👊', tgt: 'foe', fx: [{ k: 'dmg', s: 'atk', m: 1 }] }; doSkill(B, u, sk, a.tid);
     } else if (a.t === 'guard') {
       addSt(B, u, u, 'guard', 2); u.mp = Math.min(u.maxMp, u.mp + 6); u.rc = clamp(u.rc + (u.rcMax === 5 ? 0 : 8), 0, u.rcMax); ev(B, { t: 'skill', u: u.id, n: 'Защита', ic: '🛡️', tg: [u.id] }); msg(B, u.name + ' встаёт в защиту');
     } else if (a.t === 'item') {
@@ -385,13 +417,22 @@
       } else if (f.k === 'healPct') { const me = u.hp / u.maxHp; score += me < 0.55 ? 60 : 0; }
       else if (f.k === 'revive') score += own.length < side(B, u).length ? 80 : 0;
       else if (f.k === 'cleanse') score += own.some(x => x.st.some(isDeb)) ? 28 : 0;
+      else if (f.k === 'erase' || f.k === 'devour') { const small = foes.filter(x => x.role !== 'boss' && x.role !== 'mini' && x.hp <= x.maxHp * (f.thr || 0.3)).length; score += small ? 120 + 20 * small : 22; }
+      else if (f.k === 'timestop') score += (nF >= 2 ? 70 + 10 * nF : 40) + (u.hp < u.maxHp * 0.5 ? 40 : 0);
+      else if (f.k === 'decree') score += nF >= 2 ? 62 : 34;
+      else if (f.k === 'law') score += !(B.law && B.law[f.id || (f.ids && f.ids[0])] > 0) && foes.some(x => x.role === 'boss' || x.role === 'caster' || x.role === 'support') ? 46 : 0;
+      else if (f.k === 'strip') score += foes.filter(x => x.st.some(s => D.ST[s.id].k === 'buff')).length * 25;
+      else if (f.k === 'mantraUp') score += u.m0 ? 30 : 0;
+      else if (f.k === 'echo') { const l = u.lastSk && C.skillOf(u, u.lastSk); score += l && l.id !== sk.id ? estimate(B, u, l) * 0.7 : 0; }
+      else if (f.k === 'hpCost') score -= u.hp / u.maxHp < 0.6 ? 80 : 0;
       else if (f.k === 'st') {
         const id = f.id, kind = D.ST[id].k;
         if (kind === 'buff' || kind === 'hot') {
           const tg = f.to === 'self' || sk.tgt === 'self' ? [u] : own;
           const miss = tg.filter(x => !has(x, id)).length;
           if (!miss) return;
-          const base = { rally: 26, guard: 16, taunt: 24, cover: 24, shield: 28, haste: 20, focus: 12, evade: 14, defUp: 14, bless: 22, regen: lowFrac < 0.85 ? 26 : 0 }[id] || 10;
+          let base = { rally: 26, guard: 16, taunt: 24, cover: 24, shield: 28, haste: 20, focus: 12, evade: 14, defUp: 14, bless: 22, regen: lowFrac < 0.85 ? 26 : 0, reflect: u.hp < u.maxHp * 0.7 ? 44 : 12, immortal: u.hp < u.maxHp * 0.38 ? 150 : 0, pact: u.hp > u.maxHp * 0.55 && nF ? 95 : 0 }[id];
+          if (base === undefined) base = 10;
           let b = base * (tg.length > 1 ? 1 + miss * 0.3 : 1);
           if ((id === 'taunt' || id === 'cover') && own.length < 2) b *= 0.4; if ((id === 'guard' || id === 'shield') && lowFrac > 0.9 && u.turns < 2) b *= 0.7;
           if (id === 'rally' || id === 'bless') b *= nF > 0 ? 1 : 0; score += b;
