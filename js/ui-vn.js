@@ -36,38 +36,70 @@
   const SIL = { courtyard: 'cathedral', street_fest: 'village', void: '', void_dusk: '', camp: 'trees', ruins: 'arches', forest: 'trees', mines: 'peaks', swamp: 'trees', spire: 'spire', cathedral: 'cathedral' };
   UI.silFor = (bg) => { const m = SIL[bg]; return m ? `<div class="sil sil-${m}"></div>` : ''; };
 
+  // ───── Сцена: геометрия спрайтов (расчёты — RPG.vnLayout / RPG.vnPlaceRect в portrait.js) ─────
+  // У каждого портрета в манифесте: dim = [w, h, keyed, fx, fy, fw] — центр лица и его ширина (px). Размер голов выравнивается по fw,
+  // настроения одного персонажа совмещаются по лицу (кроссфейд без «прыжков»), низ спрайта продлён и растворяется под диалогом.
+  UI.artMetrics = (art, mood) => RPG.artMetricsOf(UI.manifest, art, mood);
+  UI.vnLayout = RPG.vnLayout;
+  UI.vnPlace = function (ref, m, el) { const r = RPG.vnPlaceRect(ref, m); el.style.left = r.left + 'px'; el.style.top = r.top + 'px'; el.style.width = r.width + 'px'; el.style.height = r.height + 'px'; };
+  const RIM = { courtyard: '150,160,255', street_fest: '255,170,90', void: '170,120,255', void_dusk: '255,120,90', camp: '255,160,80', ruins: '170,150,255', forest: '110,230,160', mines: '255,170,80', swamp: '120,230,170', spire: '170,210,255', cathedral: '255,214,140' };
+  UI.vnRim = (bg) => RIM[bg] || '150,160,255';
+
   UI.playLines = function (lines, o) {
     return new Promise((resolve) => {
       const slot = UI.slot(), st = UI.p.settings, layer = $('#layer'); o = o || {};
       const result = {};
-      layer.innerHTML = `<div id="story" class="story vn"><div class="vbg" id="sbg"></div><div class="vbg b2" id="sbg2"></div><div class="vcg" id="vcg"></div><div class="vstage" id="vstage"></div><div class="vfog"></div>
+      layer.innerHTML = `<div id="story" class="story vn"><div class="vbg" id="sbg"></div><div class="vbg b2" id="sbg2"></div><div class="vcg" id="vcg"></div><div class="vstage" id="vstage"></div><div class="vfog"></div><div class="vfloor"></div>
         <div class="vtop"><button class="mini" data-act="vLog" data-quiet="1" title="Лог">📜</button><button class="mini" data-act="vAuto" id="vAuto" data-quiet="1">▶ Авто</button><button class="mini" data-act="sSkip" id="sSkip" data-quiet="1">⏭ Пропуск</button></div>
         <div class="dlg" id="dlg" data-act="sNext" data-quiet="1"><div class="spk" id="spk"></div><div class="txt" id="stxt"></div><i class="nx">▾</i></div><div class="schoice" id="schoice"></div><div class="tcard" id="tcard"></div><div class="flash" id="sflash"></div><div class="vlog" id="vlog"></div></div>`;
       layer.classList.add('on'); const root = $('#story');
-      const Q = lines.slice(); let typing = null, waitNext = null, skipping = false, auto = false, curBg = '', curCg = null;
-      const logArr = []; const actors = {}; // key -> {el, mood}
-      const stage = $('#vstage');
-      const setBg = (bg) => { if (!bg || bg === curBg) return; curBg = bg; const b2 = $('#sbg2'), b1 = $('#sbg'); b2.className = 'vbg b2 bg-' + bg + ' in'; b2.innerHTML = UI.silFor(bg); setTimeout(() => { b1.className = 'vbg bg-' + bg; b1.innerHTML = b2.innerHTML; b2.className = 'vbg b2'; b2.innerHTML = ''; }, 600); };
+      const Q = lines.slice(); let typing = null, waitNext = null, skipping = false, auto = false, curBg = '', curCg = null, finished = false;
+      const logArr = []; const actors = {}; // key -> {el, mood, art, ord, imgs}
+      const stage = $('#vstage'); let ord = 0, bgGen = 0, bgTimer = 0; const timers = new Set();
+      const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); if (!finished) fn(); }, ms); timers.add(t); return t; };
+      const finalizeBg = () => { if (!bgTimer) return; clearTimeout(bgTimer); bgTimer = 0; const b1 = $('#sbg'), b2 = $('#sbg2'); if (!b1 || !b2) return; b1.className = 'vbg bg-' + curBg; b1.innerHTML = b2.innerHTML; b2.className = 'vbg b2'; b2.innerHTML = ''; };
+      const setBg = (bg) => {
+        if (!bg || bg === curBg) return; finalizeBg(); curBg = bg; const gen = ++bgGen; root.dataset.bg = bg; root.style.setProperty('--rim', UI.vnRim(bg));
+        const b2 = $('#sbg2'); b2.className = 'vbg b2 bg-' + bg; b2.innerHTML = UI.silFor(bg); void b2.offsetWidth; b2.classList.add('in');
+        bgTimer = setTimeout(() => { if (gen === bgGen && !finished) finalizeBg(); }, 620);
+      };
       const setCg = (id) => { const el = $('#vcg'); if (id === curCg) return; curCg = id; if (!id) { el.classList.remove('on'); return; } const f = UI.cgFile(id); if (!f) { el.classList.remove('on'); return; } el.style.backgroundImage = `url(assets/vn/${f})`; el.className = 'vcg on kb'; Object.keys(actors).forEach(hideActor); };
-      const done = () => { layer.classList.remove('on'); layer.innerHTML = ''; UI.sNext = UI.sSkip = UI.vAuto = null; try { F.setMode(st.particles ? (UI.v === 'game' ? 'embers' : 'stars') : 'none'); } catch (e) { /* ignore */ } if (!o.replay && o.id) E.finishScene(slot, o.id); resolve(result); };
-      const posFor = (key, sp) => { if (sp.hero) return 'left'; const used = Object.values(actors).map((a) => a.pos); return used.includes('right') ? (used.includes('center') ? 'right' : 'center') : 'right'; };
-      const spriteHtml = (art, mood) => UI.por(art, 'vsp', false, mood);
+      const done = () => {
+        finished = true; timers.forEach(clearTimeout); timers.clear(); clearTimeout(bgTimer); window.removeEventListener('resize', layout);
+        layer.classList.remove('on'); layer.innerHTML = ''; UI.sNext = UI.sSkip = UI.vAuto = null; try { F.setMode(st.particles ? (UI.v === 'game' ? 'embers' : 'stars') : 'none'); } catch (e) { /* ignore */ } if (!o.replay && o.id) E.finishScene(slot, o.id); resolve(result);
+      };
+      const spriteEl = (art, mood) => { const wrap = document.createElement('div'); wrap.innerHTML = UI.por(art, 'vsp', false, mood); return wrap.firstElementChild; };
+      const decoded = (el) => (el && el.decode && el.tagName === 'IMG' ? Promise.race([el.decode().catch(() => {}), UI.wait(700)]) : Promise.resolve());
+      // порядок актёров: герой слева, остальные по появлению
+      const live = () => Object.keys(actors).sort((p, q) => (D.SPEAKERS[q].hero ? 1 : 0) - (D.SPEAKERS[p].hero ? 1 : 0) || actors[p].ord - actors[q].ord);
+      function layout() {
+        const keys = live(); if (!keys.length || finished) return;
+        const W = stage.clientWidth || 390, dlg = $('#dlg'), Yb = (dlg ? dlg.offsetTop : stage.clientHeight - 140) + 16;
+        const L = UI.vnLayout(keys.map((k) => actors[k].ref), W, Yb);
+        keys.forEach((k, i) => { const a = actors[k], g = L[i]; a.el.style.height = g.frH + 'px'; a.el.style.transform = `translate(${g.x.toFixed(1)}px,${g.y.toFixed(1)}px) scale(${g.s.toFixed(4)})`; a.el.style.setProperty('--sx', (i === 0 && keys.length > 1 ? -40 : i === keys.length - 1 && keys.length > 1 ? 40 : 0) + 'px'); });
+      }
+      window.addEventListener('resize', layout);
       const showActor = (key, mood) => {
         const sp = D.SPEAKERS[key]; if (!sp || !sp.art) return null;
         if (curCg) { curCg = null; $('#vcg').classList.remove('on'); }
-        let a = actors[key];
+        mood = mood || 'n'; let a = actors[key];
         if (!a) {
-          const pos = posFor(key, sp); const el = document.createElement('div'); el.className = 'vact pos-' + pos; el.innerHTML = spriteHtml(sp.art, mood); stage.appendChild(el);
-          a = actors[key] = { el, mood: mood || 'n', pos }; requestAnimationFrame(() => el.classList.add('in'));
-        } else if ((mood || 'n') !== a.mood) {
-          const old = a.el.firstElementChild; const wrap = document.createElement('div'); wrap.innerHTML = spriteHtml(sp.art, mood); const nw = wrap.firstElementChild; nw.classList.add('xf'); a.el.appendChild(nw);
-          requestAnimationFrame(() => nw.classList.add('on')); setTimeout(() => { if (old && old.parentNode) old.remove(); nw.classList.remove('xf', 'on'); }, 380);
-          a.mood = mood || 'n'; if (mood === 'a' || mood === 'm') { a.el.classList.remove('pop'); void a.el.offsetWidth; a.el.classList.add('pop'); }
+          const ref = UI.artMetrics(sp.art, 'n'), m = UI.artMetrics(sp.art, mood);
+          const el = document.createElement('div'); el.className = 'vact'; el.innerHTML = '<div class="vslide"><div class="vbr"><div class="vfx"><div class="vimgs"></div></div></div></div>';
+          const img = spriteEl(sp.art, mood); UI.vnPlace(ref, m, img); el.querySelector('.vimgs').appendChild(img); stage.appendChild(el);
+          a = actors[key] = { el, mood, art: sp.art, ord: ord++, ref, timer: 0 }; layout();
+          decoded(img).then(() => { if (!finished && actors[key] === a) el.classList.add('in'); });
+        } else if (mood !== a.mood) {
+          const box = a.el.querySelector('.vimgs'); a.mood = mood; clearTimeout(a.timer);
+          while (box.children.length > 1) box.firstElementChild.remove();         // быстрые смены: оставляем только текущий верхний слой
+          const nw = spriteEl(sp.art, mood); UI.vnPlace(a.ref, UI.artMetrics(sp.art, mood), nw); nw.classList.add('xf'); box.appendChild(nw);
+          decoded(nw).then(() => { if (finished || actors[key] !== a || a.mood !== mood) return; void nw.offsetWidth; nw.classList.add('on'); a.timer = later(() => { while (box.children.length > 1) box.firstElementChild.remove(); nw.classList.remove('xf', 'on'); }, 400); });
+          if (mood === 'a' || mood === 'm') { const fx = a.el.querySelector('.vfx'); fx.classList.remove('pop'); void fx.offsetWidth; fx.classList.add('pop'); }
         }
         Object.keys(actors).forEach((k) => actors[k].el.classList.toggle('talk', k === key));
         return a;
       };
-      function hideActor(key) { const a = actors[key]; if (!a) return; a.el.classList.remove('in'); setTimeout(() => a.el.remove(), 350); delete actors[key]; }
+      function hideActor(key) { const a = actors[key]; if (!a) return; delete actors[key]; a.el.classList.remove('in', 'talk'); a.el.classList.add('out'); layout(); const el = a.el; setTimeout(() => el.remove(), 520); }
       const typeText = (txt, narr) => new Promise((r) => {
         const el = $('#stxt'); el.className = 'txt' + (narr ? ' narr' : ''); el.textContent = ''; const sp = [0, 44, 20, 7][st.textSpeed == null ? 2 : st.textSpeed]; let i = 0; const nx = $('#dlg .nx'); nx.style.opacity = 0;
         if (skipping || !sp) { el.textContent = txt; nx.style.opacity = 1; r(); return; }
@@ -83,11 +115,11 @@
         const w = (ms) => UI.wait(skipping ? 40 : ms);
         switch (name) {
           case 'stars': case 'embers': case 'fireflies': case 'snow': try { F.setMode(st.particles ? name : 'none'); } catch (e) { /* ignore */ } break;
-          case 'silence': root.classList.add('silence'); UI.sfx('boom'); await w(1800); setTimeout(() => root.classList.remove('silence'), 2500); break;
+          case 'silence': root.classList.add('silence'); UI.sfx('boom'); await w(1800); later(() => root.classList.remove('silence'), 2500); break;
           case 'flash': { const f = $('#sflash'); f.className = 'flash'; void f.offsetWidth; f.classList.add('go'); UI.sfx('magic'); await w(450); break; }
-          case 'entropy': { const f = $('#sflash'); f.className = 'flash ent'; void f.offsetWidth; f.classList.add('go'); root.classList.add('desat'); UI.sfx('boom'); await w(1400); setTimeout(() => root.classList.remove('desat'), 4000); break; }
-          case 'halo': { root.classList.remove('halo'); void root.offsetWidth; root.classList.add('halo'); UI.sfx('magic'); await w(900); break; }
-          case 'shake': root.classList.remove('shk'); void root.offsetWidth; root.classList.add('shk'); UI.sfx('boom'); await w(500); break;
+          case 'entropy': { const f = $('#sflash'); f.className = 'flash ent'; void f.offsetWidth; f.classList.add('go'); root.classList.add('desat'); UI.sfx('boom'); await w(1400); later(() => root.classList.remove('desat'), 4000); break; }
+          case 'halo': { root.classList.remove('halo'); void root.offsetWidth; root.classList.add('halo'); later(() => root.classList.remove('halo'), 1700); UI.sfx('magic'); await w(900); break; }
+          case 'shake': root.classList.remove('shk'); void root.offsetWidth; root.classList.add('shk'); later(() => root.classList.remove('shk'), 600); UI.sfx('boom'); await w(500); break;
           default: break;
         }
       };

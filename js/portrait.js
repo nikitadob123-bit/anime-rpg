@@ -288,5 +288,26 @@ RPG.HERO_MOOD_NAMES = { n: 'neutral', h: 'smirk', a: 'angry', d: 'despair', m: '
 RPG.moodName = (art, mood) => (art === 'hero' ? RPG.HERO_MOOD_NAMES : RPG.MOOD_NAMES)[mood || 'n'] || 'neutral';
 /* Итоговое имя файла из манифеста с откатом: настроение → neutral → null (тогда рисуется SVG) */
 RPG.artFileOf = (manifest, art, mood) => { const m = manifest && manifest.portraits && manifest.portraits[art]; if (!m) return null; return m[RPG.moodName(art, mood)] || m.neutral || null; };
+
+/* Геометрия сцены новеллы (чистые функции — тестируются в node).
+   Метрики портрета: {w,h,fx,fy,fw} — размер файла, центр лица и ширина лица (px). Высота h>720 означает продление бюста вниз (затухание под диалогом).
+   Кадр актёра: ширина 1800, центр лица эталона в x=900, сверху запас 220; позиция и размер кадра задаются одним transform (translate+scale). */
+RPG.VN = { FR_W: 1800, FR_CX: 900, FR_T: 220, BUST: 720, SLOTS: { 1: [0.5], 2: [0.3, 0.7], 3: [0.2, 0.5, 0.8] }, FACE_K: { 1: 0.5, 2: 0.42, 3: 0.35 } };
+RPG.artMetricsOf = (manifest, art, mood) => {
+  const f = RPG.artFileOf(manifest, art, mood), d = f && manifest.dim && manifest.dim[f];
+  if (d && d.length >= 6) return { w: d[0], h: d[1], fx: d[3], fy: d[4], fw: d[5], img: true };
+  if (d) return { w: d[0], h: d[1], fx: d[0] / 2, fy: d[1] * 0.18, fw: d[0] * 0.32, img: true };
+  return { w: 256, h: 320, fx: 128, fy: 100, fw: 130, img: false };
+};
+RPG.vnLayout = (refs, W, Yb) => {
+  const V = RPG.VN, n = refs.length; if (!n) return [];
+  let Ft = V.FACE_K[Math.min(3, n)] * W;
+  refs.forEach((r) => { const bust = r.h > V.BUST ? V.BUST : r.h; Ft = Math.min(Ft, ((Yb - 58) / ((bust - r.fy) + 0.75 * r.fw)) * r.fw); });   // голова не уходит за верх экрана
+  return refs.map((r, i) => {
+    const s = Ft / r.fw, ext = r.h > V.BUST ? r.h - V.BUST : 0, frH = V.FR_T + r.h, slot = V.SLOTS[Math.min(3, n)][Math.min(2, i)];
+    return { s, x: slot * W - V.FR_CX * s, y: Yb + ext * s - frH * s, frH, face: Ft };
+  });
+};
+RPG.vnPlaceRect = (ref, m) => { const V = RPG.VN, r = ref.fw / m.fw; return { left: V.FR_CX - m.fx * r, top: V.FR_T + ref.fy - m.fy * r, width: m.w * r, height: m.h * r, r }; };
 if (typeof module !== 'undefined') module.exports = RPG;
 })();

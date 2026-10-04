@@ -119,11 +119,6 @@ button.card,.card.tap{text-align:left;width:100%;color:inherit}
 #story{position:absolute;inset:0;overflow:hidden;background:#05060f}#story .sbg2{opacity:0;transition:opacity .6s}#story .sbg2.in{opacity:1}
 #story.silence .sbg,#story.silence .sbg2,#story.silence .stage{filter:grayscale(1) brightness(.5);transition:filter .5s}
 #story.shk{animation:shk .5s}@keyframes shk{20%{transform:translate(-6px,3px)}40%{transform:translate(6px,-4px)}60%{transform:translate(-4px,-2px)}80%{transform:translate(3px,3px)}}
-.stage{position:absolute;left:0;right:0;top:calc(var(--sat) + 40px);bottom:210px}
-.actor{position:absolute;bottom:0;width:62%;height:100%;opacity:0;transform:translateY(30px);transition:opacity .35s,transform .35s,filter .3s;filter:brightness(.55);pointer-events:none;-webkit-mask-image:linear-gradient(180deg,#000 82%,transparent);mask-image:linear-gradient(180deg,#000 82%,transparent)}
-.actor.left{left:-6%}.actor.right{right:-6%}.actor.on{opacity:1;transform:none}.actor.talk{filter:brightness(1);z-index:2}.actor.on:not(.talk){transform:scale(.96)}
-.actor .por,.actor .svgpor{border-radius:18px}.actor.talk.m-h .por,.actor.talk.m-h .svgpor{animation:bnc .5s}.actor.talk.m-x{animation:agr .4s}.actor.m-s{filter:brightness(.8) saturate(.7)}
-@keyframes bnc{40%{transform:translateY(-12px)}}@keyframes agr{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .stbar{position:absolute;top:calc(var(--sat) + 8px);right:10px;z-index:6}#story .mini{padding:6px 12px;border-radius:99px;background:rgba(0,0,0,.55);border:1px solid var(--line);font-size:12px}#story .mini.on{border-color:var(--gold);color:var(--gold2)}
 .dlg{position:absolute;left:10px;right:10px;bottom:calc(14px + var(--sab));min-height:150px;padding:20px 16px 18px;background:linear-gradient(180deg,rgba(14,17,46,.93),rgba(7,9,24,.97));border:1px solid var(--gold);border-radius:16px;z-index:5;box-shadow:0 0 30px rgba(0,0,0,.6)}
 .dlg .spk{position:absolute;top:-14px;left:14px;padding:3px 14px;border-radius:99px;background:#0b0d26;border:1px solid currentColor;font-family:var(--serif);font-weight:700;font-size:14px;letter-spacing:.03em}
@@ -138,10 +133,10 @@ button.card,.card.tap{text-align:left;width:100%;color:inherit}
 .bt-top{display:flex;align-items:center;gap:5px;flex:none}.bt-title{font-family:var(--serif);font-size:12px;color:var(--gold2);white-space:nowrap}.turnstrip{display:flex;gap:2px;flex:1;overflow:hidden;justify-content:center}.tn{font-style:normal;width:26px;height:26px;display:grid;place-items:center;border-radius:8px;font-size:15px;background:rgba(0,0,0,.45);border:1px solid rgba(255,107,122,.5);flex:none}.tn.a{border-color:rgba(79,214,255,.7)}.tn.now{transform:scale(1.2);box-shadow:0 0 10px var(--gold);border-color:var(--gold)}
 .bt-top .mini{width:34px;height:30px;border-radius:9px;background:rgba(0,0,0,.5);border:1px solid var(--line);font-size:13px}.bt-top .mini.on{border-color:var(--ok);background:rgba(110,224,138,.2)}
 .foes{flex:1;min-height:0;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-content:center;padding:4px 0}
-.unit{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;transition:opacity .5s,transform .3s,filter .5s}.unit .nm{font-size:11px;font-weight:600;text-align:center;line-height:1.1}.unit .nm small{color:var(--gold);font-weight:400}.unit .bar{width:100%}
+.unit{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;transition:opacity .5s,scale .3s,filter .5s}.unit .nm{font-size:11px;font-weight:600;text-align:center;line-height:1.1}.unit .nm small{color:var(--gold);font-weight:400}.unit .bar{width:100%}
 .unit.foe{width:30%;min-width:96px;padding:6px 6px 4px;border-radius:14px;background:rgba(10,12,30,.6);border:1px solid rgba(255,255,255,.12)}.unit.foe .spr{font-size:44px;line-height:1.1;filter:drop-shadow(0 4px 8px #000);animation:idle 3s ease-in-out infinite}.unit.foe.boss{width:70%;padding:10px}.unit.foe.boss .spr{font-size:78px}.unit.foe.mini{width:46%}.unit.foe.mini .spr{font-size:60px}
-@keyframes idle{50%{transform:translateY(-4px)}}.unit.sel{border-color:var(--gold);box-shadow:0 0 16px rgba(242,195,92,.45)}.unit.active{box-shadow:0 0 0 2px #fff}.unit.dead{opacity:.15;filter:grayscale(1);transform:scale(.8);pointer-events:none}
-.unit.hit{animation:hit .35s}@keyframes hit{25%{transform:translateX(-7px);filter:brightness(2.5) saturate(0)}50%{transform:translateX(6px)}}.unit.acting{transform:scale(1.08);z-index:5}
+@keyframes idle{50%{transform:translateY(-4px)}}.unit.sel{border-color:var(--gold);box-shadow:0 0 16px rgba(242,195,92,.45)}.unit.active{box-shadow:0 0 0 2px #fff}.unit.dead{opacity:.15;filter:grayscale(1);scale:.8;pointer-events:none}
+.unit.hit{animation:hit .35s}@keyframes hit{25%{translate:-7px 0;filter:brightness(2.5) saturate(0)}50%{translate:6px 0}}.unit.acting{scale:1.08;z-index:5}
 .intent{position:absolute;top:-8px;right:-4px;min-width:26px;height:24px;padding:0 5px;border-radius:12px;background:#1b1020;border:1px solid var(--bad);display:grid;place-items:center;font-size:14px;z-index:3}.intent:empty{display:none}.charging{border-color:var(--bad)!important;animation:chg .7s infinite}@keyframes chg{50%{box-shadow:0 0 18px var(--bad)}}
 .sts{display:flex;flex-wrap:wrap;gap:1px;justify-content:center;min-height:12px}.si{font-style:normal;font-size:12px;position:relative;line-height:1}.si b{font-size:8px;position:absolute;right:-3px;bottom:-3px;color:#fff;background:#000a;border-radius:4px;padding:0 2px}.wk{font-size:10px;color:var(--dim);min-height:12px}
 .flt{position:absolute;left:50%;top:20%;transform:translateX(-50%);font-weight:800;font-size:19px;white-space:nowrap;pointer-events:none;z-index:9;animation:flt 1.05s ease-out forwards;text-shadow:0 2px 3px #000,0 0 6px #000}.flt.dmg{color:#ff8a8a}.flt.dmg.crit{color:#ffd24a;font-size:26px}.flt.heal{color:#7dffa0}.flt.txt{color:#cfd6ff;font-size:14px}.flt.warn{color:#ff6b7a;font-size:14px}.flt.skn{color:#fff;font-size:13px;top:-6px;font-weight:600}.flt.dot{font-size:14px;color:#ffa86a}
@@ -155,4 +150,9 @@ button.card,.card.tap{text-align:left;width:100%;color:inherit}
 .battle.shake{animation:shk .4s}.btsum .mbox,.mbox.btsum{border-radius:20px 20px 0 0}
 body.noshake .shake,body.noshake .shk{animation:none!important}body.nopart #fx{display:none}
 @media (max-height:700px){.dlg{min-height:130px}.dlg .txt{min-height:80px;font-size:14.5px}.stage{bottom:180px}.unit.foe .spr{font-size:36px}}
-@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
+/* reduce-motion: бесконечные анимации отключаем (раньше 0.01s в цикле давали мерцание), разовые укорачиваем, всплывающие числа остаются видимыми */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important;transition-delay:0s!important;scroll-behavior:auto!important}
+  .vbg,.vbg .sil,.vbr,.vcg.kb,.unit.foe .spr,.ring,.card.story.glow,.node.can,.charging,.sdot.on,.flt,.vfx.pop{animation:none!important}
+  .vact::before{transition:none}
+}

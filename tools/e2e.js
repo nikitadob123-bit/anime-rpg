@@ -108,6 +108,81 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
   await toText('Простите'); await page.waitForTimeout(1000); await shot('vn-sad-hero1'); imgs = await imgNow();
   check('VN: sad у героини света (hero1_sad)', imgs.some((x) => /hero1.*sad/.test(x)), imgs.join(','));
   await endVn();
+
+  // ───── Анимации и постановка VN ─────
+  console.log('Анимации VN');
+  const errN0 = errors.length;
+  const playTest = async (lines, bg) => { await ev(([l, b]) => { __RPG.UI.vnTest = __RPG.UI.playLines(l, { bg: b || 'camp', replay: true }); }, [lines, bg]); await page.waitForSelector('#story', { timeout: 4000 }); };
+  const faces = () => ev(() => { const M = __RPG.UI.manifest.dim, dl = document.querySelector('#dlg').getBoundingClientRect(); return [...document.querySelectorAll('.vact:not(.out)')].map((el) => { const im = [...el.querySelectorAll('.vsp')].pop(), r = im.getBoundingClientRect(), f = (im.getAttribute('src') || '').split('/').pop(), d = M[f] || [], k = r.width / (d[0] || 1); return { f, fw: d[5] * k, fcx: r.left + d[3] * k, fcy: r.top + d[4] * k, bottom: r.bottom, dlgTop: dl.top, imgs: el.querySelectorAll('.vsp').length, xf: el.querySelectorAll('.vsp.xf').length, cls: el.className, z: getComputedStyle(el).zIndex }; }); });
+  // A. три актёра: одинаковый размер голов, слоты, нет зазора до диалога, дыхание не перезапускается при смене настроения
+  await playTest([['bg', 'camp'], ['h', 'Раз.', 'n'], ['i', 'Два.', 'h'], ['e', 'Три.', 'n'], ['h', 'Четыре.', 'a'], ['i', 'Пять.', 's'], ['n', 'Конец.']]);
+  await toText('Три'); await page.waitForTimeout(1300);
+  let fc = await faces();
+  check('VN: три актёра на сцене', fc.length === 3, fc.map((x) => x.f).join(','));
+  const fws = fc.map((x) => x.fw); check('VN: одинаковый размер голов (±8%)', Math.max(...fws) / Math.min(...fws) < 1.08, fws.map((x) => Math.round(x)).join('/'));
+  const xs = fc.map((x) => x.fcx).sort((a, b) => a - b); check('VN: слоты лево/центр/право', Math.abs(xs[0] - 78) < 14 && Math.abs(xs[1] - 195) < 14 && Math.abs(xs[2] - 312) < 14, xs.map(Math.round).join('/'));
+  check('VN: герой слева', fc[0].f.startsWith('hero_') && Math.abs(fc[0].fcx - xs[0]) < 1);
+  check('VN: головы в кадре, низ спрайта уходит под диалог', fc.every((x) => x.fcy - 0.7 * x.fw > -6 && x.fcy < 600 && x.bottom >= x.dlgTop + 4), fc.map((x) => `${Math.round(x.fcy)}/${Math.round(x.bottom)}>${Math.round(x.dlgTop)}`).join(' '));
+  check('VN: говорящий поверх остальных', fc.filter((x) => /\btalk\b/.test(x.cls)).length === 1 && Number(fc.find((x) => /\btalk\b/.test(x.cls)).z) > Math.max(...fc.filter((x) => !/\btalk\b/.test(x.cls)).map((x) => Number(x.z))));
+  const br0 = await ev(() => { window.__br = document.getAnimations().filter((a) => a.animationName === 'breathe'); window.__brT = window.__br.map((a) => a.currentTime); return window.__br.length; });
+  check('VN: дыхание у спрайтов (breathe) запущено', br0 >= 3, String(br0));
+  const roleOk = await ev(() => { const run = window.__br.filter((a) => a.playState === 'running').length; return run === 1; });
+  check('VN: дышит только говорящий (остальные на паузе)', roleOk);
+  await toText('Четыре'); await page.waitForTimeout(1200);
+  const keep = await ev(() => window.__br.every((a, i) => a.playState !== 'idle' && a.currentTime >= window.__brT[i]) && document.getAnimations().filter((x) => x.animationName === 'breathe').length === window.__br.length);
+  check('VN: смена настроения не перезапускает дыхание и не создаёт дублей', keep);
+  fc = await faces();
+  check('VN: после кроссфейда по одному слою, классы xf сняты', fc.every((x) => x.imgs === 1 && x.xf === 0), fc.map((x) => x.imgs + '/' + x.xf).join(' '));
+  await endVn();
+
+  // B. «прыжок» лица между настроениями одного персонажа: центры лиц neutral/happy/angry/shy совпадают в кадре
+  await playTest([['bg', 'camp'], ['i', 'Раз.', 'n'], ['i', 'Два.', 'h'], ['i', 'Три.', 'a'], ['i', 'Четыре.', 's'], ['n', 'Конец.']]);
+  const pos = [];
+  for (const sub of ['Раз', 'Два', 'Три', 'Четыре']) { await toText(sub); await page.waitForTimeout(700); const f = (await faces())[0]; pos.push([f.fcx, f.fcy, f.fw]); }
+  check('VN: лицо одного персонажа остаётся на месте при смене настроений (±10px, размер ±6%)', pos.every((p) => Math.abs(p[0] - pos[0][0]) < 10 && Math.abs(p[1] - pos[0][1]) < 10 && Math.abs(p[2] / pos[0][2] - 1) < 0.06), pos.map((p) => p.map(Math.round).join(',')).join(' | '));
+  await endVn();
+
+  // C. торпеда: быстрые клики, пропуск, смены фона/эффектов — без ошибок и зависших слоёв
+  await playTest([['bg', 'camp'], ['h', 'a', 'n'], ['i', 'b', 'h'], ['fx', 'halo'], ['e', 'c', 'a'], ['bg', 'ruins'], ['fx', 'shake'], ['h', 'd', 'a'], ['bg', 'forest'], ['i', 'e', 's'], ['hide', 'i'], ['i', 'f', 'a'], ['fx', 'flash'], ['bg', 'mines'], ['e', 'g', 'h'], ['n', 'Конец.']]);
+  for (let i = 0; i < 40; i++) { await page.locator('#dlg').click({ force: true, timeout: 500 }).catch(() => {}); await page.waitForTimeout(25); }
+  const maxAct = await ev(() => document.querySelectorAll('.vact:not(.out)').length);
+  check('VN: быстрые клики — не больше 3 актёров на сцене', maxAct <= 3, String(maxAct));
+  await page.locator('#sSkip').click({ timeout: 800 }).catch(() => {});
+  let gone = false; for (let i = 0; i < 40 && !gone; i++) { await page.waitForTimeout(250); gone = (await page.locator('#story').count()) === 0; if (!gone && (await page.locator('.schoice.on').count())) await click('.schoice.on .choice'); }
+  check('VN: сцена с кликами и пропуском завершается, слой очищен', gone && (await ev(() => document.querySelector('#layer').innerHTML === '')));
+  check('VN: быстрые клики/пропуск без ошибок консоли', errors.length === errN0, errors.slice(errN0, errN0 + 3).join(' || '));
+  await page.waitForTimeout(700);
+
+  // D. гонка фонов: серия bg подряд — в конце ровно последний фон, силуэт на месте, b2 скрыт
+  await playTest([['bg', 'camp'], ['bg', 'ruins'], ['bg', 'forest'], ['bg', 'mines'], ['n', 'Конец.']], 'camp');
+  await toText('Конец'); await page.waitForTimeout(1000);
+  const bgs = await ev(() => ({ b1: document.querySelector('#sbg').className, b2: document.querySelector('#sbg2').className, sil: document.querySelector('#sbg').innerHTML }));
+  check('VN: серия смен фона не оставляет старый фон', /bg-mines/.test(bgs.b1) && !/\bin\b/.test(bgs.b2) && /sil-peaks/.test(bgs.sil), JSON.stringify(bgs));
+  await endVn();
+
+  // E. эффекты снимаются: halo, shake, flash не залипают
+  await playTest([['bg', 'camp'], ['fx', 'halo'], ['fx', 'shake'], ['fx', 'flash'], ['n', 'Стоим и ждём.']]);
+  await toText('Стоим'); await page.waitForTimeout(2300);
+  const fxs = await ev(() => { const r = document.querySelector('#story'); return { halo: r.classList.contains('halo'), shk: r.classList.contains('shk'), op: getComputedStyle(r, '::after').opacity, flash: getComputedStyle(document.querySelector('#sflash')).opacity }; });
+  check('VN: halo/shake/flash не залипают (после эффекта opacity=0, классы сняты)', !fxs.halo && !fxs.shk && Number(fxs.op) === 0 && Number(fxs.flash) === 0, JSON.stringify(fxs));
+  await endVn();
+
+  // F. hide → сразу show того же персонажа: без дублей
+  await playTest([['bg', 'camp'], ['h', 'a', 'n'], ['hide', 'h'], ['h', 'b', 'a'], ['n', 'Конец.']]);
+  await toText('Конец'); await page.waitForTimeout(900);
+  check('VN: hide и повторный выход — один спрайт героя без дублей', (await ev(() => document.querySelectorAll('.vact').length)) === 1);
+  await endVn();
+
+  // G. prefers-reduced-motion: бесконечных анимаций нет, сцена играется
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await playTest([['bg', 'camp'], ['h', 'Тихо.', 'n'], ['i', 'Тишина.', 'a'], ['n', 'Конец.']]);
+  await toText('Тишина'); await page.waitForTimeout(900);
+  const inf = await ev(() => document.getAnimations().filter((a) => a.effect && a.effect.getComputedTiming().iterations === Infinity).map((a) => a.animationName || a.transitionProperty));
+  check('VN: при reduced-motion нет бесконечных анимаций (раньше мерцали с периодом 10 мс)', inf.length === 0, inf.join(','));
+  const rm = await ev(() => ({ n: document.querySelectorAll('.vact.in').length, op: getComputedStyle(document.querySelector('.vact.in')).opacity }));
+  check('VN: при reduced-motion спрайты видны', rm.n >= 2 && Number(rm.op) === 1, JSON.stringify(rm));
+  await endVn(); await page.emulateMedia({ reducedMotion: 'no-preference' });
+
   const l3 = [['bg', 'camp'], ['h', 'Все здесь?', 'n'], ['i', 'Все.', 'n'], ['m', 'Командир, у меня идея.', 'h'], ['i', 'Опять.', 'a']];
   await ev((l) => { __RPG.UI.vnTest = __RPG.UI.playLines(l, { bg: 'camp', replay: true }); }, l3);
   await page.waitForSelector('#story'); await toText('Опять'); await page.waitForTimeout(1000); await shot('vn-three-actors');
@@ -180,7 +255,12 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
   check('вылазка началась', !!(await slot()).run); await shot('24b-run'); console.log('  errors so far:', errors.slice(0, 4).join(' || '));
   await act('runNext'); await page.waitForSelector('#battle', { timeout: 5000 }); await page.waitForTimeout(500); await shot('25-battle');
   await page.waitForSelector('.mainbtns', { timeout: 8000 });
-  await act('bSel', '.foe'); await act('bBasic'); await page.waitForTimeout(900); await shot('26-battle-hit');
+  await act('bSel', '.foe'); await act('bBasic');
+  const hitOk = await page.waitForSelector('.unit.hit', { timeout: 2500 }).then(async () => { await page.waitForTimeout(160); return (await page.locator('.unit.hit').count()) > 0; }).catch(() => false);
+  check('бой: класс удара .hit живёт ≥160 мс (renderUnits его больше не стирает)', hitOk);
+  const fltOk = await page.locator('.flt').count() > 0 || await page.waitForSelector('.flt', { timeout: 1500 }).then(() => true).catch(() => false);
+  check('бой: всплывающие числа/названия навыков отображаются', fltOk);
+  await page.waitForTimeout(700); await shot('26-battle-hit');
   const mant = await ev(() => { const B = __RPG.UI.B; const h = B && B.party.find((u) => u.hero); return h ? { mst: h.mst, st: h.st.map((x) => x.id + ':' + (x.pow || '')) } : null; });
   console.log('  мантра в бою:', JSON.stringify(mant));
   await act('bAuto'); await act('bSpeed');

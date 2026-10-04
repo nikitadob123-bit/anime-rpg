@@ -21,23 +21,39 @@
 .sil-ruins{position:absolute;left:0;right:0;bottom:0;height:34%;background:#07060e;clip-path:polygon(0 100%,0 60%,8% 52%,12% 70%,18% 40%,24% 62%,30% 48%,36% 72%,44% 55%,52% 68%,60% 36%,66% 58%,74% 46%,82% 70%,90% 50%,100% 64%,100% 100%)}
 .vbg.in .sil,.vbg .sil{opacity:.95}
 .vfog{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 40%,transparent 40%,rgba(0,0,0,.55) 100%);z-index:1}
+.vbg{animation:bgdrift 40s ease-in-out infinite alternate;transform:scale(1.08)}.vbg .sil{animation:sildrift 26s ease-in-out infinite alternate}
+@keyframes bgdrift{from{transform:scale(1.08) translate(-7px,2px)}to{transform:scale(1.08) translate(7px,-3px)}}
+@keyframes sildrift{from{transform:translateX(-12px)}to{transform:translateX(12px)}}
 
 /* — CG — */
 .vcg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity .8s;z-index:2;pointer-events:none}.vcg.on{opacity:1}
 .vcg.kb{animation:kb 22s ease-in-out infinite alternate}@keyframes kb{from{transform:scale(1.02)}to{transform:scale(1.12) translate(-1.5%,-1.5%)}}
 
-/* — сцена и персонажи — */
-.vstage{position:absolute;left:0;right:0;top:calc(var(--sat) + 36px);bottom:128px;z-index:3;pointer-events:none}
-.vact{position:absolute;bottom:0;width:84%;max-width:380px;opacity:0;transform:translateY(24px) scale(.98);transition:opacity .4s,transform .5s,filter .35s;filter:brightness(.42) saturate(.7)}
-.vact.in{opacity:1;transform:none}.vact.in:not(.talk){transform:translateY(8px) scale(.96)}
-.vact.talk{filter:none;z-index:3}
-.vact.pos-left{left:-22%}.vact.pos-right{right:-22%}.vact.pos-center{left:8%;width:80%;z-index:1}
-.vact .vsp{display:block;position:relative;width:100%;height:auto;max-height:100%;border-radius:0;background:transparent;object-fit:contain;object-position:bottom;animation:breathe 4.2s ease-in-out infinite;transform-origin:50% 100%;filter:drop-shadow(0 6px 14px rgba(0,0,0,.6))}
-.vact .vsp.xf{position:absolute;left:0;bottom:0;opacity:0;transition:opacity .35s;animation:none}.vact .vsp.xf.on{opacity:1}
-.vact.pop{animation:vpop .35s}.vact.talk .vsp.svgpor,.vact .svgpor{width:100%;aspect-ratio:256/320}
-@keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.012)}}
-@keyframes vpop{30%{transform:translateX(-6px) scale(1.02)}60%{transform:translateX(5px)}}
-.vact:not(.talk) .vsp{animation-duration:6s}
+/* — сцена и персонажи —
+   Слои актёра (каждый анимирует своё свойство, чтобы transform не конфликтовал):
+   .vact (позиция+масштаб через transform, opacity) > .vslide (вход/выход, «слушающий» чуть дальше, затемнение) > .vbr (дыхание) > .vfx (поп при гневе) > .vimgs (кадр, маска затухания снизу) */
+.story{--rim:150,160,255}
+.vstage{position:absolute;inset:0;overflow:hidden;z-index:3;pointer-events:none}
+.vact{position:absolute;left:0;top:0;width:1800px;transform-origin:0 0;opacity:0;z-index:2;transition:transform .6s cubic-bezier(.22,.8,.3,1),opacity .45s ease;will-change:transform}
+.vact.in{opacity:1}.vact.out{opacity:0;transition:opacity .4s ease}.vact.talk{z-index:5}
+.vact::before{content:"";position:absolute;left:350px;top:60px;width:1100px;height:1100px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 46%,rgba(var(--rim),.30) 0%,rgba(var(--rim),.12) 34%,rgba(0,0,0,.28) 56%,transparent 70%);opacity:.45;transition:opacity .5s}
+.vact.talk::before{opacity:1}
+.vslide{position:absolute;inset:0;transform:translate(var(--sx,0),26px) scale(.985);transform-origin:50% 100%;transition:transform .55s cubic-bezier(.22,.8,.3,1),filter .4s ease;
+  filter:brightness(.66) saturate(.82) drop-shadow(0 0 2px rgba(var(--rim),.55)) drop-shadow(0 14px 22px rgba(0,0,0,.55))}
+.vact.in .vslide{transform:translate(0,10px) scale(.965)}
+.vact.in.talk .vslide{transform:none;filter:brightness(1) saturate(1) drop-shadow(0 0 2px rgba(var(--rim),.7)) drop-shadow(0 14px 22px rgba(0,0,0,.55))}
+.vbr{position:absolute;inset:0;transform-origin:50% 100%;animation:breathe 5.6s ease-in-out infinite;animation-play-state:paused}
+.vact.talk .vbr{animation-play-state:running}
+.vfx{position:absolute;inset:0}
+.vimgs{position:absolute;inset:0;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 170px),transparent 100%);mask-image:linear-gradient(180deg,#000 calc(100% - 170px),transparent 100%)}
+.vimgs .vsp{position:absolute;display:block;max-width:none;border-radius:0;background:transparent;object-fit:fill;user-select:none;-webkit-user-drag:none}
+.vimgs .vsp.xf{opacity:0;transition:opacity .35s ease}.vimgs .vsp.xf.on{opacity:1}
+.vimgs .svgpor{overflow:visible}
+.vfx.pop{animation:vpop .38s ease-out}
+@keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.004)}}
+@keyframes vpop{0%{transform:translateX(0)}30%{transform:translateX(-9px) scale(1.012)}60%{transform:translateX(7px)}100%{transform:none}}
+.vfloor{position:absolute;left:0;right:0;bottom:0;height:34%;z-index:4;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(3,4,12,.45) 55%,rgba(3,4,12,.8))}
 
 /* — UI новеллы — */
 .vtop{position:absolute;top:calc(var(--sat) + 8px);right:10px;z-index:7;display:flex;gap:6px}
@@ -47,10 +63,10 @@
 .story .schoice{z-index:8}
 .vlog{position:absolute;inset:0;z-index:12;display:none;background:rgba(3,4,12,.94);padding:calc(var(--sat) + 10px) 14px 20px;overflow-y:auto}.vlog.on{display:block}
 .vlog .lh{display:flex;justify-content:space-between;align-items:center;font-family:var(--serif);font-size:18px;margin-bottom:10px;position:sticky;top:0}.vlog p{margin:0 0 10px;font-size:14px;line-height:1.45;color:#dfe2ff}
-.story.desat .vact,.story.desat .vbg{filter:grayscale(1) contrast(1.1);transition:filter 1s}
+.story.desat .vstage,.story.desat .vbg{filter:grayscale(1) contrast(1.1);transition:filter 1s}
 .flash.ent{background:#ddd}
-.story.halo::after{content:"";position:absolute;inset:0;z-index:9;pointer-events:none;background:radial-gradient(circle at 50% 22%,rgba(255,244,200,.85),rgba(255,220,120,.25) 40%,transparent 70%);animation:fl 1.6s}
-.story.silence .vbg,.story.silence .vact,.story.silence .vcg{filter:grayscale(1) brightness(.5);transition:filter .5s}
+.story.halo::after{content:"";position:absolute;inset:0;z-index:9;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 22%,rgba(255,244,200,.85),rgba(255,220,120,.25) 40%,transparent 70%);animation:fl 1.6s both}
+.story.silence .vbg,.story.silence .vstage,.story.silence .vcg{filter:grayscale(1) brightness(.5);transition:filter .5s}
 .story.shk{animation:shk .5s}
 
 /* — портреты в списках: лицо крупно — */

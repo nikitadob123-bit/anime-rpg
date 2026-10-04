@@ -175,11 +175,13 @@
     const c = u.hero ? D.CLASSES[u.cls] : null;
     return `<div class="unit ally ${u.alive ? '' : 'dead'} ${B.cur === u ? 'active' : ''}" id="u_${u.id}">${UI.por(u.portrait || (u.hero ? UI.slot().hero.portrait : ''), 'xs', false)}<div class="nm">${esc(u.name)}</div>${bar(u.hp, u.maxHp, 'hp')}${bar(u.mp, u.maxMp, 'mp')}${u.rcMax > 0 && u.hero ? bar(u.rc, u.rcMax, 'rc rc-' + u.cls) : ''}<div class="hpn">${fmt(u.hp)}/${fmt(u.maxHp)}</div><div class="sts">${stIcons(u)}</div></div>`;
   }
+  // переносим класс со свежей карточки, но не стираем «кратковременные» классы анимаций (hit/acting): раньше renderUnits после каждого события обрывал их в тот же кадр
+  function syncCls(old, nw) { const keep = ['hit', 'acting'].filter((c) => old.classList.contains(c)); old.className = nw.className; keep.forEach((c) => old.classList.add(c)); }
   function renderUnits(B, full) {
     const foes = $('#foes'), party = $('#party'); if (!foes) return;
     if (full || foes.children.length !== B.foes.length) foes.innerHTML = B.foes.map((u) => foeCard(B, u)).join(''); else B.foes.forEach((u) => { const old = $('#u_' + u.id); if (old) { const t = document.createElement('div'); t.innerHTML = foeCard(B, u); const nw = t.firstElementChild; // обновляем, сохраняя CSS-переходы полос
-      old.className = nw.className; $$('.bar i', old).forEach((i, k) => { i.style.width = $$('.bar i', nw)[k].style.width; }); const a = $('.sts', old); if (a) a.innerHTML = $('.sts', nw).innerHTML; const it = $('.intent', old); if (it) it.innerHTML = $('.intent', nw).innerHTML; } });
-    if (full || party.children.length !== B.party.length) party.innerHTML = B.party.map((u) => partyCard(B, u)).join(''); else B.party.forEach((u) => { const old = $('#u_' + u.id); if (old) { const t = document.createElement('div'); t.innerHTML = partyCard(B, u); const nw = t.firstElementChild; old.className = nw.className; $$('.bar i', old).forEach((i, k) => { i.style.width = $$('.bar i', nw)[k].style.width; }); const a = $('.sts', old); if (a) a.innerHTML = $('.sts', nw).innerHTML; const hn = $('.hpn', old); if (hn) hn.textContent = $('.hpn', nw).textContent; } });
+      syncCls(old, nw); $$('.bar i', old).forEach((i, k) => { i.style.width = $$('.bar i', nw)[k].style.width; }); const a = $('.sts', old); if (a) a.innerHTML = $('.sts', nw).innerHTML; const it = $('.intent', old); if (it) it.innerHTML = $('.intent', nw).innerHTML; } });
+    if (full || party.children.length !== B.party.length) party.innerHTML = B.party.map((u) => partyCard(B, u)).join(''); else B.party.forEach((u) => { const old = $('#u_' + u.id); if (old) { const t = document.createElement('div'); t.innerHTML = partyCard(B, u); const nw = t.firstElementChild; syncCls(old, nw); $$('.bar i', old).forEach((i, k) => { i.style.width = $$('.bar i', nw)[k].style.width; }); const a = $('.sts', old); if (a) a.innerHTML = $('.sts', nw).innerHTML; const hn = $('.hpn', old); if (hn) hn.textContent = $('.hpn', nw).textContent; } });
     renderTurns(B);
   }
   function renderTurns(B) {
