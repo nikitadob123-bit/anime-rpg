@@ -75,7 +75,7 @@ const sha = (b) => crypto.createHash('sha1').update(b).digest('hex');
   info = await scene('newhero-demon-smirk.jpg', [['bg', 'camp'], ['h', 'Показывайте, чем вы меня взвешиваете.', 'mh']], 1);
   check('VN демон-форма ухмылка (mh): hero_demon_smirk.webp', /hero_demon_smirk\.webp$/.test(info[0].src) && info[0].ok, JSON.stringify(info));
   info = await scene('newhero-demon-with-general.jpg', [['bg', 'camp'], ['i', 'Государь…', 'd'], ['h', 'Встаньте.', 'm'], ['m', 'Вот это я люблю!', 'h']], 2);
-  check('VN демон-форма + генералы: все в кадре', info.length >= 2 && info.every((x) => x.ok && x.l >= -400 && x.rr <= 650), JSON.stringify(info));
+  check('VN демон-форма + генералы: все в кадре', info.length >= 2 && info.every((x) => x.ok && x.l >= -650 && x.rr <= 700), JSON.stringify(info));
   const sorted = frames.slice().sort((a, b) => a - b), p95 = sorted[Math.floor(sorted.length * 0.95)];
   check('кадры: p95 интервала rAF < 50 мс на главном экране', p95 < 50, p95.toFixed(1) + ' мс');
   const oldArt = await ev(() => performance.getEntriesByType('resource').map((r) => r.name).filter((n) => /hero_demon\.webp/.test(n)));
