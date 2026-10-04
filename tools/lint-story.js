@@ -49,6 +49,7 @@ function lintLines(where, lines, ctx, depth) {
       if (!speakers.has(k)) return E(w, 'неизвестный говорящий «' + k + '» (RPG.story.speaker в js/story/cast.js)');
       if (typeof l[1] !== 'string' || !l[1].trim()) return E(w, 'пустой текст реплики');
       if (l[2] !== undefined && !MOODS.includes(l[2])) E(w, 'неизвестное настроение «' + l[2] + '» (допустимы: ' + MOODS.join(', ') + ')');
+      if (/^m[a-z]$/.test(l[2] || '') && k !== 'h') E(w, 'настроение формы Короля «' + l[2] + '» допустимо только у героя (h)');
       if (l.length > 3) E(w, 'лишние элементы в реплике');
       ctx.lines++; ctx.chars += l[1].length; if (k === 'n') ctx.narr++; if (l[2]) ctx.mood++;
       if (l[1].length > LIM.maxLine) E(w, 'реплика длиннее ' + LIM.maxLine + ' знаков (' + l[1].length + ')'); else if (l[1].length > LIM.warnLine) W(w, 'длинная реплика (' + l[1].length + ' зн.) — разбейте');
