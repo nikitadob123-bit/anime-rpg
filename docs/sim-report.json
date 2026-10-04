@@ -1,202 +1,125 @@
 {
- "warrior": {
+ "mantra": {
+  "build": "Мантра Силы (Плоть+Корень)",
   "avgLevel": 30,
   "winRateByTier": [
-   0.8,
-   0.95,
-   0.69,
-   0.92
+   0.96,
+   0.89,
+   0.85,
+   0.87
   ],
-  "runsPerGame": 48,
-  "actionsPerBattle": 17.3,
-  "gold": 70165,
+  "runsPerGame": 39.8,
+  "actionsPerBattle": 17,
+  "gold": 55361,
+  "crewAvgLevel": 29.9,
   "firstClear": {
    "mill": {
     "runs": 1,
-    "lv": 4
+    "lv": 3.7
    },
    "wood": {
-    "runs": 2.1,
-    "lv": 6.1
+    "runs": 2,
+    "lv": 5.8
    },
    "mines": {
-    "runs": 3.2,
-    "lv": 7.4
+    "runs": 3,
+    "lv": 7
    },
    "swamp": {
-    "runs": 6.2,
-    "lv": 10.7
+    "runs": 5.7,
+    "lv": 10
    },
    "spire": {
-    "runs": 8.2,
-    "lv": 12.6
+    "runs": 8.6,
+    "lv": 12.7
    },
    "cathedral": {
-    "runs": 11.3,
-    "lv": 15.3
+    "runs": 13.2,
+    "lv": 15.9
    }
   },
-  "runsToL30": 48,
-  "reachedL30": "10/10"
+  "runsToL30": 39.8
  },
- "mage": {
+ "dark": {
+  "build": "Тьма и Разрушение",
   "avgLevel": 30,
   "winRateByTier": [
-   0.9,
+   0.99,
    1,
-   0.95,
+   0.96,
    0.93
   ],
-  "runsPerGame": 41.2,
-  "actionsPerBattle": 11.6,
-  "gold": 61465,
+  "runsPerGame": 39.2,
+  "actionsPerBattle": 11.1,
+  "gold": 61081,
+  "crewAvgLevel": 29.9,
   "firstClear": {
    "mill": {
-    "runs": 1.1,
-    "lv": 4
+    "runs": 1,
+    "lv": 3.8
    },
    "wood": {
-    "runs": 2.2,
-    "lv": 6.1
+    "runs": 2,
+    "lv": 6
    },
    "mines": {
-    "runs": 3.3,
-    "lv": 7.4
+    "runs": 3,
+    "lv": 7
    },
    "swamp": {
-    "runs": 5.4,
-    "lv": 10.1
+    "runs": 5.1,
+    "lv": 10
    },
    "spire": {
     "runs": 7.3,
-    "lv": 12
-   },
-   "cathedral": {
-    "runs": 10.5,
-    "lv": 15.1
-   }
-  },
-  "runsToL30": 41,
-  "reachedL30": "10/10"
- },
- "rogue": {
-  "avgLevel": 30,
-  "winRateByTier": [
-   0.88,
-   1,
-   0.96,
-   0.96
-  ],
-  "runsPerGame": 40.8,
-  "actionsPerBattle": 12.4,
-  "gold": 70541,
-  "firstClear": {
-   "mill": {
-    "runs": 1,
-    "lv": 4
-   },
-   "wood": {
-    "runs": 2,
-    "lv": 6
-   },
-   "mines": {
-    "runs": 3.2,
-    "lv": 7.3
-   },
-   "swamp": {
-    "runs": 5.4,
-    "lv": 10.2
-   },
-   "spire": {
-    "runs": 7.4,
     "lv": 12.2
    },
    "cathedral": {
-    "runs": 10.1,
-    "lv": 15
+    "runs": 11.3,
+    "lv": 15.5
    }
   },
-  "runsToL30": 41,
-  "reachedL30": "10/10"
+  "runsToL30": 39.2
  },
- "healer": {
+ "dominion": {
+  "build": "Власть и Подчинение",
   "avgLevel": 30,
   "winRateByTier": [
-   0.98,
-   0.94,
-   0.83,
-   0.55
+   0.99,
+   1,
+   1,
+   0.97
   ],
-  "runsPerGame": 36.6,
-  "actionsPerBattle": 47.8,
-  "gold": 44394,
+  "runsPerGame": 38.5,
+  "actionsPerBattle": 18.6,
+  "gold": 78253,
+  "crewAvgLevel": 29.7,
   "firstClear": {
    "mill": {
     "runs": 1,
-    "lv": 4
+    "lv": 3.9
    },
    "wood": {
     "runs": 2,
-    "lv": 6
+    "lv": 5.8
    },
    "mines": {
-    "runs": 3.1,
-    "lv": 7.6
+    "runs": 3,
+    "lv": 7
    },
    "swamp": {
-    "runs": 4.5,
-    "lv": 9.5
+    "runs": 5.1,
+    "lv": 10
    },
    "spire": {
-    "runs": 7,
-    "lv": 12
+    "runs": 7.1,
+    "lv": 12.1
    },
    "cathedral": {
-    "runs": 10.1,
-    "lv": 15
+    "runs": 10.5,
+    "lv": 15.3
    }
   },
-  "runsToL30": 37,
-  "reachedL30": "10/10"
- },
- "shield": {
-  "avgLevel": 29.6,
-  "winRateByTier": [
-   0.53,
-   0.54,
-   0.25,
-   0.45
-  ],
-  "runsPerGame": 60.9,
-  "actionsPerBattle": 35.9,
-  "gold": 57599,
-  "firstClear": {
-   "mill": {
-    "runs": 1,
-    "lv": 4
-   },
-   "wood": {
-    "runs": 2.2,
-    "lv": 6.2
-   },
-   "mines": {
-    "runs": 3.3,
-    "lv": 7.6
-   },
-   "swamp": {
-    "runs": 9.7,
-    "lv": 12.5
-   },
-   "spire": {
-    "runs": 12,
-    "lv": 14.4
-   },
-   "cathedral": {
-    "runs": 13.8,
-    "lv": 15.6
-   }
-  },
-  "runsToL30": 58,
-  "reachedL30": "8/10"
+  "runsToL30": 38.5
  }
 }

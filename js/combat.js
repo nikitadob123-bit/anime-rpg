@@ -3,7 +3,7 @@
   const RPG = globalThis.RPG || (globalThis.RPG = {});
   const D = RPG.D, E = RPG.E;
   const C = RPG.C = {};
-  C.TUNE = { hp: 1.6, atk: 2.5 };
+  C.TUNE = { hp: 2.0, atk: 3.2 };
   const SKL = (id) => D.SKILLS[id] || D.ESK[id];
   const clamp = E.clamp;
   const isDeb = (s) => { const k = D.ST[s.id].k; return k === 'debuff' || k === 'dot' || k === 'ctrl'; };
