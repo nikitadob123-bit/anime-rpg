@@ -14,10 +14,19 @@
     const L = RPG.NPC_LOOK[id]; if (!L) return null;
     return Object.assign({}, L, { mood: { n: 'n', h: 'h', a: 'x', s: 's', d: 's', m: 'x' }[mood || 'n'] || 'n' });
   };
+  // пул декодированных картинок: look-ahead по репликам, спрайт показывается только после decode() (иначе подлагивает на главном потоке)
+  UI.imgPool = new Map();
+  UI.prefetch = function (art, mood) {
+    const f = art && UI.artFile(art, mood); if (!f) return Promise.resolve();
+    const url = 'assets/vn/' + f; let im = UI.imgPool.get(url);
+    if (!im) { im = new Image(); im.decoding = 'async'; im.src = url; im._p = im.decode ? im.decode().catch(() => {}) : Promise.resolve(); UI.imgPool.set(url, im); if (UI.imgPool.size > 28) UI.imgPool.delete(UI.imgPool.keys().next().value); }
+    else { UI.imgPool.delete(url); UI.imgPool.set(url, im); }
+    return im._p;
+  };
   UI.por = function (id, cls, lazy, mood) {
     if (!id) return '<div class="por empty"></div>';
     const f = UI.artFile(id, mood);
-    if (f) return `<img class="por ${cls || ''}" ${lazy === false ? '' : 'loading="lazy"'} decoding="async" alt="" draggable="false" data-pid="${esc(id)}" src="assets/vn/${f}">`;
+    if (f) return `<img class="por ${cls || ''}" ${lazy === false ? '' : 'loading="lazy"'} decoding="async" alt="" draggable="false" data-pid="${esc(id)}" data-mood="${esc(mood || 'n')}" src="assets/vn/${f}">`;
     const spec = UI.portraitSpec(id, mood); if (!spec) return '<div class="por empty"></div>';
     return `<div class="por ${cls || ''} svgpor" data-pid="${esc(id)}">${RPG.portraitSVG(spec)}</div>`;
   };
@@ -49,7 +58,7 @@
     return new Promise((resolve) => {
       const slot = UI.slot(), st = UI.p.settings, layer = $('#layer'); o = o || {};
       const result = {};
-      layer.innerHTML = `<div id="story" class="story vn"><div class="vbg" id="sbg"></div><div class="vbg b2" id="sbg2"></div><div class="vcg" id="vcg"></div><div class="vstage" id="vstage"></div><div class="vfog"></div><div class="vfloor"></div>
+      layer.innerHTML = `<div id="story" class="story vn"><div class="vbg" id="sbg"></div><div class="vbg b2" id="sbg2"></div><div class="vcg" id="vcg"></div><div class="vstage" id="vstage"></div><div class="vfog"></div>
         <div class="vtop"><button class="mini" data-act="vLog" data-quiet="1" title="Лог">📜</button><button class="mini" data-act="vAuto" id="vAuto" data-quiet="1">▶ Авто</button><button class="mini" data-act="sSkip" id="sSkip" data-quiet="1">⏭ Пропуск</button></div>
         <div class="dlg" id="dlg" data-act="sNext" data-quiet="1"><div class="spk" id="spk"></div><div class="txt" id="stxt"></div><i class="nx">▾</i></div><div class="schoice" id="schoice"></div><div class="tcard" id="tcard"></div><div class="flash" id="sflash"></div><div class="vlog" id="vlog"></div></div>`;
       layer.classList.add('on'); const root = $('#story');
@@ -69,7 +78,7 @@
         layer.classList.remove('on'); layer.innerHTML = ''; UI.sNext = UI.sSkip = UI.vAuto = null; try { F.setMode(st.particles ? (UI.v === 'game' ? 'embers' : 'stars') : 'none'); } catch (e) { /* ignore */ } if (!o.replay && o.id) E.finishScene(slot, o.id); resolve(result);
       };
       const spriteEl = (art, mood) => { const wrap = document.createElement('div'); wrap.innerHTML = UI.por(art, 'vsp', false, mood); return wrap.firstElementChild; };
-      const decoded = (el) => (el && el.decode && el.tagName === 'IMG' ? Promise.race([el.decode().catch(() => {}), UI.wait(700)]) : Promise.resolve());
+      const decoded = (el) => (el && el.tagName === 'IMG' ? Promise.race([UI.prefetch(el.dataset.pid, el.dataset.mood).then(() => (el.decode ? el.decode().catch(() => {}) : 0)), UI.wait(700)]) : Promise.resolve());
       // порядок актёров: герой слева, остальные по появлению
       const live = () => Object.keys(actors).sort((p, q) => (D.SPEAKERS[q].hero ? 1 : 0) - (D.SPEAKERS[p].hero ? 1 : 0) || actors[p].ord - actors[q].ord);
       function layout() {
@@ -92,15 +101,16 @@
           decoded(img).then(() => { if (!finished && actors[key] === a) el.classList.add('in'); });
         } else if (mood !== a.mood) {
           const box = a.el.querySelector('.vimgs'); a.mood = mood; clearTimeout(a.timer);
-          while (box.children.length > 1) box.firstElementChild.remove();         // быстрые смены: оставляем только текущий верхний слой
+          [...box.children].forEach((c) => { if (c.classList.contains('xf') && !c.classList.contains('on')) c.remove(); });   // ещё не показанные (ждут decode) — выбрасываем
+          while (box.children.length > 2) box.firstElementChild.remove();                                                      // цепочка кроссфейдов ограничена
           const nw = spriteEl(sp.art, mood); UI.vnPlace(a.ref, UI.artMetrics(sp.art, mood), nw); nw.classList.add('xf'); box.appendChild(nw);
-          decoded(nw).then(() => { if (finished || actors[key] !== a || a.mood !== mood) return; void nw.offsetWidth; nw.classList.add('on'); a.timer = later(() => { while (box.children.length > 1) box.firstElementChild.remove(); nw.classList.remove('xf', 'on'); }, 400); });
+          decoded(nw).then(() => { if (finished || actors[key] !== a || nw.parentNode !== box) return; void nw.offsetWidth; nw.classList.add('on'); clearTimeout(a.timer); a.timer = later(() => { while (nw.previousElementSibling) nw.previousElementSibling.remove(); nw.classList.remove('xf', 'on'); }, 420); });
           if (mood === 'a' || mood === 'm') { const fx = a.el.querySelector('.vpp'); fx.classList.remove('pop'); void fx.offsetWidth; fx.classList.add('pop'); }
         }
         Object.keys(actors).forEach((k) => actors[k].el.classList.toggle('talk', k === key));
         return a;
       };
-      function hideActor(key) { const a = actors[key]; if (!a) return; delete actors[key]; a.el.classList.remove('in', 'talk'); a.el.classList.add('out'); layout(); const el = a.el; setTimeout(() => el.remove(), 520); }
+      function hideActor(key) { const a = actors[key]; if (!a) return; delete actors[key]; a.el.classList.remove('in', 'talk'); a.el.classList.add('out'); layout(); const el = a.el; later(() => el.remove(), 520); }
       const typeText = (txt, narr) => new Promise((r) => {
         const el = $('#stxt'); el.className = 'txt' + (narr ? ' narr' : ''); el.textContent = ''; const sp = [0, 44, 20, 7][st.textSpeed == null ? 2 : st.textSpeed]; let i = 0; const nx = $('#dlg .nx'); nx.style.opacity = 0;
         if (skipping || !sp) { el.textContent = txt; nx.style.opacity = 1; r(); return; }
@@ -124,9 +134,14 @@
           default: break;
         }
       };
+      // look-ahead: декодируем спрайты ближайших реплик заранее (2–3 вперёд, включая ветки if)
+      const ahead = (n) => {
+        const seen = []; const walk = (arr) => { for (const l of arr) { if (seen.length >= n) return; if (l[0] === 'if') walk(l[2]); else if (l[0] === 'choice') { seen.push(null); } else if (D.SPEAKERS[l[0]] && D.SPEAKERS[l[0]].art && !/^(bg|cg|fx|hide|title|set|give|rec|loy|aff|date)$/.test(l[0])) seen.push([D.SPEAKERS[l[0]].art, l[2] || 'n']); } };
+        walk(Q); seen.forEach((s) => { if (s) UI.prefetch(s[0], s[1]); });
+      };
       const note = (t) => UI.toast(t, 'gold');
       (async () => {
-        setBg(o.bg); await UI.wait(150);
+        ahead(4); setBg(o.bg); await UI.wait(150);
         while (Q.length) {
           const l = Q.shift(), k = l[0];
           if (k === 'bg') { setBg(l[1]); if (curCg) { curCg = null; $('#vcg').classList.remove('on'); } await UI.wait(skipping ? 20 : 450); continue; }
@@ -151,7 +166,7 @@
           }
           const sp = D.SPEAKERS[k]; if (!sp) continue; const narr = !sp.n;
           const text = E.fmtText(l[1], slot);
-          if (!narr) showActor(k, l[2]); else Object.keys(actors).forEach((a) => actors[a].el.classList.remove('talk'));
+          ahead(3); if (!narr) showActor(k, l[2]); else Object.keys(actors).forEach((a) => actors[a].el.classList.remove('talk'));
           const spk = $('#spk'); spk.textContent = narr ? '' : E.fmtText(sp.n, slot); spk.style.color = sp.c || '#fff'; spk.style.display = narr ? 'none' : 'block';
           $('#dlg').classList.toggle('narr', narr);
           logArr.push({ n: narr ? '' : E.fmtText(sp.n, slot), t: text, c: sp.c });

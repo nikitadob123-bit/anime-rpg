@@ -326,7 +326,7 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
     await p3.waitForTimeout(1800);
     await p3.screenshot({ path: path.join(outDir, 'vn-phone-lirya.jpg'), type: 'jpeg', quality: 80, scale: 'device' });
     const bm = await p3.evaluate(() => ({ dlg: document.querySelector('#dlg').getBoundingClientRect().top, imgs: [...document.querySelectorAll('.vact:not(.out) .vsp')].map((i) => ({ f: (i.getAttribute('src') || '').split('/').pop(), nw: i.naturalWidth, nh: i.naturalHeight, b: i.getBoundingClientRect().bottom, h: i.getBoundingClientRect().height, w: i.getBoundingClientRect().width })) }));
-    check('телефон: спрайты не растянуты (пропорции кадра = пропорции файла), низ уходит под диалог', bm.imgs.length === 2 && bm.imgs.every((i) => Math.abs(i.h / i.w - i.nh / i.nw) < 0.01 && i.nh === 720 && i.b > bm.dlg), JSON.stringify(bm));
+    check('телефон: спрайты не растянуты (пропорции кадра = пропорции файла), низ уходит под диалог', bm.imgs.length === 2 && bm.imgs.every((i) => Math.abs(i.h / i.w - i.nh / i.nw) < 0.01 && i.nh <= 720 && i.nh >= 300 && i.b > bm.dlg), JSON.stringify(bm));
     check('телефон: без ошибок консоли', err3.length === 0, err3.join(' | '));
 
     // плавность на телефоне: семплируем computed transform в разные моменты (8 с), движение должно быть плавным (мелкие шаги, без скачков и рестартов)
@@ -362,6 +362,42 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
     await p3.setViewportSize({ width: 400, height: 824 }); await p3.waitForTimeout(400); await p3.setViewportSize({ width: 400, height: 880 }); await p3.waitForTimeout(900);
     const after = await p3.evaluate(() => [...document.querySelectorAll('.vact.in')].map((el) => el.style.transform));
     check('телефон: resize туда-обратно возвращает те же позиции', after.length === 2 && JSON.stringify(after) === JSON.stringify(await p3.evaluate(() => [...document.querySelectorAll('.vact.in')].map((el) => el.style.transform))));
+
+    // ───── ЭТАП 1: стресс смены актёров/настроений (нет остатков слоёв) и производительность под CPU-throttling ─────
+    await p3.goto(url, { waitUntil: 'load' }); await p3.waitForTimeout(1200);
+    await p3.waitForFunction(() => window.__RPG && __RPG.UI && __RPG.UI.manifest && Object.keys(__RPG.UI.manifest.portraits || {}).length > 10, null, { timeout: 8000 });
+    await p3.evaluate(() => {
+      const UI = __RPG.UI, S = __RPG.S; const id = S.listIds()[0]; UI.p = S.load(id).p; if (UI.p.active == null || !UI.p.slots[UI.p.active]) UI.p.active = UI.p.slots.findIndex((x) => x); UI.p.settings.textSpeed = 0;
+      window.__stress = (cfg) => new Promise((res) => {
+        const keys = ['h', 'g', 'q'], moods = ['n', 'h', 'a', 's'], lines = [['bg', 'camp']];
+        for (let i = 0; i < cfg.n; i++) lines.push([keys[i % 3], 'Реплика ' + i, moods[(i >> 1) % 4]]);
+        lines.push(['choice', [{ t: 'Конец' }]]);
+        const r = { frames: 0, maxImgs: 0, maxActs: 0, longtasks: [], dts: [], leak: [] };
+        let po = null; try { po = new PerformanceObserver((l) => l.getEntries().forEach((x) => r.longtasks.push(Math.round(x.duration)))); po.observe({ entryTypes: ['longtask'] }); } catch (x) { /* нет longtask */ }
+        UI.playLines(lines, { bg: 'camp', replay: true }); const t0 = performance.now(); let last = t0, run = true;
+        const raf = (t) => { if (!run) return; r.frames++; r.dts.push(Math.round(t - last)); last = t; requestAnimationFrame(raf); }; requestAnimationFrame(raf);
+        const smp = setInterval(() => { r.maxImgs = Math.max(r.maxImgs, ...[...document.querySelectorAll('.vimgs')].map((b) => b.querySelectorAll('img').length), 0); r.maxActs = Math.max(r.maxActs, document.querySelectorAll('.vact').length); }, 40);
+        const iv = setInterval(() => { if (UI.sNext) UI.sNext(); if (document.querySelector('.choice')) { clearInterval(iv); clearInterval(smp); run = false; r.ms = performance.now() - t0; if (po) po.disconnect(); setTimeout(() => res(r), 1500); } }, cfg.dt);
+      });
+    });
+    const st1 = await p3.evaluate(() => __stress({ n: 60, dt: 100 }));
+    const fin = await p3.evaluate(() => ({ acts: [...document.querySelectorAll('.vact')].map((a) => ({ cls: a.className, imgs: a.querySelectorAll('img').length, xf: a.querySelectorAll('.xf').length })), sprites: document.querySelectorAll('.vsp').length }));
+    check('VN-стресс (3 актёра, смена каждые 100 мс): в слоях актёра не больше 3 картинок одновременно', st1.maxImgs <= 3, 'max=' + st1.maxImgs);
+    check('VN-стресс: .vact не плодятся (≤ 3 + выходящие)', st1.maxActs <= 4, 'max=' + st1.maxActs);
+    check('VN-стресс: после серии — ровно 3 актёра, по одной картинке, без висящих .xf/.out', fin.acts.length === 3 && fin.acts.every((a) => a.imgs === 1 && a.xf === 0 && /\bin\b/.test(a.cls) && !/\bout\b/.test(a.cls)) && fin.sprites === 3, JSON.stringify(fin));
+    await p3.screenshot({ path: path.join(outDir, 'vn-phone-three.jpg'), type: 'jpeg', quality: 80, scale: 'device' });
+    await p3.evaluate(() => __RPG.UI.sChoice(0)); await p3.waitForTimeout(600);
+
+    // производительность: 3 актёра, смена каждые 300 мс, CPU throttling 4x, DPR 3
+    const cdp = await ctx3.newCDPSession(p3); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+    const pf = await p3.evaluate(() => __stress({ n: 24, dt: 300 }));
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+    const fps = pf.frames / (pf.ms / 1000), worst = pf.longtasks.length ? Math.max(...pf.longtasks) : 0, sd = pf.dts.slice().sort((a, b) => a - b), p95 = sd[Math.floor(sd.length * 0.95)] || 0;
+    console.log('  perf (CPU 4x, DPR 3, 3 актёра, смена/300 мс): fps=' + fps.toFixed(1) + ' кадров=' + pf.frames + ' p95 dt=' + p95 + ' мс; long tasks=' + pf.longtasks.length + ' max=' + worst + ' мс ' + JSON.stringify(pf.longtasks.slice(0, 10)));
+    fs.writeFileSync(path.join(outDir, 'vn-perf.json'), JSON.stringify({ cpuThrottle: 4, dpr: 3, viewport: '400x880', fps: +fps.toFixed(1), frames: pf.frames, p95FrameMs: p95, longTasks: pf.longtasks, maxLongTaskMs: worst }, null, 1));
+    check('VN-перф (4x CPU): ≥ 45 fps', fps >= 45, fps.toFixed(1) + ' fps');
+    check('VN-перф (4x CPU): нет long tasks > 50 мс', worst <= 50, 'max=' + worst + ' мс, всего ' + pf.longtasks.length);
+    await p3.evaluate(() => __RPG.UI.sChoice && __RPG.UI.sChoice(0));
     await ctx3.close();
 
     // reduced-motion на телефоне: ни одной бесконечной анимации, всё стоит неподвижно

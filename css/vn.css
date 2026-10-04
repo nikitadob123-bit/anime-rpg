@@ -31,30 +31,31 @@
 
 /* — сцена и персонажи —
    Слои актёра (каждый анимирует своё свойство; тяжёлый filter стоит на СТАТИЧНОМ слое .vslide, а анимируемые слои — только transform/opacity):
-   .vact (позиция+масштаб, opacity) > .vpp (поп при гневе) > .vbr (дыхание) > .vslide (вход/выход, затемнение, тень/rim — filter) > .vimgs (кадр, маска затухания снизу) */
+   .vact (позиция+масштаб, opacity) > .vpp (поп при гневе) > .vbr (дыхание) > .vslide (вход/выход) > .vimgs (кадр, маска затухания снизу) */
 .story{--rim:150,160,255}
 .vstage{position:absolute;inset:0;overflow:hidden;z-index:3;pointer-events:none}
-.vact{position:absolute;left:0;top:0;width:1800px;transform-origin:0 0;opacity:0;z-index:2;transition:transform .6s cubic-bezier(.22,.8,.3,1),opacity .45s ease}
+.vact{contain:layout paint style;position:absolute;left:0;top:0;width:1800px;transform-origin:0 0;opacity:0;z-index:2;transition:transform .6s cubic-bezier(.22,.8,.3,1),opacity .45s ease}
 .vstage.nofx .vact{transition:opacity .45s ease}
 .vact.in{opacity:1}.vact.out{opacity:0;transition:opacity .4s ease}.vact.talk{z-index:5}
-.vact::before{content:"";position:absolute;left:350px;top:60px;width:1100px;height:1100px;border-radius:50%;pointer-events:none;
-  background:radial-gradient(ellipse at 50% 46%,rgba(var(--rim),.30) 0%,rgba(var(--rim),.12) 34%,rgba(0,0,0,.14) 56%,transparent 70%);opacity:.45;transition:opacity .5s}
+.vact::before{content:"";position:absolute;left:560px;top:120px;width:680px;height:680px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 50% 50%,rgba(var(--rim),.20) 0%,rgba(var(--rim),.08) 40%,transparent 68%);opacity:0;transition:opacity .5s}
 .vact.talk::before{opacity:1}
 .vpp,.vbr,.vslide,.vimgs{position:absolute;inset:0}
 .vpp.pop{animation:vpop .38s ease-out}
-.vbr{transform-origin:50% 100%;animation:breathe 8s ease-in-out infinite;animation-play-state:paused;will-change:transform}
+.vbr{transform-origin:50% 100%;animation:breathe 8s ease-in-out infinite;animation-play-state:paused}
 .vact.talk .vbr{animation-play-state:running}
-.vslide{transform:translate(var(--sx,0),26px) scale(.985);transform-origin:50% 100%;transition:transform .55s cubic-bezier(.22,.8,.3,1),filter .4s ease;
-  filter:brightness(.66) saturate(.82) drop-shadow(0 0 2px rgba(var(--rim),.55)) drop-shadow(0 12px 20px rgba(0,0,0,.4))}
+.vslide{transform:translate(var(--sx,0),26px) scale(.985);transform-origin:50% 100%;transition:transform .55s cubic-bezier(.22,.8,.3,1)}
 .vact.in .vslide{transform:translate(0,10px) scale(.965)}
-.vact.in.talk .vslide{transform:none;filter:brightness(1) saturate(1) drop-shadow(0 0 2px rgba(var(--rim),.7)) drop-shadow(0 12px 20px rgba(0,0,0,.4))}
+.vact.in.talk .vslide{transform:none}
+/* затемнение неактивных — лёгкий color-matrix прямо на картинке (без blur и теней; у говорящего filter отсутствует вовсе) */
+.vimgs .vsp{filter:brightness(.7) saturate(.85);transition:filter .4s ease,opacity .35s ease}
+.vact.talk .vimgs .vsp{filter:none}
 .vimgs{overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 170px),transparent 100%);mask-image:linear-gradient(180deg,#000 calc(100% - 170px),transparent 100%)}
 .vimgs .vsp{position:absolute;display:block;max-width:none;border-radius:0;background:transparent;object-fit:fill;user-select:none;-webkit-user-drag:none}
-.vimgs .vsp.xf{opacity:0;transition:opacity .35s ease}.vimgs .vsp.xf.on{opacity:1}
+.vimgs .vsp.xf{opacity:0}.vimgs .vsp.xf.on{opacity:1}
 .vimgs .svgpor{overflow:visible}
 @keyframes breathe{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(0,-7px,0) scale(1.006)}}
 @keyframes vpop{0%{transform:translateX(0)}30%{transform:translateX(-9px) scale(1.012)}60%{transform:translateX(7px)}100%{transform:none}}
-.vfloor{position:absolute;left:0;right:0;bottom:0;height:34%;z-index:4;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(3,4,12,.45) 55%,rgba(3,4,12,.8))}
 
 /* — UI новеллы — */
 .vtop{position:absolute;top:calc(var(--sat) + 8px);right:10px;z-index:7;display:flex;gap:6px}

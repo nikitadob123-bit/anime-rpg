@@ -12,7 +12,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'assets', 'vn')
 os.makedirs(OUT, exist_ok=True)
 EXT = ('.png', '.jpg', '.jpeg', '.webp')
-PORT_H, CG_MAX, Q = 720, 1280, 88
+PORT_H, CG_MAX, Q, AQ, FS = 720, 1280, 74, 68, 0.7   # FS — масштаб файла относительно «логических» 720 px (метрики в манифесте логические; браузер сам растягивает до логического размера)
 
 def key_bg(im, thresh=48):
     """Вырезает однотонный светло-серый фон (заливка от краёв). Возвращает RGBA или None, если фон не однотонный."""
@@ -64,7 +64,7 @@ try:
     import cv2; CASCADE = cv2.CascadeClassifier(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'lbpcascade_animeface.xml')); HAVE_FACE = not CASCADE.empty()
 except Exception: HAVE_FACE = False
 import geom
-METHOD = 'm5' if HAVE_MATTE else 'k8'   # m3 — нейро-маска + closed-form matting + defringe; k8 — запасной chroma-ключ
+METHOD = 'm6' if HAVE_MATTE else 'k8'   # m3 — нейро-маска + closed-form matting + defringe; k8 — запасной chroma-ключ
 OVERRIDES = {}
 _ov = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'face-overrides.json')
 if os.path.exists(_ov): OVERRIDES = json.load(open(_ov))
@@ -174,18 +174,18 @@ for low, p, cg, sig in files:
     k = CUT[low]; fx, fy, fw = GEOM[low]; out_name = low + '.webp'; dst = os.path.join(OUT, out_name)
     bb = k.split()[3].point(lambda v: 255 if v > 10 else 0).getbbox()
     pad = max(6, int(0.02 * k.size[0])); x0 = max(0, bb[0] - pad) if bb else 0; x1 = min(k.size[0], bb[2] + pad) if bb else k.size[0]
-    k = soften_borders(k); kk = k.crop((x0, 0, x1, k.size[1])); fx -= x0
+    k = soften_borders(k); y0 = max(0, bb[1] - pad) if bb else 0; kk = k.crop((x0, y0, x1, k.size[1])); fx -= x0; fy -= y0   # обрезка по bbox альфы (сверху и по бокам); низ — кадр целиком
     w, h = kk.size                      # без синтетического продления: низ бюста просто уходит под окно диалога (затухание — маской в CSS)
-    dims = [w, h, 1, round(fx), round(fy), round(fw)]
+    dims = [w, h, 1, round(fx), round(fy), round(fw), x0, y0]
     if old.get(out_name) != sig or not os.path.exists(dst) or olddim.get(out_name) != dims:
-        kk.save(dst, 'WEBP', quality=Q, method=6, alpha_quality=100, exact=False); n_new += 1; print('+', out_name, os.path.getsize(dst) // 1024, 'KB', '|', HOW[low])
+        kk.resize((max(1, round(w * FS)), max(1, round(h * FS))), Image.LANCZOS).save(dst, 'WEBP', quality=Q, method=6, alpha_quality=AQ, exact=False); n_new += 1; print('+', out_name, os.path.getsize(dst) // 1024, 'KB', '|', HOW[low])
     DIMS[out_name] = dims; srcs[out_name] = sig
     cid, mood = low.rsplit('_', 1); portraits.setdefault(cid, {})[mood] = out_name
 for f in os.listdir(OUT):
     if f.endswith('.webp') and f not in srcs: os.remove(os.path.join(OUT, f))
 pre = sorted(list(cgs.values()) + [v['neutral'] for v in portraits.values() if 'neutral' in v])
 ver = hashlib.md5(json.dumps([portraits, cgs, srcs, DIMS], sort_keys=True).encode()).hexdigest()[:8]
-json.dump({'v': ver, 'portraits': portraits, 'cg': cgs, 'pre': pre, 'dim': DIMS, 'src': srcs}, open(man_path, 'w'), ensure_ascii=False, separators=(',', ':'), sort_keys=True)
+json.dump({'v': ver, 'fs': FS, 'portraits': portraits, 'cg': cgs, 'pre': pre, 'dim': DIMS, 'src': srcs}, open(man_path, 'w'), ensure_ascii=False, separators=(',', ':'), sort_keys=True)
 cnt = sum(len(v) for v in portraits.values())
 print('метод вырезания:', 'нейро-маска (isnet-anime) + closed-form matting + defringe' if HAVE_MATTE else 'запасной chroma-ключ', '| лица:', 'каскад + совмещение силуэтов' if HAVE_FACE else 'оценка по силуэту')
 print('готово: портретов %d (персонажей %d), CG %d, новых/обновлённых %d, вес %d KB' % (cnt, len(portraits), len(cgs), n_new, sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT)) // 1024))
