@@ -68,7 +68,7 @@
 .bar.aff i{background:linear-gradient(90deg,#ff8aa8,#ff5a8a)}.affb{position:relative;margin:4px 0}.affb i{position:absolute;top:-2px;width:2px;height:10px;background:rgba(255,255,255,.55)}
 .heart.glow{border-color:#ff8aa8;box-shadow:0 0 18px rgba(255,120,160,.25)}
 .crewm{display:flex;flex-direction:column;gap:8px;max-height:78dvh;overflow-y:auto}.crewm .por.lg{width:96px;height:110px;aspect-ratio:auto}.eqgrid.three{grid-template-columns:repeat(3,1fr)}
-.toggle{padding:8px 0 0}.toggle input{width:20px;height:20px}
+.cmdrow{display:flex;gap:8px;align-items:center;padding:8px 0 0;position:static}.cmdrow input{width:20px;height:20px;flex:none;position:static;opacity:1}
 .wrap{flex-wrap:wrap}
 
 /* — ветки Силы — */
@@ -78,3 +78,5 @@
 .tree.one .tcol{width:100%}
 .unit.ally .si b{font-size:9px}
 .btn.sk.conc,.sk.conc{border-color:#c88aff}
+
+body[data-view="title"] #view,body[data-view="slots"] #view{background:linear-gradient(180deg,rgba(5,6,15,.55),rgba(5,6,15,.9)),var(--title-cg,none) center/cover no-repeat}

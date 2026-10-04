@@ -7,7 +7,7 @@
     try { localStorage.setItem('arpg.test', '1'); localStorage.removeItem('arpg.test'); } catch (e) {
       document.getElementById('view').innerHTML = '<div class="screen"><h2>Хранилище недоступно</h2><p class="dim">Браузер запретил localStorage (режим инкогнито или блокировка). Игра не сможет сохраняться.</p></div>'; S.store = (function () { const m = {}; return { getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: (k) => { delete m[k]; } }; })();
     }
-    UI.loadManifest().finally(() => UI.go('title'));
+    UI.loadManifest().finally(() => { const f = UI.cgFile('halo_city'); if (f) document.body.style.setProperty('--title-cg', `url(${new URL('assets/vn/' + f, location.href).href})`); UI.go('title'); });
   };
   document.addEventListener('visibilitychange', () => { if (document.hidden && UI.p) UI.save(true); });
   window.addEventListener('pagehide', () => { if (UI.p) UI.save(true); });

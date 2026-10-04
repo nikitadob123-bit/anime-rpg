@@ -113,6 +113,12 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
   await page.waitForSelector('#story'); await toText('Опять'); await page.waitForTimeout(1000); await shot('vn-three-actors');
   check('VN: три персонажа в кадре', await ev(() => document.querySelectorAll('.vact').length) === 3);
   await endVn();
+  await ev((l) => { __RPG.UI.vnTest = __RPG.UI.playLines(l, { bg: 'void', replay: true }); }, [['cg', 'demon_king'], ['n', 'Нимб над руинами гаснет.'], ['cg', 'halo_city'], ['n', 'А над городом, которого больше нет, он горит.']]);
+  await page.waitForSelector('#story'); await toText('Нимб над руинами'); await page.waitForTimeout(1500); await shot('vn-cg-demon-king');
+  check('CG показан (demon_king)', await ev(() => document.querySelector('#vcg').classList.contains('on') && /demon_king/.test(document.querySelector('#vcg').style.backgroundImage)));
+  await toText('горит'); await page.waitForTimeout(1500); await shot('vn-cg-halo-city');
+  check('CG сменён (halo_city)', await ev(() => /halo_city/.test(document.querySelector('#vcg').style.backgroundImage)));
+  await endVn();
   check('сцена закрыта, слой очищен', await page.locator('#story').count() === 0);
 
   // ───── вкладки ─────

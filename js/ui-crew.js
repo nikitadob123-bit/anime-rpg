@@ -55,7 +55,7 @@
     const un = E.recruited(s), ms = s.missions || [];
     const party = s.party.map((id) => D.CREW[id]).filter(Boolean);
     const head = `<h2>Свита</h2><div class="card"><div class="row gap center-v"><b class="grow tl">Отряд на вылазку (${party.length}/${E.PARTY_MAX})</b><small class="dim">вечеров: ${s.crewTalk || 0}</small></div><div class="row gap partyrow">${[0, 1, 2].map((i) => party[i] ? `<button class="pcell" data-act="crewOpen" data-id="${s.party[i]}" data-quiet="1">${UI.por(party[i].art, 'xs', false)}<small>${esc(party[i].n)}</small></button>` : '<div class="pcell empty"><span>＋</span><small>пусто</small></div>').join('')}</div>
-      <label class="toggle row gap center-v"><input type="checkbox" id="cmdChk" ${s.cmd ? 'checked' : ''} data-act="cmdTog"><span class="grow tl small">Командовать Свитой в бою самому <span class="dim">(иначе она действует сама)</span></span></label></div>`;
+      <label class="cmdrow"><input type="checkbox" id="cmdChk" ${s.cmd ? 'checked' : ''} data-act="cmdTog"><span class="grow tl small">Командовать Свитой в бою самому <span class="dim">(иначе она действует сама)</span></span></label></div>`;
     const mis = ms.length ? `<div class="card"><b>Задания в пути</b>${ms.map((m, i) => { const left = E.missionLeft(m); const c = D.CREW[m.cid]; return `<div class="item"><span class="grow tl"><b>${esc(c.n)}</b> · ${D.DUN[m.did].n} · ${E.MISSION_DUR[m.di].n}<small>${left > 0 ? 'ещё ' + Math.ceil(left / 60000) + ' мин' : 'готово!'}</small></span>${left > 0 ? '' : `<button class="btn primary small" data-act="missionDone" data-i="${i}">Забрать</button>`}</div>`; }).join('')}</div>` : '';
     const list = D.CREW_IDS.map((id) => {
       const c = D.CREW[id], st = s.crew[id];
