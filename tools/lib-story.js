@@ -3,7 +3,8 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 function load() {
   const RPG = require(path.join(root, 'js/data-core.js'));
-  ['data-maou', 'data-prof', 'data-world', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'combat', 'crew', 'save',
+  require(path.join(root, 'js/data-stats.js'));
+  ['data-maou', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'combat', 'crew', 'save',
     'story/cast', 'story/core', 'story/enemies', 'story/outline'].forEach((f) => require(path.join(root, 'js', f + '.js')));
   const ST = RPG.story;
   for (let k = 1; k <= ST.ARCS; k++) {
