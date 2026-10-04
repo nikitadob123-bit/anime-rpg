@@ -190,3 +190,5 @@ body.noshake .shake,body.noshake .shk{animation:none!important}body.nopart #fx{d
 .cc-h{display:flex;align-items:center;gap:8px}.cc-ic{width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;border-radius:12px;background:radial-gradient(circle,color-mix(in srgb,var(--bc) 45%,#000),#10122c);border:1px solid var(--bc)}
 .cc-f{display:flex;flex-direction:column;gap:2px;color:var(--dim)}.tfb{color:#ffd77a}
 .ndet{z-index:6;box-shadow:0 -6px 18px rgba(0,0,0,.55)}.tgraph{margin-bottom:10px}
+
+.shrine-ic{filter:drop-shadow(0 0 10px rgba(255,214,102,.55))}.shrine-t{color:var(--dim,#b9bddb)}.shrine-opts{display:flex;flex-direction:column;gap:8px}.shrine-opts .btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 14px;line-height:1.25}.shrine-opts .btn small{opacity:.8;font-size:12px;font-weight:400}

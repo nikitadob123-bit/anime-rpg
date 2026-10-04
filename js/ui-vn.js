@@ -167,7 +167,9 @@
           const sp = D.SPEAKERS[k]; if (!sp) continue; const narr = !sp.n;
           const text = E.fmtText(l[1], slot);
           ahead(3); if (!narr) showActor(k, l[2]); else Object.keys(actors).forEach((a) => actors[a].el.classList.remove('talk'));
-          const spk = $('#spk'); spk.textContent = narr ? '' : E.fmtText(sp.n, slot); spk.style.color = sp.c || '#fff'; spk.style.display = narr ? 'none' : 'block';
+          const spk = $('#spk'); const spn = narr ? '' : E.fmtText(sp.n, slot);
+          if (!narr && !sp.art) { spk.innerHTML = '<i class="spkbadge" style="background:' + esc(sp.c || '#c8c8e0') + '">' + esc(Array.from(spn)[0] || '?') + '</i>' + esc(spn); } else spk.textContent = spn;   // говорящий без портрета: значок-силуэт с инициалом вместо спрайта
+          spk.style.color = sp.c || '#fff'; spk.style.display = narr ? 'none' : 'block';
           $('#dlg').classList.toggle('narr', narr);
           logArr.push({ n: narr ? '' : E.fmtText(sp.n, slot), t: text, c: sp.c });
           await typeText(text, narr); await waitTap(text.length);

@@ -94,7 +94,7 @@
   async function doEvent(node) {
     const s = UI.slot();
     if (node.ev === 'shrine') {
-      const c = await new Promise((res) => { UI.shrineRes = res; UI.modal(`<div class="big-ic xl center">⛩️</div><h3>Алтарь Лиры</h3><div class="mtext tl">Среди камней мерцает осколок песни. Он отзовётся на просьбу — но заберёт что-то взамен или нет, зависит от вашего выбора.</div><button class="btn primary wide" data-act="shrineP" data-c="bless">✨ Благословение (+8% урон и броня до конца вылазки)</button><button class="btn primary wide" data-act="shrineP" data-c="heal">💚 Исцеление (+60% здоровья)</button><button class="btn ghost wide" data-act="shrineP" data-c="blood">🩸 Дар крови (−15% здоровья, золото)</button>`, { lock: true }); });
+      const c = await new Promise((res) => { UI.shrineRes = res; UI.modal(`<div class="big-ic xl center shrine-ic">⛩️</div><h3 class="center">Алтарь Лиры</h3><div class="mtext tl shrine-t">Среди камней мерцает осколок песни Лирии. Он откликнется на просьбу: выберите, что попросить — дар или плата зависят только от вас.</div><div class="shrine-opts"><button class="btn primary wide" data-act="shrineP" data-c="bless"><b>✨ Благословение</b><small>+8% урона и брони до конца вылазки</small></button><button class="btn primary wide" data-act="shrineP" data-c="heal"><b>💚 Исцеление</b><small>+60% здоровья и немного энергии</small></button><button class="btn ghost wide" data-act="shrineP" data-c="blood"><b>🩸 Дар крови</b><small>−15% здоровья, взамен золото</small></button></div>`, { lock: true }); });
       UI.closeModal(); const r = C.resolveEvent(s, c); UI.save(true); await evResult(r); return;
     }
     const r = C.resolveEvent(s); UI.save(true); await evResult(r);
@@ -104,7 +104,7 @@
     return new Promise((res) => {
       const mats = Object.keys(r.mats || {}).map((k) => `${D.MATS[k].ic} ${D.MATS[k].n} ×${r.mats[k]}`).join('<br>');
       UI.sfx(r.ev === 'chest' ? 'loot' : r.ev === 'rest' ? 'heal' : 'ok');
-      UI.modal(`<div class="big-ic xl center">${evIcon(r.ev)}</div><h3>${r.ev === 'chest' ? 'Сундук' : r.ev === 'rest' ? 'Привал' : r.ev === 'shrine' ? 'Алтарь' : 'Находка'}</h3><div class="mtext tl">${esc(r.text)}</div>${r.gold ? `<div>🪙 +${fmt(r.gold)}</div>` : ''}${mats ? `<div class="small">${mats}</div>` : ''}${(r.items || []).map((it) => `<div>${rarSpan(it)}</div>`).join('')}${r.lvUp ? '<div class="ok">🌟 Профессия повысила уровень!</div>' : ''}<button class="btn primary wide" id="evOk" data-act="evOk">Продолжить</button>`, { lock: true });
+      UI.modal(`<div class="big-ic xl center">${evIcon(r.ev)}</div><h3>${r.ev === 'chest' ? 'Сундук' : r.ev === 'rest' ? 'Привал' : r.ev === 'shrine' ? 'Алтарь Лиры' : 'Находка'}</h3><div class="mtext tl">${esc(r.text)}</div>${r.gold ? `<div>🪙 +${fmt(r.gold)}</div>` : ''}${mats ? `<div class="small">${mats}</div>` : ''}${(r.items || []).map((it) => `<div>${rarSpan(it)}</div>`).join('')}${r.lvUp ? '<div class="ok">🌟 Профессия повысила уровень!</div>' : ''}<button class="btn primary wide" id="evOk" data-act="evOk">Продолжить</button>`, { lock: true });
       UI.evDone = () => { UI.closeModal(); res(); };
     });
   }

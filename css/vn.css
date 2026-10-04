@@ -98,3 +98,5 @@
 .btn.sk.conc,.sk.conc{border-color:#c88aff}
 
 body[data-view="title"] #view,body[data-view="slots"] #view{background:linear-gradient(180deg,rgba(5,6,15,.55),rgba(5,6,15,.9)),var(--title-cg,none) center/cover no-repeat}
+
+.spkbadge{display:inline-flex;align-items:center;justify-content:center;width:1.35em;height:1.35em;margin-right:.45em;border-radius:50%;font-style:normal;font-weight:700;font-size:.85em;color:#10122c;vertical-align:-.12em;box-shadow:0 0 0 1px rgba(255,255,255,.35)}
