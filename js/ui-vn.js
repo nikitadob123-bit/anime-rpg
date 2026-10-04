@@ -12,7 +12,7 @@
   UI.cgFile = (id) => UI.manifest.cg['cg_' + id] || null;
   UI.portraitSpec = function (id, mood) {
     const L = RPG.NPC_LOOK[id]; if (!L) return null;
-    return Object.assign({}, L, { mood: { n: 'n', h: 'h', a: 'x', s: 's', d: 's', m: 'x' }[mood || 'n'] || 'n' });
+    return Object.assign({}, L, { mood: { n: 'n', h: 'h', a: 'x', s: 's', d: 's', m: 'x', u: 'n', ma: 'x', mh: 'h', ms: 's', md: 's', mu: 'n' }[mood || 'n'] || 'n' });
   };
   // пул декодированных картинок: look-ahead по репликам, спрайт показывается только после decode() (иначе подлагивает на главном потоке)
   UI.imgPool = new Map();
@@ -25,7 +25,9 @@
   };
   UI.por = function (id, cls, lazy, mood) {
     if (!id) return '<div class="por empty"></div>';
-    const f = UI.artFile(id, mood);
+    let f = UI.artFile(id, mood);
+    const av = (!mood || mood === 'n') && /\b(xs|sm|lg|xl)\b/.test(cls || '') && RPG.avatarOf(UI.manifest, id);    // маленькие аватары: кроп лица (256 px) вместо целого бюста
+    if (av) f = av;
     if (f) return `<img class="por ${cls || ''}" ${lazy === false ? '' : 'loading="lazy"'} decoding="async" alt="" draggable="false" data-pid="${esc(id)}" data-mood="${esc(mood || 'n')}" src="assets/vn/${f}">`;
     const spec = UI.portraitSpec(id, mood); if (!spec) return '<div class="por empty"></div>';
     return `<div class="por ${cls || ''} svgpor" data-pid="${esc(id)}">${RPG.portraitSVG(spec)}</div>`;
@@ -105,7 +107,7 @@
           while (box.children.length > 2) box.firstElementChild.remove();                                                      // цепочка кроссфейдов ограничена
           const nw = spriteEl(sp.art, mood); UI.vnPlace(a.ref, UI.artMetrics(sp.art, mood), nw); nw.classList.add('xf'); box.appendChild(nw);
           decoded(nw).then(() => { if (finished || actors[key] !== a || nw.parentNode !== box) return; void nw.offsetWidth; nw.classList.add('on'); clearTimeout(a.timer); a.timer = later(() => { while (nw.previousElementSibling) nw.previousElementSibling.remove(); nw.classList.remove('xf', 'on'); }, 420); });
-          if (mood === 'a' || mood === 'm') { const fx = a.el.querySelector('.vpp'); fx.classList.remove('pop'); void fx.offsetWidth; fx.classList.add('pop'); }
+          if (mood === 'a' || mood === 'm' || mood === 'ma') { const fx = a.el.querySelector('.vpp'); fx.classList.remove('pop'); void fx.offsetWidth; fx.classList.add('pop'); }
         }
         Object.keys(actors).forEach((k) => actors[k].el.classList.toggle('talk', k === key));
         return a;

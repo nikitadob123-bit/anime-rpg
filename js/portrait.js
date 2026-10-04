@@ -58,7 +58,7 @@
 
   // Запасные образы для новых персонажей (когда арт ещё не загружен)
   Object.assign(RPG.NPC_LOOK, {
-    hero: { race: 'human', sex: 'm', hs: 'spike', hc: '#1a1a24', ec: '#9a6aff', cloth: '#3a2a4a' },
+    hero: { race: 'human', sex: 'm', hs: 'spike', hc: '#e9ecf5', ec: '#8fd0ff', cloth: '#1f2a4a' },
     sister: { race: 'human', sex: 'f', hs: 'long', hc: '#7a4a2a', ec: '#c98a4a', cloth: '#8a6a4a' },
     gen1: { race: 'demon', sex: 'f', hs: 'long', hc: '#f4f4fa', ec: '#ff3a4a', horns: 'curve', cloth: '#1c1c28' },
     gen2: { race: 'beast', sex: 'f', hs: 'tail', hc: '#e8501f', ec: '#ffb35a', ears: 'fox', cloth: '#8a3a2a' },
@@ -80,6 +80,7 @@
     sub_vesper: { race: 'elf', sex: 'm', hs: 'swept', hc: '#cfd6e8', ec: '#d89aff', skin: '#6a5a8a', cloth: '#1c1c28' },
     sub_brum: { race: 'dwarf', sex: 'm', hs: 'bald', hc: '#b4421f', ec: '#e8a040', beard: 'full', acc: 'goggles', cloth: '#6a4a3a' }
   });
+  RPG.NPC_LOOK.hero_demon = Object.assign({}, RPG.NPC_LOOK.hero, { hc: '#d9dbe6', ec: '#ffd35a', cloth: '#1c1c28', mood: 'x' });   // SVG-откат формы Короля Демонов
 
   const OPEN = { n: 1, h: 1, s: 1, x: 1 };
 
@@ -284,10 +285,17 @@
   
 /* Маппинг настроений реплики (n,h,a,s,d,m) → имя файла-настроения арта. Общий для плеера и тестов. */
 RPG.MOOD_NAMES = { n: 'neutral', h: 'happy', a: 'angry', s: 'shy', d: 'sad' };
-RPG.HERO_MOOD_NAMES = { n: 'neutral', h: 'smirk', a: 'angry', d: 'despair', m: 'demon', s: 'neutral' };
-RPG.moodName = (art, mood) => (art === 'hero' ? RPG.HERO_MOOD_NAMES : RPG.MOOD_NAMES)[mood || 'n'] || 'neutral';
+RPG.HERO_MOOD_NAMES = { n: 'neutral', h: 'smirk', a: 'angry', d: 'despair', s: 'shy', u: 'surprised', m: 'demon' };   // обычный облик героя (hero_*.webp); d — sad (старый ключ despair)
+RPG.HERO_DEMON_MOODS = { m: 'neutral', ma: 'angry', mh: 'smirk', ms: 'shy', md: 'sad', mu: 'surprised' };            // форма Короля Демонов (hero_demon_*.webp)
+RPG.moodName = (art, mood) => (art === 'hero' ? RPG.HERO_MOOD_NAMES[mood || 'n'] || (mood !== 'm' && RPG.HERO_DEMON_MOODS[mood]) : RPG.MOOD_NAMES[mood || 'n']) || 'neutral';
 /* Итоговое имя файла из манифеста с откатом: настроение → neutral → null (тогда рисуется SVG) */
-RPG.artFileOf = (manifest, art, mood) => { const m = manifest && manifest.portraits && manifest.portraits[art]; if (!m) return null; return m[RPG.moodName(art, mood)] || m.neutral || null; };
+RPG.artFileOf = (manifest, art, mood) => {
+  const P = manifest && manifest.portraits; const m = P && P[art]; if (!m) return null;
+  if (art === 'hero' && mood && RPG.HERO_DEMON_MOODS[mood]) { const dm = P.hero_demon; return (dm && (dm[RPG.HERO_DEMON_MOODS[mood]] || dm.neutral)) || m.demon || m.neutral || null; }   // форма Короля; нет арта — старый ключ demon / обычный облик
+  return m[RPG.moodName(art, mood)] || m.neutral || null;
+};
+/* Маленькие аватары (профиль, бой, слоты, список): кроп лица из нового арта, manifest.av[id] */
+RPG.avatarOf = (manifest, art) => (manifest && manifest.av && manifest.av[art]) || null;
 
 /* Геометрия сцены новеллы (чистые функции — тестируются в node).
    Метрики портрета: {w,h,fx,fy,fw} — размер файла (h=720), центр лица и ширина лица (px). Низ бюста «погружён» на SINK px под окно диалога, затухание — CSS-маской (никакого синтетического продления пикселей).
