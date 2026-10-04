@@ -239,6 +239,14 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
   check('все 10 веток видны сразу (переключатель)', await page.locator('.bchip').count() === 10);
   await act('sub', '[data-v="conc"]'); await page.waitForTimeout(100); check('раздел «Концепты»: 28+ карточек', await page.locator('.ccard').count() >= 28); await shot('skills-concepts'); await noOverflow('концепты');
   await act('sub', '[data-v="b0"]');
+  // скриншот: граф ветки с изученными узлами и карточкой концепта
+  await ev(() => { const s = __RPG.UI.slot(); s.hero.level = 60; s.hero.bossPts = 30; __RPG.UI.refresh(); });
+  await act('sub', '[data-v="b3"]');
+  for (let i = 0; i < 9; i++) { if (!(await page.locator('.node.can').count())) break; await click('.node.can'); await click('#btnLearn'); }
+  await click('.node.can'); await page.waitForTimeout(150); await page.locator('.ndet').scrollIntoViewIfNeeded(); await shot('skills-graph-learned-node');
+  const cn = page.locator('.node.concept').first();
+  if (await cn.count()) { await cn.scrollIntoViewIfNeeded(); await cn.click(); await page.waitForTimeout(150); await page.locator('.ndet').scrollIntoViewIfNeeded(); await shot('skills-concept-card'); check('карточка концепта с описанием и лором', (await page.locator('.ndet').innerText()).length > 60); }
+  else check('в ветке виден концепт-узел (.node.concept)', false);
   await act('sub', '[data-v="echo"]'); await click('.node.can'); await click('#btnLearn'); sl = await slot();
   check('узел Отголоска изучен', Object.keys(sl.hero.uspent).length === 1); await shot('15-skills-echo');
   await act('sub', '[data-v="list"]'); await shot('15b-skills-list');
