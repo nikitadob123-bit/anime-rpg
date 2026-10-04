@@ -5,7 +5,7 @@
 
   // ───── Враги и подземелья арки 9 ─────
   E('slag_hound', { n: 'Шлаковая гончая', ic: '🐕‍🦺', role: 'skirm', tags: ['beast'], sk: ['e_bite', 'e_magma', 'e_howl'], weak: ['ice'], res: ['fire'], loot: [['fang', 0.4, 1, 2], ['ore_cu', 0.4, 1, 2]] });
-  E('forge_golem', { n: 'Горновой голем', ic: '🗿', role: 'tank', tags: ['construct'], sk: ['e_hit', 'e_guard', 'e_slam'], weak: ['ice', 'bolt'], res: ['fire', 'phys'], loot: [['ore_fe', 0.6, 1, 2], ['ing_fe', 0.4, 1, 2]] });
+  E('horn_golem', { n: 'Горновой голем', ic: '🗿', role: 'tank', tags: ['construct'], sk: ['e_hit', 'e_guard', 'e_slam'], weak: ['ice', 'bolt'], res: ['fire', 'phys'], loot: [['ore_fe', 0.6, 1, 2], ['ing_fe', 0.4, 1, 2]] });
   E('ember_gnome', { n: 'Искровой гном', ic: '🔥', role: 'caster', tags: ['human'], sk: ['e_fire', 'e_blast', 'e_zap'], weak: ['ice'], res: ['fire'], loot: [['ore_cu', 0.5, 1, 2], ['herb_r', 0.3, 1, 1]] });
   E('hammer_automaton', { n: 'Молот-автомат', ic: '🔨', role: 'brute', tags: ['construct'], sk: ['e_slam', 'e_quake', 'e_hit'], weak: ['bolt'], res: ['fire'], loot: [['ore_fe', 0.6, 1, 2], ['gem_ae', 0.2, 1, 1]] });
   E('hammer_master', { n: 'Мастер Молота', ic: '⚒️', role: 'mini', tags: ['human'], sk: ['e_slam', 'e_guard', 'e_quake', 'e_regrow'], weak: ['ice', 'dark'], res: ['fire'], loot: [['ore_ms', 1, 1, 2], ['gem_ae', 0.6, 1, 2]], title: 'Мастер Сотни', lines: ['Выслушай меня, король. Я говорю уже час.', 'Мой молот помнит все твои ошибки.'] });
@@ -17,7 +17,7 @@
   E('heldgrim', { n: 'Хельдгрим Железносердый', ic: '👑', role: 'boss', duel: 'heldgrim', tags: ['human'], sk: ['e_chain', 'e_slam', 'e_magma', 'e_quake', 'e_guard'], ph2: 'enrage', weak: ['ice', 'dark'], res: ['fire', 'phys'], loot: [['ess_l', 1, 2, 3], ['gem_fr', 1, 2, 3], ['ore_ms', 1, 2, 3]], title: 'Король-под-горой', lines: ['Горе народу, который не удержит своё небо!', 'Я не злодей. Я старик, которому есть что терять.'] });
 
   const D1 = ST.defineDungeon;
-  D1({ id: 'hammer_hall', n: 'Зал Сотни Молотов', ic: '⚒️', lv: 46, floors: 2, bio: 'ash', col: '#d89a5a', d: 'Каменный зал, где сто молотов бьют по сто наковальням. Они не остановятся, пока не получат приказ.', pool: ['forge_golem', 'ember_gnome', 'hammer_automaton', 'slag_hound'], mini: 'hammer_master', boss: 'hammer_hundred', ev: ['chest', 'rest', 'gather_ore', 'shrine'], gate: '#pending', lockHint: 'Сначала прочтите главу «Зал Сотни Молотов».' });
+  D1({ id: 'hammer_hall', n: 'Зал Сотни Молотов', ic: '⚒️', lv: 46, floors: 2, bio: 'ash', col: '#d89a5a', d: 'Каменный зал, где сто молотов бьют по сто наковальням. Они не остановятся, пока не получат приказ.', pool: ['horn_golem', 'ember_gnome', 'hammer_automaton', 'slag_hound'], mini: 'hammer_master', boss: 'hammer_hundred', ev: ['chest', 'rest', 'gather_ore', 'shrine'], gate: '#pending', lockHint: 'Сначала прочтите главу «Зал Сотни Молотов».' });
   D1({ id: 'mountain_heart', n: 'Сердце Горы', ic: '⛰️', lv: 46, floors: 2, bio: 'ash', col: '#b86a3a', d: 'Самая глубокая шахта Кархола. Здесь лежит Первая Печать и бьётся сердце самой горы.', pool: ['rock_wyrm', 'seal_wraith', 'iron_guard', 'magma_golem'], mini: 'chain_smith', boss: 'heldgrim', ev: ['chest', 'rest', 'gather_ore', 'shrine'], gate: '#pending', lockHint: 'Сначала прочтите главу «Сердце Горы».' });
 
   // ════════════ Глава 81 · Врата Кархола ════════════
