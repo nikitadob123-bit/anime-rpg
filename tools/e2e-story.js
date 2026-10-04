@@ -65,7 +65,7 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
   check('загружался outline.js', reqs.some((u) => /js\/story\/outline\.js/.test(u)));
   await shot('01-tab-arc1');
   await ev(() => document.querySelectorAll('.arcrow')[1].click()); await page.waitForTimeout(250);
-  check('арка 2 раскрывается; главы «скоро»', await page.locator('.chrow.soon').count() === 10);
+  check('арка 2 раскрывается: 10 глав написаны (нет «скоро»), главы закрыты до прохождения 1-й арки', await page.locator('.chrow').count() === 10 && await page.locator('.chrow.soon').count() === 0);
   await shot('02-tab-arc2');
   await ev(() => document.querySelectorAll('.arcrow')[0].click()); await page.waitForTimeout(150);
 
@@ -112,7 +112,8 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
     check('глава ' + n + ' пройдена', await ev((k) => __RPG.story.done(__RPG.UI.slot(), k), n));
   }
   sl = await slot();
-  check('сыграно 10 глав; текущая — 11', await ev(() => __RPG.story.current(__RPG.UI.slot())) === 11 && sl.story.flags.ch10_done === 1);
+  const curN = await ev(() => __RPG.story.current(__RPG.UI.slot())), doneN = await ev(() => __RPG.story.doneCount(__RPG.UI.slot()));
+  check('сыграно ≥ 10 глав (автопроигрыватель мог зайти в арку 2); глава 10 пройдена', doneN >= 10 && sl.story.flags.ch10_done === 1 && curN === doneN + 1, 'cur=' + curN + ' done=' + doneN);
   check('в VN встречались новые фоны глав', [...bgsSeen].some((b) => ['stairs', 'gate_hall', 'gallery', 'mist_bell', 'cradle_door'].includes(b)), [...bgsSeen].join(','));
   check('выборы в главах сработали (≥1 пойман в цикле)', choicesTotal.n >= 1, String(choicesTotal.n));
   check('сохранены решения: флаги ключевых выборов', Object.keys(sl.story.flags).filter((k) => /^(knights_|form_|gallery_|bell_|promise_|held_|warden_|spared_oldrik|killed_oldrik)/.test(k)).length >= 5);
@@ -121,24 +122,24 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
   // Главная после арки 1: «Глава 11 ещё пишется»
   await act('tab', '[data-t="city"]'); await page.waitForTimeout(250);
   const cityTxt = await page.locator('.content').innerText();
-  check('главная: «Глава 11» ещё пишется + кнопка к сюжету', cityTxt.includes('Глава 11') && cityTxt.includes('ещё пишется'));
+  check('главная: текущая глава арки 2 написана (нет «ещё пишется») + кнопка к сюжету', cityTxt.includes('Глава ' + curN) && !cityTxt.includes('ещё пишется'));
   await shot('04-city-after-arc1');
   await act('tab', '[data-t="story"]'); await page.waitForTimeout(400);
-  check('вкладка «Сюжет»: пройдено 10 из 300; арка 1 «пройдена»', (await page.locator('.content').innerText()).includes('Пройдено глав: 10 из 300') && (await page.locator('.arcbox').first().innerText()).includes('пройдена'));
+  check('вкладка «Сюжет»: пройдено ' + doneN + ' из 300; арка 1 «пройдена»', (await page.locator('.content').innerText()).includes('Пройдено глав: ' + doneN + ' из 300') && (await page.locator('.arcbox').first().innerText()).includes('пройдена'));
   await act('storyCur'); await page.waitForTimeout(300);
-  check('«К текущей» раскрывает арку 2, глава 11 «скоро»', await page.locator('.chrow.soon').count() >= 1);
+  check('«К текущей» раскрывает арку 2, текущая глава подсвечена, «скоро» нет', await page.locator('.chrow.cur').count() === 1 && await page.locator('.chrow.soon').count() === 0);
   await shot('05-tab-arc2-current');
   // перечитывание главы
   await ev(() => document.querySelectorAll('.arcrow')[0].click()); await page.waitForTimeout(200);
   await act('replayCh', '[data-n="5"]'); await page.waitForSelector('#story', { timeout: 4000 });
   const rr = await playStory(900); check('перечитывание главы 5 работает', rr.done);
-  sl = await slot(); check('перечитывание не меняет прогресс', await ev(() => __RPG.story.doneCount(__RPG.UI.slot())) === 10);
+  sl = await slot(); check('перечитывание не меняет прогресс', await ev(() => __RPG.story.doneCount(__RPG.UI.slot())) === doneN);
 
   // Сохранение: перезагрузка страницы, профиль и слот на месте
   await ev(() => __RPG.UI.save(true)); await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(900);
   await ev(() => { const el = document.querySelector('[data-act="pickProfile"]'); if (el) el.click(); }); await page.waitForTimeout(400);
   await ev(() => { const el = document.querySelector('[data-act="playSlot"]'); if (el) el.click(); }); await page.waitForTimeout(1200);
-  check('после перезагрузки прогресс сюжета сохранён (10 глав)', await ev(() => __RPG.UI.slot() && __RPG.story.doneCount(__RPG.UI.slot())) === 10);
+  check('после перезагрузки прогресс сюжета сохранён (' + doneN + ' глав)', await ev(() => __RPG.UI.slot() && __RPG.story.doneCount(__RPG.UI.slot())) === doneN);
 
   const bg = await ev(() => { const el = document.createElement('div'); el.className = 'vbg bg-gate_hall'; document.body.appendChild(el); const b = getComputedStyle(el).backgroundImage; el.remove(); return b; });
   check('CSS-фон новых глав подключён (gradient)', /gradient/.test(bg), bg.slice(0, 40));
