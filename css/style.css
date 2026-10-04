@@ -195,4 +195,4 @@ body.noshake .shake,body.noshake .shk{animation:none!important}body.nopart #fx{d
 
 /* Главная: ключевая иллюстрация «Нимб над городом» (cg_halo_city) под затемнением + светящееся кольцо Нимба; без CG — прежний градиент */
 .hub .hubcg{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,9,30,.15),rgba(8,9,30,.45) 60%,rgba(5,6,15,.88)),var(--title-cg,none) 50% 38%/cover no-repeat}
-.hub .lira{top:5%;height:30%}
+.hub .lira{left:4%;right:4%;top:5%;height:30%}

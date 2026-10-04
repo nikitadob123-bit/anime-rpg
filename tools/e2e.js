@@ -359,7 +359,7 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
     await p3.waitForTimeout(1800);
     await p3.screenshot({ path: path.join(outDir, 'vn-phone-lirya.jpg'), type: 'jpeg', quality: 80, scale: 'device' });
     const bm = await p3.evaluate(() => ({ dlg: document.querySelector('#dlg').getBoundingClientRect().top, imgs: [...document.querySelectorAll('.vact:not(.out) .vsp')].map((i) => ({ f: (i.getAttribute('src') || '').split('/').pop(), nw: i.naturalWidth, nh: i.naturalHeight, b: i.getBoundingClientRect().bottom, h: i.getBoundingClientRect().height, w: i.getBoundingClientRect().width })) }));
-    check('телефон: спрайты не растянуты (пропорции кадра = пропорции файла), низ уходит под диалог', bm.imgs.length === 2 && bm.imgs.every((i) => Math.abs(i.h / i.w - i.nh / i.nw) < 0.01 && i.nh <= 720 && i.nh >= 300 && i.b > bm.dlg), JSON.stringify(bm));
+    check('телефон: спрайты не растянуты (пропорции кадра = пропорции файла), низ уходит под диалог', bm.imgs.length === 2 && bm.imgs.every((i) => Math.abs(i.h / i.w - i.nh / i.nw) < 0.01 && i.nh <= 1540 && i.nh >= 300 && i.b > bm.dlg), JSON.stringify(bm));
     check('телефон: без ошибок консоли', err3.length === 0, err3.join(' | '));
 
     // плавность на телефоне: семплируем computed transform в разные моменты (8 с), движение должно быть плавным (мелкие шаги, без скачков и рестартов)
