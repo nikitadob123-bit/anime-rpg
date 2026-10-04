@@ -4,12 +4,12 @@
 
   // ───── Враги и подземелье: Сердце Колокола ─────
   const E = ST.defineEnemy;
-  E('bell_seraph', { n: 'Серафим-звонарь', ic: '🔔', role: 'support', tags: ['spirit'], sk: ['e_heal', 'e_pray', 'e_chord'], weak: ['dark'], res: ['light'], loot: [['ess_l', 0.5, 1, 2], ['dust', 0.4, 1, 3]] });
+  E('bell_seraph_28', { n: 'Серафим-звонарь', ic: '🔔', role: 'support', tags: ['spirit'], sk: ['e_heal', 'e_pray', 'e_chord'], weak: ['dark'], res: ['light'], loot: [['ess_l', 0.5, 1, 2], ['dust', 0.4, 1, 3]] });
   E('chime_guard', { n: 'Страж Перезвона', ic: '🛡️', role: 'tank', tags: ['construct', 'spirit'], sk: ['e_hit', 'e_guard', 'e_holysword'], weak: ['dark', 'bolt'], res: ['light'], loot: [['ore_ms', 0.5, 1, 2], ['gem_ae', 0.3, 1, 1]] });
   E('peal_wraith', { n: 'Призрак Первого Звона', ic: '👻', role: 'caster', tags: ['spirit'], sk: ['e_toll', 'e_shade', 'e_zap'], weak: ['dark'], res: ['light'], loot: [['ess', 0.5, 1, 2], ['dust', 0.5, 1, 3]] });
   E('bell_verger', { n: 'Звонарь Колыбели', ic: '📯', role: 'mini', tags: ['human', 'spirit'], sk: ['e_toll', 'e_chord', 'e_chain', 'e_call_cherub'], weak: ['dark'], res: ['light'], loot: [['ess_l', 1, 2, 3], ['gem_ae', 0.8, 1, 2]], title: 'Звонарь Колыбели', lines: ['Тише. Здесь спит колокол.', 'Я звоню для тех, кто не слышит.'] });
   E('aurelius', { n: 'Аурелий, Светлоликий', ic: '☀️', role: 'boss', duel: 'aurelius', tags: ['spirit'], sk: ['e_halo', 'e_judge', 'e_holysword', 'e_toll', 'e_goldcut', 'e_hnova'], ph2: 'enrage', weak: ['dark'], res: ['light'], loot: [['gem_fr', 1, 2, 4], ['ess_l', 1, 4, 6], ['ess', 1, 3, 5], ['gem_ae', 1, 2, 4]], title: 'Аурелий', lines: ['Я прошу прощения заранее. Это больно будет не вам одному.', 'Порядок — это милость, которую вы пока не умеете принять.'] });
-  ST.defineDungeon({ id: 'heart_bell', n: 'Сердце Колокола', ic: '🔔', lv: 94, floors: 2, bio: 'ash', col: '#fff0a0', d: 'Внутренняя полость Первого Колокола. Каждый шаг здесь звучит, а каждый звук помнит, кто его издал.', pool: ['bell_seraph', 'chime_guard', 'peal_wraith', 'halo_guard'], mini: 'bell_verger', boss: 'aurelius', ev: ['chest', 'rest', 'shrine'], gate: '#pending', lockHint: 'Сначала прочтите главу «Сердце Колокола».' });
+  ST.defineDungeon({ id: 'heart_bell', n: 'Сердце Колокола', ic: '🔔', lv: 94, floors: 2, bio: 'ash', col: '#fff0a0', d: 'Внутренняя полость Первого Колокола. Каждый шаг здесь звучит, а каждый звук помнит, кто его издал.', pool: ['bell_seraph_28', 'chime_guard', 'peal_wraith', 'halo_guard'], mini: 'bell_verger', boss: 'aurelius', ev: ['chest', 'rest', 'shrine'], gate: '#pending', lockHint: 'Сначала прочтите главу «Сердце Колокола».' });
 
   // ════════════ Глава 271 · Врата Колыбели ════════════
   C[271] = {

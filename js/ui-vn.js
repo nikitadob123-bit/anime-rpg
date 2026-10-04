@@ -158,7 +158,7 @@
           if (k === 'loy') { if (!o.replay) for (const id in l[1]) { if (l[1][id]) { const d = E.addLoy(slot, id, l[1][id]); if (d) note((d > 0 ? '🤝 +' : '💔 ') + d + ' верность: ' + D.CREW[id].n); } } continue; }
           if (k === 'aff') { if (!o.replay) for (const id in l[1]) { const d = E.addAff(slot, id, l[1][id]); if (d) note('💞 ' + (d > 0 ? '+' : '') + d + ' симпатия: ' + D.CREW[id].n); } continue; }
           if (k === 'date') { result.date = l[1]; continue; }
-          if (k === 'if') { if (slot.story.flags[l[1]]) Q.unshift(...l[2]); continue; }
+          if (k === 'if') { if (E.flagTest(slot, l[1])) Q.unshift(...l[2]); continue; }
           if (k === 'choice') {
             skipping = false; auto = false; $('#sSkip').classList.remove('on'); $('#sSkip').textContent = '⏭ Пропуск'; $('#vAuto').textContent = '▶ Авто';
             const pick = await new Promise((r) => { const c = $('#schoice'); c.innerHTML = l[1].map((op, i) => `<button class="choice" data-act="sChoice" data-i="${i}" data-quiet="1">${esc(E.fmtText(op.t, slot))}</button>`).join(''); c.classList.add('on'); UI.sChoice = (i) => { c.classList.remove('on'); c.innerHTML = ''; UI.sfx('ok'); r(i); }; });

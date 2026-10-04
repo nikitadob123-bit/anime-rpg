@@ -66,7 +66,7 @@ function lintLines(where, lines, ctx, depth) {
       case 'give': if (ctx.chapterNew && ctx.lastScene) E(w, 'награду главы задавайте полем reward, а не give в сцене'); lintGive(w, l[1]); break;
       case 'rec': if (!CREW[l[1]]) E(w, 'rec: нет «' + l[1] + '» в D.CREW'); break;
       case 'loy': case 'aff': if (!l[1] || typeof l[1] !== 'object') E(w, k + ': объект {id: ±n}'); else { Object.keys(l[1]).forEach((c) => { if (!CREW[c]) E(w, k + ': нет «' + c + '» в D.CREW'); if (typeof l[1][c] !== 'number' || Math.abs(l[1][c]) > 10) E(w, k + ' ' + c + ': число от −10 до 10'); }); ctx[k]++; } break;
-      case 'if': if (typeof l[1] !== 'string' || !Array.isArray(l[2])) { E(w, 'if: ["if", "флаг", [строки]]'); break; } usedFlags.push([w, l[1]]); lintLines(w + ' if', l[2], ctx, depth + 1); break;
+      case 'if': if (typeof l[1] !== 'string' || !Array.isArray(l[2])) { E(w, 'if: ["if", "флаг", [строки]]'); break; } usedFlags.push([w, l[1].replace(/^!/, '')]); lintLines(w + ' if', l[2], ctx, depth + 1); break;
       case 'choice': {
         if (depth > 0) W(w, 'вложенный выбор в if/choice'); if (!Array.isArray(l[1]) || l[1].length < 2 || l[1].length > 4) { E(w, 'choice: от 2 до 4 вариантов'); break; }
         ctx.choices++;

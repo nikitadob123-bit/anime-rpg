@@ -8,7 +8,7 @@
   E('crusader_footman', { n: 'Крестоносец-пехотинец', ic: '🛡️', role: 'brute', tags: ['human'], el: 'light', sk: ['e_hit', 'e_slam', 'e_guard'], weak: ['dark', 'bolt'], res: ['light'], loot: [['hide', 0.5, 1, 2], ['ore_ms', 0.4, 1, 2]] });
   E('bell_acolyte', { n: 'Звонарь-послушник', ic: '🔔', role: 'support', tags: ['human'], el: 'light', sk: ['e_heal', 'e_toll', 'e_pray'], weak: ['dark', 'fire'], res: ['light'], loot: [['cloth', 0.5, 1, 2], ['ess', 0.3, 1, 1]] });
   E('chain_priest', { n: 'Священник-цепник', ic: '⛓️', role: 'caster', tags: ['human'], el: 'light', sk: ['e_chain', 'e_smite', 'e_curse'], weak: ['dark', 'earth'], res: ['light'], loot: [['dust', 0.5, 1, 2], ['ess_l', 0.2, 1, 1]] });
-  E('halo_guard', { n: 'Страж Нимба', ic: '😇', role: 'skirm', tags: ['spirit'], el: 'light', sk: ['e_halo', 'e_hit', 'e_charge'], weak: ['dark'], res: ['light'], loot: [['dust', 0.5, 1, 2], ['ess', 0.4, 1, 2]] });
+  E('halo_guard_6', { n: 'Страж Нимба', ic: '😇', role: 'skirm', tags: ['spirit'], el: 'light', sk: ['e_halo', 'e_hit', 'e_charge'], weak: ['dark'], res: ['light'], loot: [['dust', 0.5, 1, 2], ['ess', 0.4, 1, 2]] });
   E('bell_construct', { n: 'Литой колокол-страж', ic: '🔔', role: 'tank', tags: ['construct'], el: 'earth', sk: ['e_guard', 'e_slam', 'e_toll', 'e_quake'], weak: ['water', 'bolt'], res: ['earth'], loot: [['ore_ms', 0.7, 1, 3], ['gem_fr', 0.3, 1, 1]] });
   E('foundry_master', { n: 'Мастер Литейной', ic: '🔥', role: 'mini', tags: ['human'], el: 'fire', sk: ['e_fire', 'e_blast', 'e_guard', 'e_slam'], weak: ['water', 'ice'], res: ['fire'], loot: [['ore_ms', 1, 2, 3], ['gem_fr', 0.6, 1, 1]], title: 'Мастер Литейной', lines: ['Колокол должен петь. Остальное — шлак.', 'Отольём и вас, если не будете мешать.'] });
   E('white_bell', { n: 'Белый Колокол', ic: '🔔', role: 'boss', tags: ['construct', 'spirit'], el: 'light', sk: ['e_toll', 'e_hnova', 'e_smite', 'e_guard', 'e_quake'], ph2: 'enrage', weak: ['dark', 'water'], res: ['light'], loot: [['gem_fr', 1, 2, 3], ['ess_l', 1, 3, 4], ['ore_ms', 1, 2, 3]], title: 'Белый Колокол', lines: ['БОММ. Все молитвы будут услышаны.', 'БОММ. Тишина не предусмотрена.'] });
@@ -910,7 +910,7 @@
     ],
     reward: { gold: 1300, sp: 2, mats: { ess_l: 3, cloth: 3 }, cons: { pot_hp2: 2, pot_mp2: 2 } }
   };
-  D1({ id: 'bell_fort', n: 'Крепость Белого Колокола', ic: '🔔', lv: 38, floors: 2, bio: 'ash', col: '#e8e0c0', d: 'Каменная крепость на скале, где день и ночь льют колокол размером с дом. Воздух гудит так, что дрожат зубы.', pool: ['crusader_footman', 'bell_acolyte', 'chain_priest', 'halo_guard', 'bell_construct'], mini: 'foundry_master', boss: 'white_bell', ev: ['chest', 'rest', 'shrine'], need: 'loom_hall', gate: '#pending', lockHint: 'Сначала прочтите главу «Крепость Белого Колокола».' });
+  D1({ id: 'bell_fort', n: 'Крепость Белого Колокола', ic: '🔔', lv: 38, floors: 2, bio: 'ash', col: '#e8e0c0', d: 'Каменная крепость на скале, где день и ночь льют колокол размером с дом. Воздух гудит так, что дрожат зубы.', pool: ['crusader_footman', 'bell_acolyte', 'chain_priest', 'halo_guard_6', 'bell_construct'], mini: 'foundry_master', boss: 'white_bell', ev: ['chest', 'rest', 'shrine'], need: 'loom_hall', gate: '#pending', lockHint: 'Сначала прочтите главу «Крепость Белого Колокола».' });
   D.INTROS.bell_fort = [['bg', 'cult'], ['n', 'Ворота крепости открыты настежь: внутри льют колокол, и всем не до гостей. Раскалённый металл течёт по желобам, а над двором стоит гул.'], ['h', 'Шумно. Я бы предпочёл крепость, в которой спят.', 'n']];
 
 // ════════════ Глава 58 · Крепость Белого Колокола ════════════
@@ -1054,7 +1054,7 @@
     ] } },
     reward: { gold: 1500, sp: 2, mats: { ess_l: 4, gem_fr: 1, ore_ms: 3 }, cons: { pot_hp3: 2, pot_mp2: 2 } }
   };
-  D1({ id: 'octavian_court', n: 'Двор Иерофанта', ic: '🕯️', lv: 39, floors: 2, bio: 'cave', col: '#bdb8a8', d: 'Внутренние покои крепости: серые стены, узкие окна, свечи в нишах. Здесь решают судьбу мира вполголоса.', pool: ['crusader_footman', 'chain_priest', 'halo_guard', 'bell_acolyte', 'bell_construct'], mini: 'grey_guard', boss: 'octavian', ev: ['chest', 'rest', 'shrine'], need: 'bell_fort', gate: '#pending', lockHint: 'Сначала прочтите главу «Октавиан».' });
+  D1({ id: 'octavian_court', n: 'Двор Иерофанта', ic: '🕯️', lv: 39, floors: 2, bio: 'cave', col: '#bdb8a8', d: 'Внутренние покои крепости: серые стены, узкие окна, свечи в нишах. Здесь решают судьбу мира вполголоса.', pool: ['crusader_footman', 'chain_priest', 'halo_guard_6', 'bell_acolyte', 'bell_construct'], mini: 'grey_guard', boss: 'octavian', ev: ['chest', 'rest', 'shrine'], need: 'bell_fort', gate: '#pending', lockHint: 'Сначала прочтите главу «Октавиан».' });
   D.INTROS.octavian_court = [['bg', 'cult'], ['n', 'За сводчатой дверью тихо. Слишком тихо для места, где куют колокол. На столах лежат карты, на картах стоят свечи.'], ['h', 'Подозрительно аккуратно. Люди, которые так складывают бумаги, редко бывают милыми.', 'n']];
 
 // ════════════ Глава 59 · Октавиан ════════════

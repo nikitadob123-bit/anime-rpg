@@ -319,6 +319,8 @@
     return true;
   };
   E.nextScene = (slot) => D.STORY.find(s => !slot.story.done.includes(s.id) && E.sceneAvail(slot, s.id)) || null;
+  // условие ['if', 'флаг' | '!флаг', […]]: «!» — отрицание (флаг не задан или равен 0)
+  E.flagTest = function (slot, expr) { const neg = String(expr)[0] === '!', v = !!slot.story.flags[neg ? String(expr).slice(1) : expr]; return neg ? !v : v; };
   E.setFlags = function (slot, f) { const fl = slot.story.flags; for (const k in f) { const v = f[k]; fl[k] = (typeof v === 'number' && typeof fl[k] === 'number') ? fl[k] + v : v; } };
   E.give = function (slot, g) {
     if (g.gold) { slot.gold += g.gold; }
