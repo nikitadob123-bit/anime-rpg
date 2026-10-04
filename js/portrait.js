@@ -281,5 +281,12 @@
   }
   RPG.portraitSVG = portraitSVG;
   RPG.portraitSpec = (id) => RPG.PORTRAIT_BY_ID[id] || null;
-  if (typeof module !== 'undefined') module.exports = RPG;
+  
+/* Маппинг настроений реплики (n,h,a,s,d,m) → имя файла-настроения арта. Общий для плеера и тестов. */
+RPG.MOOD_NAMES = { n: 'neutral', h: 'happy', a: 'angry', s: 'shy', d: 'sad' };
+RPG.HERO_MOOD_NAMES = { n: 'neutral', h: 'smirk', a: 'angry', d: 'despair', m: 'demon', s: 'neutral' };
+RPG.moodName = (art, mood) => (art === 'hero' ? RPG.HERO_MOOD_NAMES : RPG.MOOD_NAMES)[mood || 'n'] || 'neutral';
+/* Итоговое имя файла из манифеста с откатом: настроение → neutral → null (тогда рисуется SVG) */
+RPG.artFileOf = (manifest, art, mood) => { const m = manifest && manifest.portraits && manifest.portraits[art]; if (!m) return null; return m[RPG.moodName(art, mood)] || m.neutral || null; };
+if (typeof module !== 'undefined') module.exports = RPG;
 })();

@@ -7,7 +7,7 @@
   "apostle_angry.webp": [
    1280,
    720,
-   0
+   1
   ],
   "apostle_neutral.webp": [
    1280,
@@ -25,9 +25,9 @@
    0
   ],
   "gen1_angry.webp": [
-   1280,
+   1083,
    720,
-   0
+   1
   ],
   "gen1_happy.webp": [
    1280,
@@ -40,14 +40,14 @@
    1
   ],
   "gen1_shy.webp": [
-   1280,
+   834,
    720,
-   0
+   1
   ],
   "gen2_angry.webp": [
-   1280,
+   1044,
    720,
-   0
+   1
   ],
   "gen2_happy.webp": [
    1268,
@@ -60,19 +60,19 @@
    1
   ],
   "gen2_shy.webp": [
-   1280,
+   681,
    720,
-   0
+   1
   ],
   "gen3_angry.webp": [
-   1280,
+   1141,
    720,
-   0
+   1
   ],
   "gen3_happy.webp": [
-   1280,
+   639,
    720,
-   0
+   1
   ],
   "gen3_neutral.webp": [
    594,
@@ -80,9 +80,9 @@
    1
   ],
   "gen3_shy.webp": [
-   1280,
+   715,
    720,
-   0
+   1
   ],
   "gen4_angry.webp": [
    1280,
@@ -100,19 +100,19 @@
    1
   ],
   "gen4_shy.webp": [
-   1280,
+   777,
    720,
-   0
+   1
   ],
   "gen5_angry.webp": [
-   1280,
+   990,
    720,
-   0
+   1
   ],
   "gen5_happy.webp": [
-   1280,
+   981,
    720,
-   0
+   1
   ],
   "gen5_neutral.webp": [
    735,
@@ -120,19 +120,19 @@
    1
   ],
   "gen5_shy.webp": [
-   1280,
+   612,
    720,
-   0
+   1
   ],
   "gen6_angry.webp": [
-   1280,
+   1116,
    720,
-   0
+   1
   ],
   "gen6_happy.webp": [
-   1280,
+   815,
    720,
-   0
+   1
   ],
   "gen6_neutral.webp": [
    1221,
@@ -140,19 +140,19 @@
    1
   ],
   "gen6_shy.webp": [
-   1280,
+   784,
    720,
-   0
+   1
   ],
   "gen7_angry.webp": [
    1280,
    720,
-   0
+   1
   ],
   "gen7_happy.webp": [
-   1280,
+   1044,
    720,
-   0
+   1
   ],
   "gen7_neutral.webp": [
    1243,
@@ -185,14 +185,14 @@
    1
   ],
   "gen9_angry.webp": [
-   1280,
+   1185,
    720,
-   0
+   1
   ],
   "gen9_happy.webp": [
-   1280,
+   1196,
    720,
-   0
+   1
   ],
   "gen9_neutral.webp": [
    1055,
@@ -200,14 +200,14 @@
    1
   ],
   "gen9_shy.webp": [
-   1280,
+   1193,
    720,
-   0
+   1
   ],
   "hero1_angry.webp": [
    1280,
    720,
-   0
+   1
   ],
   "hero1_neutral.webp": [
    1280,
@@ -215,14 +215,14 @@
    1
   ],
   "hero1_sad.webp": [
-   1280,
+   889,
    720,
-   0
+   1
   ],
   "hero2_angry.webp": [
    1280,
    720,
-   0
+   1
   ],
   "hero2_neutral.webp": [
    934,
@@ -232,7 +232,7 @@
   "hero2_sad.webp": [
    1280,
    720,
-   0
+   1
   ],
   "hero3_angry.webp": [
    1280,
@@ -252,17 +252,17 @@
   "hero_angry.webp": [
    1280,
    720,
-   0
+   1
   ],
   "hero_demon.webp": [
-   1280,
+   1148,
    720,
-   0
+   1
   ],
   "hero_despair.webp": [
    1280,
    720,
-   0
+   1
   ],
   "hero_neutral.webp": [
    764,
@@ -270,9 +270,9 @@
    1
   ],
   "hero_smirk.webp": [
-   1280,
+   852,
    720,
-   0
+   1
   ],
   "sister_happy.webp": [
    1280,
@@ -445,68 +445,68 @@
   "sub_vesper_neutral.webp"
  ],
  "src": {
-  "apostle_angry.webp": "k2-546141-1791094629",
-  "apostle_neutral.webp": "k2-446389-1791093892",
-  "cg_demon_king.webp": "k2-2701866-1791093676",
-  "cg_halo_city.webp": "k2-2551886-1791093676",
-  "gen1_angry.webp": "k2-308734-1791094126",
-  "gen1_happy.webp": "k2-252631-1791094054",
-  "gen1_neutral.webp": "k2-251187-1791093770",
-  "gen1_shy.webp": "k2-251915-1791094126",
-  "gen2_angry.webp": "k2-363287-1791094213",
-  "gen2_happy.webp": "k2-314796-1791094213",
-  "gen2_neutral.webp": "k2-243528-1791093770",
-  "gen2_shy.webp": "k2-262873-1791094213",
-  "gen3_angry.webp": "k2-288518-1791094213",
-  "gen3_happy.webp": "k2-245426-1791094213",
-  "gen3_neutral.webp": "k2-217851-1791093770",
-  "gen3_shy.webp": "k2-230407-1791094213",
-  "gen4_angry.webp": "k2-275245-1791094213",
-  "gen4_happy.webp": "k2-259215-1791094213",
-  "gen4_neutral.webp": "k2-246460-1791093770",
-  "gen4_shy.webp": "k2-305053-1791094298",
-  "gen5_angry.webp": "k2-264899-1791094298",
-  "gen5_happy.webp": "k2-254222-1791094298",
-  "gen5_neutral.webp": "k2-205747-1791093831",
-  "gen5_shy.webp": "k2-182241-1791094298",
-  "gen6_angry.webp": "k2-271765-1791094298",
-  "gen6_happy.webp": "k2-244010-1791094298",
-  "gen6_neutral.webp": "k2-330262-1791093831",
-  "gen6_shy.webp": "k2-312847-1791094298",
-  "gen7_angry.webp": "k2-583399-1791094402",
-  "gen7_happy.webp": "k2-328113-1791094402",
-  "gen7_neutral.webp": "k2-340788-1791093831",
-  "gen7_shy.webp": "k2-325858-1791094402",
-  "gen8_angry.webp": "k2-207442-1791094402",
-  "gen8_happy.webp": "k2-241032-1791094402",
-  "gen8_neutral.webp": "k2-299263-1791093831",
-  "gen8_shy.webp": "k2-177017-1791094402",
-  "gen9_angry.webp": "k2-327364-1791094402",
-  "gen9_happy.webp": "k2-353401-1791094402",
-  "gen9_neutral.webp": "k2-297662-1791093831",
-  "gen9_shy.webp": "k2-288904-1791094402",
-  "hero1_angry.webp": "k2-387404-1791094629",
-  "hero1_neutral.webp": "k2-362185-1791093892",
-  "hero1_sad.webp": "k2-295125-1791094629",
-  "hero2_angry.webp": "k2-233361-1791094629",
-  "hero2_neutral.webp": "k2-269120-1791093892",
-  "hero2_sad.webp": "k2-259467-1791094629",
-  "hero3_angry.webp": "k2-303418-1791094629",
-  "hero3_neutral.webp": "k2-211428-1791093892",
-  "hero3_sad.webp": "k2-265910-1791094629",
-  "hero_angry.webp": "k2-335775-1791094126",
-  "hero_demon.webp": "k2-385373-1791094126",
-  "hero_despair.webp": "k2-291929-1791094126",
-  "hero_neutral.webp": "k2-205929-1791093770",
-  "hero_smirk.webp": "k2-192253-1791094126",
-  "sister_happy.webp": "k2-294792-1791094054",
-  "sister_neutral.webp": "k2-182583-1791093892",
-  "sub_brum_neutral.webp": "k2-289659-1791093962",
-  "sub_garm_neutral.webp": "k2-298735-1791093962",
-  "sub_grak_neutral.webp": "k2-276481-1791093962",
-  "sub_skril_neutral.webp": "k2-246712-1791093962",
-  "sub_tik_neutral.webp": "k2-187296-1791093962",
-  "sub_vesper_neutral.webp": "k2-202151-1791093962"
+  "apostle_angry.webp": "k6-546141-1791094629",
+  "apostle_neutral.webp": "k6-446389-1791093892",
+  "cg_demon_king.webp": "k6-2701866-1791093676",
+  "cg_halo_city.webp": "k6-2551886-1791093676",
+  "gen1_angry.webp": "k6-308734-1791094126",
+  "gen1_happy.webp": "k6-252631-1791094054",
+  "gen1_neutral.webp": "k6-251187-1791093770",
+  "gen1_shy.webp": "k6-251915-1791094126",
+  "gen2_angry.webp": "k6-363287-1791094213",
+  "gen2_happy.webp": "k6-314796-1791094213",
+  "gen2_neutral.webp": "k6-243528-1791093770",
+  "gen2_shy.webp": "k6-262873-1791094213",
+  "gen3_angry.webp": "k6-288518-1791094213",
+  "gen3_happy.webp": "k6-245426-1791094213",
+  "gen3_neutral.webp": "k6-217851-1791093770",
+  "gen3_shy.webp": "k6-230407-1791094213",
+  "gen4_angry.webp": "k6-275245-1791094213",
+  "gen4_happy.webp": "k6-259215-1791094213",
+  "gen4_neutral.webp": "k6-246460-1791093770",
+  "gen4_shy.webp": "k6-305053-1791094298",
+  "gen5_angry.webp": "k6-264899-1791094298",
+  "gen5_happy.webp": "k6-254222-1791094298",
+  "gen5_neutral.webp": "k6-205747-1791093831",
+  "gen5_shy.webp": "k6-182241-1791094298",
+  "gen6_angry.webp": "k6-271765-1791094298",
+  "gen6_happy.webp": "k6-244010-1791094298",
+  "gen6_neutral.webp": "k6-330262-1791093831",
+  "gen6_shy.webp": "k6-312847-1791094298",
+  "gen7_angry.webp": "k6-583399-1791094402",
+  "gen7_happy.webp": "k6-328113-1791094402",
+  "gen7_neutral.webp": "k6-340788-1791093831",
+  "gen7_shy.webp": "k6-325858-1791094402",
+  "gen8_angry.webp": "k6-207442-1791094402",
+  "gen8_happy.webp": "k6-241032-1791094402",
+  "gen8_neutral.webp": "k6-299263-1791093831",
+  "gen8_shy.webp": "k6-177017-1791094402",
+  "gen9_angry.webp": "k6-327364-1791094402",
+  "gen9_happy.webp": "k6-353401-1791094402",
+  "gen9_neutral.webp": "k6-297662-1791093831",
+  "gen9_shy.webp": "k6-288904-1791094402",
+  "hero1_angry.webp": "k6-387404-1791094629",
+  "hero1_neutral.webp": "k6-362185-1791093892",
+  "hero1_sad.webp": "k6-295125-1791094629",
+  "hero2_angry.webp": "k6-233361-1791094629",
+  "hero2_neutral.webp": "k6-269120-1791093892",
+  "hero2_sad.webp": "k6-259467-1791094629",
+  "hero3_angry.webp": "k6-303418-1791094629",
+  "hero3_neutral.webp": "k6-211428-1791093892",
+  "hero3_sad.webp": "k6-265910-1791094629",
+  "hero_angry.webp": "k6-335775-1791094126",
+  "hero_demon.webp": "k6-385373-1791094126",
+  "hero_despair.webp": "k6-291929-1791094126",
+  "hero_neutral.webp": "k6-205929-1791093770",
+  "hero_smirk.webp": "k6-192253-1791094126",
+  "sister_happy.webp": "k6-294792-1791094054",
+  "sister_neutral.webp": "k6-182583-1791093892",
+  "sub_brum_neutral.webp": "k6-289659-1791093962",
+  "sub_garm_neutral.webp": "k6-298735-1791093962",
+  "sub_grak_neutral.webp": "k6-276481-1791093962",
+  "sub_skril_neutral.webp": "k6-246712-1791093962",
+  "sub_tik_neutral.webp": "k6-187296-1791093962",
+  "sub_vesper_neutral.webp": "k6-202151-1791093962"
  },
- "v": "2a4465a8"
+ "v": "0da2ae21"
 }

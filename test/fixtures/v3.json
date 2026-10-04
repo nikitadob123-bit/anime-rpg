@@ -1,0 +1,114 @@
+{
+ "v": 3,
+ "id": "pold3",
+ "nick": "Старый игрок",
+ "avatar": "🦉",
+ "created": 1700000000000,
+ "last": 1700000000000,
+ "settings": {
+  "sound": true,
+  "music": true,
+  "vol": 0.6,
+  "textSpeed": 2,
+  "battleSpeed": 1,
+  "auto": false,
+  "shake": true,
+  "particles": true,
+  "tutorial": true
+ },
+ "slots": [
+  {
+   "hero": {
+    "name": "Старичок",
+    "sex": "f",
+    "race": "elf",
+    "cls": "mage",
+    "portrait": "elf_f_1",
+    "uniq": "frostheart",
+    "prof1": "alch",
+    "prof2": "herb",
+    "profLocked": true,
+    "level": 9,
+    "xp": 0,
+    "spent": {
+     "mA1": 1
+    },
+    "uspent": {},
+    "bossPts": 0
+   },
+   "gold": 777,
+   "uid": 2,
+   "inv": [],
+   "mats": {},
+   "cons": {
+    "pot_hp1": 3,
+    "pot_mp1": 1
+   },
+   "eq": {
+    "weapon": {
+     "id": 1,
+     "k": "staff",
+     "r": 0,
+     "il": 1,
+     "nm": "Посох",
+     "st": {
+      "mag": 11,
+      "int": 1
+     },
+     "up": 0,
+     "en": null,
+     "sl": "weapon"
+    }
+   },
+   "profs": {
+    "alch": {
+     "lv": 1,
+     "xp": 0
+    },
+    "herb": {
+     "lv": 1,
+     "xp": 0
+    }
+   },
+   "story": {
+    "flags": {
+     "prologue_done": 1
+    },
+    "done": [
+     "prologue",
+     "ch1_a"
+    ],
+    "cur": "prologue",
+    "log": []
+   },
+   "prog": {
+    "cleared": {
+     "mill": 1,
+     "wood": 1
+    },
+    "best": {},
+    "boss": {}
+   },
+   "run": null,
+   "party": [],
+   "stats": {
+    "kills": 0,
+    "runs": 0,
+    "wins": 0,
+    "deaths": 0,
+    "crafted": 0,
+    "gathered": 0,
+    "goldEarned": 0
+   },
+   "tut": {},
+   "buffs": [],
+   "created": 1700000000000,
+   "played": 0,
+   "rev": 0
+  },
+  null,
+  null
+ ],
+ "active": 0,
+ "seenIntro": {}
+}

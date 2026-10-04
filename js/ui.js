@@ -23,22 +23,6 @@
   UI.flashSaved = function () { const el = $('#saveDot'); if (!el) return; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); };
 
   // ───── Портреты ─────
-  UI.portraitSpec = function (id) {
-    if (!id) return null;
-    if (id.startsWith('npc_')) { const m = /^npc_([a-z]+)(?:_([nhsx]))?$/.exec(id); const L = m && RPG.NPC_LOOK[m[1]]; return L ? Object.assign({}, L, { mood: m[2] || 'n' }) : null; }
-    const p = RPG.PORTRAIT_BY_ID[id]; return p ? Object.assign({}, p, { mood: 'n' }) : null;
-  };
-  UI.por = function (id, cls, lazy) {
-    if (!id) return '<div class="por empty"></div>';
-    if (/^npc_[a-z]+$/.test(id)) id += '_n';
-    return `<img class="por ${cls || ''}" ${lazy === false ? '' : 'loading="lazy"'} decoding="async" alt="" draggable="false" data-pid="${esc(id)}" src="assets/portraits/${esc(id)}.webp">`;
-  };
-  document.addEventListener('error', function (e) {
-    const t = e.target; if (!t || t.tagName !== 'IMG' || !t.dataset.pid) return;
-    const spec = UI.portraitSpec(t.dataset.pid); if (!spec) return;
-    const d = document.createElement('div'); d.className = t.className + ' svgpor'; d.innerHTML = RPG.portraitSVG(spec); t.replaceWith(d);
-  }, true);
-
   // ───── Тосты и модальные окна ─────
   UI.toast = function (msg, kind) {
     const w = $('#toasts'); const el = document.createElement('div'); el.className = 'toast ' + (kind || ''); el.innerHTML = msg; w.appendChild(el);

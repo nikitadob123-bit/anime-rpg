@@ -30,11 +30,34 @@ def key_bg(im, thresh=48):
     alpha = Image.fromarray(np.where(isbg, 0, 255).astype('uint8')).filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(1.1))
     out = im.convert('RGBA'); out.putalpha(alpha); return out
 
+def key_bg_grad(im, sat_max=26, dev=20):
+    """Фон-градиент (тёмный/виньетка): заливка от краёв по пикселям с малым градиентом, низкой насыщенностью и яркостью в диапазоне фона."""
+    w, h = im.size
+    a = np.array(im).astype(int)
+    sm = np.array(im.filter(ImageFilter.GaussianBlur(1.6))).astype(int)
+    gx = np.abs(np.diff(sm, axis=1, prepend=sm[:, :1])).sum(axis=2); gy = np.abs(np.diff(sm, axis=0, prepend=sm[:1])).sum(axis=2)
+    grad = np.maximum(gx, gy)
+    lum = sm.mean(axis=2); sat = sm.max(axis=2) - sm.min(axis=2)
+    # поверхность фона: квадратичная аппроксимация яркости по краевой полосе
+    yy, xx = np.mgrid[0:h, 0:w]; xn, yn = xx / w, yy / h
+    band = np.zeros((h, w), bool); band[:4, :] = True; band[: int(h * 0.75), :4] = True; band[: int(h * 0.75), -4:] = True
+    B = np.stack([np.ones(band.sum()), xn[band], yn[band], xn[band] * yn[band], xn[band] ** 2, yn[band] ** 2], 1)
+    coef = np.linalg.lstsq(B, lum[band], rcond=None)[0]
+    fit = coef[0] + coef[1] * xn + coef[2] * yn + coef[3] * xn * yn + coef[4] * xn ** 2 + coef[5] * yn ** 2
+    cand = (grad < 4.2) & (sat < sat_max) & (np.abs(lum - fit) < dev)
+    img = Image.fromarray(np.where(cand, 255, 0).astype('uint8')).convert('RGB')
+    for sd in [(x, 0) for x in range(0, w, 24)] + [(0, y) for y in range(0, int(h * 0.8), 24)] + [(w - 1, y) for y in range(0, int(h * 0.8), 24)]:
+        if img.getpixel(sd) == (255, 255, 255): ImageDraw.floodfill(img, sd, (255, 0, 255))
+    isbg = (np.array(img)[:, :, 1] == 0) & (np.array(img)[:, :, 0] == 255)
+    if isbg.mean() < 0.12 or isbg.mean() > 0.9: return None
+    alpha = Image.fromarray(np.where(isbg, 0, 255).astype('uint8')).filter(ImageFilter.MedianFilter(5)).filter(ImageFilter.MinFilter(5)).filter(ImageFilter.GaussianBlur(1.3))
+    out = im.convert('RGBA'); out.putalpha(alpha); return out
+
 DIMS = {}
 def convert(src, dst, cg):
     im = Image.open(src).convert('RGB'); keyed = False
     if not cg:
-        k = key_bg(im)
+        k = key_bg(im) or key_bg_grad(im) or key_bg_grad(im, 80, 34)
         if k is not None:
             keyed = True; bb = k.split()[3].point(lambda v: 255 if v > 24 else 0).getbbox()
             if bb:
@@ -59,7 +82,7 @@ for f in sorted(os.listdir(SRC)) if os.path.isdir(SRC) else []:
     low = name.lower()
     if low.startswith('ref_'): continue
     p = os.path.join(SRC, f)
-    sig = 'k2-%d-%d' % (os.path.getsize(p), int(os.path.getmtime(p)))
+    sig = 'k6-%d-%d' % (os.path.getsize(p), int(os.path.getmtime(p)))
     cg = low.startswith('cg_')
     if not cg and not re.match(r'^[a-z0-9]+(_[a-z0-9]+)*_[a-z]+$', low):
         print('пропуск (имя):', f); continue

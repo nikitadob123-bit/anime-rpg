@@ -2,19 +2,13 @@
 (function () {
   const RPG = globalThis.RPG, D = RPG.D, E = RPG.E, F = RPG.F, UI = RPG.UI;
   const { $, esc } = UI;
-  const MOODS = { n: 'neutral', h: 'happy', a: 'angry', s: 'shy', d: 'sad' };
-  const HERO = { n: 'neutral', h: 'smirk', a: 'angry', d: 'despair', m: 'demon', s: 'neutral' };
   // ───── Арт: манифест, настроения, запасные SVG ─────
   UI.manifest = { portraits: {}, cg: {}, pre: [] };
   UI.loadManifest = async function () {
     try { const r = await fetch('assets/vn/manifest.json', { cache: 'no-cache' }); if (r.ok) UI.manifest = await r.json(); } catch (e) { /* офлайн без кэша: останутся SVG */ }
     return UI.manifest;
   };
-  UI.artFile = function (art, mood) {
-    const m = UI.manifest.portraits[art]; if (!m) return null;
-    const name = (art === 'hero' ? HERO : MOODS)[mood || 'n'] || 'neutral';
-    return m[name] || m.neutral || null;
-  };
+  UI.artFile = (art, mood) => RPG.artFileOf(UI.manifest, art, mood);
   UI.cgFile = (id) => UI.manifest.cg['cg_' + id] || null;
   UI.portraitSpec = function (id, mood) {
     const L = RPG.NPC_LOOK[id]; if (!L) return null;
