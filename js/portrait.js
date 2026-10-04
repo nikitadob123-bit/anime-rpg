@@ -292,7 +292,7 @@ RPG.artFileOf = (manifest, art, mood) => { const m = manifest && manifest.portra
 /* Геометрия сцены новеллы (чистые функции — тестируются в node).
    Метрики портрета: {w,h,fx,fy,fw} — размер файла, центр лица и ширина лица (px). Высота h>720 означает продление бюста вниз (затухание под диалогом).
    Кадр актёра: ширина 1800, центр лица эталона в x=900, сверху запас 220; позиция и размер кадра задаются одним transform (translate+scale). */
-RPG.VN = { FR_W: 1800, FR_CX: 900, FR_T: 220, BUST: 720, SLOTS: { 1: [0.5], 2: [0.3, 0.7], 3: [0.2, 0.5, 0.8] }, FACE_K: { 1: 0.5, 2: 0.42, 3: 0.35 } };
+RPG.VN = { FR_W: 1800, FR_CX: 900, FR_T: 220, BUST: 720, SLOTS: { 1: [0.5], 2: [0.28, 0.72], 3: [0.17, 0.5, 0.83] }, FACE_K: { 1: 0.5, 2: 0.4, 3: 0.3 } };
 RPG.artMetricsOf = (manifest, art, mood) => {
   const f = RPG.artFileOf(manifest, art, mood), d = f && manifest.dim && manifest.dim[f];
   if (d && d.length >= 6) return { w: d[0], h: d[1], fx: d[3], fy: d[4], fw: d[5], img: true };

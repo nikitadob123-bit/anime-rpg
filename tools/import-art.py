@@ -65,7 +65,7 @@ try:
     import cv2; CASCADE = cv2.CascadeClassifier(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'lbpcascade_animeface.xml')); HAVE_FACE = not CASCADE.empty()
 except Exception: HAVE_FACE = False
 import geom
-METHOD = 'm3' if HAVE_MATTE else 'k8'   # m3 — нейро-маска + closed-form matting + defringe; k8 — запасной chroma-ключ
+METHOD = 'm4' if HAVE_MATTE else 'k8'   # m3 — нейро-маска + closed-form matting + defringe; k8 — запасной chroma-ключ
 OVERRIDES = {}
 _ov = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'face-overrides.json')
 if os.path.exists(_ov): OVERRIDES = json.load(open(_ov))
@@ -101,6 +101,22 @@ def extend_bottom(im, ext=BOTTOM_EXT):
     t = np.linspace(0.0, 1.0, ext, dtype=np.float32)[:, None, None]
     rows = np.repeat(last, ext, axis=0); rows[..., :3] *= (1 - 0.5 * t); rows[..., 3] *= ((1 - t) ** 1.2)[..., 0]
     return Image.fromarray(np.concatenate([a, rows]).clip(0, 255).astype('uint8'), 'RGBA')
+
+def soften_borders(im, side=90, top=60):
+    """Персонаж, обрезанный краем исходного кадра (руки, плащ, волосы), даёт прямую «бумажную» кромку внутри экрана — плавно растворяем альфу у боковых/верхней границ там, где контент их касается."""
+    a = np.asarray(im.convert('RGBA')).astype(np.float32); h, w = a.shape[:2]; al = a[..., 3] / 255.
+    from scipy.ndimage import gaussian_filter1d
+    def ramp(n, k): t = np.clip(np.arange(n) / float(k), 0, 1); return t * t * (3 - 2 * t)
+    mult = np.ones((h, w), np.float32)
+    for col, rev in ((0, False), (w - 1, True)):
+        rows = gaussian_filter1d((al[:, col] > 0.3).astype(np.float32), 12)          # где контент касается края
+        r = ramp(side, side); r = r[::-1] if rev else r
+        prof = np.ones(w, np.float32); sl = slice(w - side, w) if rev else slice(0, side); prof[sl] = r
+        mult *= 1 - rows[:, None] * (1 - prof[None, :])
+    cols = gaussian_filter1d((al[0, :] > 0.3).astype(np.float32), 12)
+    prof = np.ones(h, np.float32); prof[:top] = ramp(top, top); mult *= 1 - cols[None, :] * (1 - prof[:, None])
+    a[..., 3] = np.clip(a[..., 3] * mult, 0, 255)
+    return Image.fromarray(a.astype('uint8'), 'RGBA')
 
 def cut_portrait(src, name):
     """-> (RGBA полного кадра | None, исходный RGB)"""
@@ -168,7 +184,7 @@ for low, p, cg, sig in files:
     k = CUT[low]; fx, fy, fw = GEOM[low]; out_name = low + '.webp'; dst = os.path.join(OUT, out_name)
     bb = k.split()[3].point(lambda v: 255 if v > 10 else 0).getbbox()
     pad = max(6, int(0.02 * k.size[0])); x0 = max(0, bb[0] - pad) if bb else 0; x1 = min(k.size[0], bb[2] + pad) if bb else k.size[0]
-    kk = k.crop((x0, 0, x1, k.size[1])); fx -= x0
+    k = soften_borders(k); kk = k.crop((x0, 0, x1, k.size[1])); fx -= x0
     kk = extend_bottom(kk); w, h = kk.size
     dims = [w, h, 1, round(fx), round(fy), round(fw)]
     if old.get(out_name) != sig or not os.path.exists(dst) or olddim.get(out_name) != dims:

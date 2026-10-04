@@ -120,7 +120,7 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
   let fc = await faces();
   check('VN: три актёра на сцене', fc.length === 3, fc.map((x) => x.f).join(','));
   const fws = fc.map((x) => x.fw); check('VN: одинаковый размер голов (±8%)', Math.max(...fws) / Math.min(...fws) < 1.08, fws.map((x) => Math.round(x)).join('/'));
-  const xs = fc.map((x) => x.fcx).sort((a, b) => a - b); check('VN: слоты лево/центр/право', Math.abs(xs[0] - 78) < 14 && Math.abs(xs[1] - 195) < 14 && Math.abs(xs[2] - 312) < 14, xs.map(Math.round).join('/'));
+  const xs = fc.map((x) => x.fcx).sort((a, b) => a - b); check('VN: слоты лево/центр/право', Math.abs(xs[0] - 66) < 14 && Math.abs(xs[1] - 195) < 14 && Math.abs(xs[2] - 324) < 14, xs.map(Math.round).join('/'));
   check('VN: герой слева', fc[0].f.startsWith('hero_') && Math.abs(fc[0].fcx - xs[0]) < 1);
   check('VN: головы в кадре, низ спрайта уходит под диалог', fc.every((x) => x.fcy - 0.7 * x.fw > -6 && x.fcy < 600 && x.bottom >= x.dlgTop + 4), fc.map((x) => `${Math.round(x.fcy)}/${Math.round(x.bottom)}>${Math.round(x.dlgTop)}`).join(' '));
   check('VN: говорящий поверх остальных', fc.filter((x) => /\btalk\b/.test(x.cls)).length === 1 && Number(fc.find((x) => /\btalk\b/.test(x.cls)).z) > Math.max(...fc.filter((x) => !/\btalk\b/.test(x.cls)).map((x) => Number(x.z))));
@@ -184,9 +184,9 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
   await endVn(); await page.emulateMedia({ reducedMotion: 'no-preference' });
 
   // H. скриншоты постановки: три актёра на тёмном и светлом фоне, двое, один
-  const sceneShot = async (name, lines, bg, last) => { await playTest(lines, bg); await toText(last); await page.waitForTimeout(1500); await shot(name); await endVn(); };
+  const sceneShot = async (name, lines, bg, last, light) => { await playTest(lines, bg); if (light) await ev(() => { document.querySelectorAll('.vbg').forEach((b) => { b.style.background = '#f0f0f0'; b.innerHTML = ''; }); document.querySelector('.vfog').style.display = 'none'; }); await toText(last); await page.waitForTimeout(1500); await shot(name); await endVn(); };
   await sceneShot('vn2-three-dark', [['bg', 'void_dusk'], ['h', 'Склонитесь.', 'a'], ['e', 'Мы не отступим.', 'n'], ['i', 'Опять.', 'h']], 'void_dusk', 'Опять');
-  await sceneShot('vn2-three-light', [['bg', 'spire'], ['h', 'Склонитесь.', 'n'], ['e', 'Мы не отступим.', 'a'], ['i', 'Опять.', 's']], 'spire', 'Опять');
+  await sceneShot('vn2-three-light', [['bg', 'spire'], ['h', 'Склонитесь.', 'n'], ['e', 'Мы не отступим.', 'a'], ['i', 'Опять.', 's']], 'spire', 'Опять', true);
   await sceneShot('vn2-two-cathedral', [['bg', 'cathedral'], ['h', 'Всё кончено.', 'a'], ['e', 'Я… не могу. Простите.', 'd']], 'cathedral', 'Простите');
   await sceneShot('vn2-one-demon', [['bg', 'camp'], ['h', 'Нимб Мира треснет.', 'm']], 'camp', 'треснет');
 
