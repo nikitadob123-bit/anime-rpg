@@ -56,7 +56,7 @@
     $$('#nav button').forEach((b) => { const t = b.dataset.t; b.classList.toggle('on', t === UI.tab); const badge = b.querySelector('.nb'); if (badge) badge.remove(); const n = t === 'skills' ? sp + up : 0; if (n > 0) b.insertAdjacentHTML('beforeend', `<span class="nb">${n}</span>`); if (t === 'city') { const ns = UI.nextStory(s); if (ns && ns.ok && !s.run) b.insertAdjacentHTML('beforeend', '<span class="nb dot">!</span>'); } });
     if (UI.tab === 'city') try { RPG.F.setMode(UI.p.settings.particles ? 'embers' : 'none'); } catch (e) { /* ignore */ }
   };
-  UI.act.tab = (el) => { UI.tab = el.dataset.t; UI.sfx('tab'); UI.renderGame(); const c = $('.content'); if (c) c.scrollTop = 0; };
+  UI.act.tab = (el) => { UI.tab = el.dataset.t; UI.sfx('tab'); UI.renderGame(); const c = $('.content'); if (c) { c.scrollTop = 0; c.classList.add('tin'); } };   // плавный вход вкладки — только при переключении, не при каждом refresh
   UI.act.sub = (el) => { UI.sub[el.dataset.k] = el.dataset.v; UI.refresh(false); };
 
   UI.tabs = {};
@@ -75,7 +75,7 @@
       ${story}${run}
       ${sp ? `<button class="card tap hint" data-act="tab" data-t="skills">🌟 Есть неиспользованные очки: <b>${sp}</b></button>` : ''}
       ${rp ? `<button class="card tap hint" data-act="tab" data-t="hearts">💞 Новых сцен с героинями: <b>${rp}</b></button>` : ''}
-      <div class="bgrid">
+      <div class="bgrid bcity">
         <button class="bld" data-act="shop" data-quiet="1"><span>🏪</span><b>Лавка</b><small>Снаряжение, зелья, подарки</small></button>
         <button class="bld" data-act="forge" data-quiet="1"><span>⚒️</span><b>Кузница</b><small>Улучшение до +${E.upCap(s)}</small></button>
         <button class="bld" data-act="tavern" data-quiet="1"><span>🔥</span><b>Костёр</b><small>Слухи и разговоры</small></button>

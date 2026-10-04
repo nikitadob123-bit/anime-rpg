@@ -1,0 +1,149 @@
+/* ═══ Нимб Мира v2.6.0 — «Король Демонов»: тёмная аниме-тема поверх базовых стилей (подключается последней).
+   Палитра: чернильно-фиолетовый фон, пурпурные и алые свечения, золото для акцентов; трещины-вены как у героя в форме Короля.
+   Всё ведётся переменными ниже. Тяжёлого нет: два подмножества шрифта (woff2 ≈ 31 КБ), SVG-орнаменты встроены, анимации — только opacity/transform. ═══ */
+@font-face{font-family:"Ruslan Display";src:url(../fonts/ruslan.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Philosopher";src:url(../fonts/philosopher.woff2) format("woff2");font-weight:700;font-style:normal;font-display:swap}
+:root{
+  --ink:#06030c;--bg:#0a0512;--bg2:#13091f;--panel:rgba(22,11,38,.9);--panel2:rgba(40,18,64,.92);--line:rgba(205,150,255,.2);
+  --tx:#f4eeff;--dim:#b4a4d4;--gold:#f0c35a;--gold2:#ffe3a2;--goldd:#a9742a;--acc:#b66bff;--acc2:#ff4f84;--blood:#c0123c;--blood2:#ff2d5f;--violet:#7a3cff;
+  --ok:#74e8a2;--bad:#ff6482;--hp:#e0245a;--mp:#7a5cff;--xp:#c76bff;
+  --glow-p:0 0 18px rgba(160,70,255,.38);--glow-r:0 0 16px rgba(255,45,95,.4);--glow-g:0 0 16px rgba(240,195,90,.38);
+  --serif:"Philosopher",Georgia,"Noto Serif","Times New Roman",serif;--disp:"Ruslan Display","Philosopher",Georgia,"Noto Serif",serif;
+  --cut:6px 16px 6px 16px;                    /* «скошенные» углы панелей */
+}
+/* — фон: чернила, пурпур сверху, багрянец снизу, виньетка и трещины-вены (всё статично, без перерисовки) — */
+html,body{background:var(--ink)}
+body{background:radial-gradient(95% 52% at 50% -6%,rgba(112,34,150,.5),transparent 64%),radial-gradient(80% 42% at 104% 102%,rgba(168,14,62,.32),transparent 62%),radial-gradient(60% 34% at -6% 70%,rgba(70,20,130,.28),transparent 70%),linear-gradient(180deg,#0e0719 0%,#080410 58%,#04020a 100%)}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 200'%3E%3Cg fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M118 2 96 34 104 52 78 88 86 108 58 150 64 168 40 198' stroke='%23ff2d5f' stroke-opacity='.18' stroke-width='6'/%3E%3Cpath d='M118 2 96 34 104 52 78 88 86 108 58 150 64 168 40 198' stroke='%23ff4f84' stroke-opacity='.55' stroke-width='1.2'/%3E%3Cpath d='M104 52 118 66M78 88 62 84 52 98M86 108 104 122M58 150 40 148' stroke='%23ff4f84' stroke-opacity='.4' stroke-width='.9'/%3E%3C/g%3E%3C/svg%3E") right top/110px 183px no-repeat,
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 200'%3E%3Cg fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 198 24 168 18 148 44 112 36 92 62 50 56 32 80 2' stroke='%23a24bff' stroke-opacity='.2' stroke-width='6'/%3E%3Cpath d='M2 198 24 168 18 148 44 112 36 92 62 50 56 32 80 2' stroke='%23c88aff' stroke-opacity='.5' stroke-width='1.2'/%3E%3Cpath d='M18 148 2 138M44 112 62 120 70 106M36 92 18 86' stroke='%23c88aff' stroke-opacity='.38' stroke-width='.9'/%3E%3C/g%3E%3C/svg%3E") left bottom/110px 183px no-repeat,
+  radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(0,0,0,.62) 100%)}
+#app{z-index:2}
+/* — типографика — */
+h1,h2{font-family:var(--disp);font-weight:400;letter-spacing:.04em}
+h2{font-size:23px;color:var(--gold2);text-shadow:0 0 14px rgba(240,195,90,.35),0 2px 0 rgba(0,0,0,.6)}
+h3{font-family:var(--serif);font-weight:700;color:#f6dcff}
+h4{font-family:var(--serif);color:#c9a9ff;letter-spacing:.1em;display:flex;align-items:center;gap:8px}
+h4::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(205,150,255,.4),transparent)}
+.lbl{font-family:var(--serif)}
+/* — кнопки — */
+.btn{font-family:var(--serif);font-weight:700;letter-spacing:.02em;border-radius:var(--cut);background:linear-gradient(180deg,rgba(62,30,96,.96),rgba(30,13,52,.96));border:1px solid rgba(205,150,255,.38);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 2px 10px rgba(110,40,190,.28);transition:transform .08s,filter .15s,box-shadow .15s}
+.btn:active{transform:scale(.96);filter:brightness(1.25);box-shadow:inset 0 0 14px rgba(255,255,255,.14),var(--glow-p)}
+.btn.primary{background:linear-gradient(180deg,#ffdf8e 0%,#e2a43e 52%,#b87420 100%);color:#2a1305;border-color:#fff0bf;text-shadow:0 1px 0 rgba(255,255,255,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 0 0 1px rgba(60,28,4,.6),var(--glow-g)}
+.btn.primary:active{box-shadow:inset 0 0 16px rgba(255,255,255,.5),0 0 22px rgba(240,195,90,.7)}
+.btn.primary.danger{background:linear-gradient(180deg,#ff6a8a,#b3123c);color:#fff;border-color:#ffb0c2;text-shadow:0 1px 0 rgba(0,0,0,.4);box-shadow:var(--glow-r)}
+.btn.ghost{background:rgba(205,150,255,.06);border-color:rgba(205,150,255,.26);box-shadow:none}
+.btn.danger{color:#ff9fb4;border-color:rgba(255,100,130,.45)}
+.btn.big{font-family:var(--disp);font-weight:400;letter-spacing:.06em;font-size:19px}
+.btn.small{border-radius:4px 10px 4px 10px}
+/* — карточки с угловыми орнаментами — */
+.card{position:relative;border-radius:var(--cut);background:linear-gradient(160deg,rgba(40,19,64,.92),rgba(15,7,27,.94));border:1px solid rgba(224,176,100,.26);box-shadow:inset 0 1px 0 rgba(255,236,200,.05),0 4px 16px rgba(0,0,0,.42)}
+.card::before,.ccard::before{content:"";position:absolute;inset:3px;pointer-events:none;border-radius:inherit;opacity:.6;
+  background:linear-gradient(var(--gold),var(--gold)) 0 0/9px 1px no-repeat,linear-gradient(var(--gold),var(--gold)) 0 0/1px 9px no-repeat,linear-gradient(var(--gold),var(--gold)) 100% 0/9px 1px no-repeat,linear-gradient(var(--gold),var(--gold)) 100% 0/1px 9px no-repeat,
+  linear-gradient(var(--gold),var(--gold)) 0 100%/9px 1px no-repeat,linear-gradient(var(--gold),var(--gold)) 0 100%/1px 9px no-repeat,linear-gradient(var(--gold),var(--gold)) 100% 100%/9px 1px no-repeat,linear-gradient(var(--gold),var(--gold)) 100% 100%/1px 9px no-repeat}
+.card.sel,.card.opt.sel{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset,var(--glow-g)}
+.ccard{position:relative}
+.chip{background:rgba(182,107,255,.16);border-color:rgba(182,107,255,.4);color:#e3d0ff}.chip.on{background:rgba(240,195,90,.22);border-color:var(--gold);color:var(--gold2)}
+.tag.warn{color:var(--gold2)}
+.inp{border-radius:8px 14px 8px 14px;background:rgba(5,2,12,.65);border-color:rgba(205,150,255,.28)}.inp:focus{border-color:var(--gold);box-shadow:var(--glow-g)}
+.seg{border-radius:var(--cut);background:rgba(5,2,12,.55)}
+.seg button{font-family:var(--serif)}
+.warnbox{border-radius:6px 12px 6px 12px}
+/* — полосы-«клинки/кристаллы» — */
+.bar{height:9px;border-radius:0;background:rgba(2,0,6,.75);box-shadow:inset 0 0 0 1px rgba(205,150,255,.2);clip-path:polygon(0 0,100% 0,calc(100% - 5px) 100%,5px 100%);overflow:hidden}
+.bar i{border-radius:0;position:relative;clip-path:polygon(0 0,100% 0,calc(100% - 5px) 100%,0 100%)}
+.bar i::after{content:"";position:absolute;left:0;right:0;top:0;height:42%;background:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,0))}
+.bar.hp i{background:linear-gradient(90deg,#7a0724,#e0245a 70%,#ff6a8a)}
+.bar.mp i{background:linear-gradient(90deg,#2e1aa8,#7a5cff 70%,#b9a6ff)}
+.bar.xp i{background:linear-gradient(90deg,#5a1fb0,#b052ff 70%,#e6b3ff)}
+/* — титул — */
+.logo{padding-top:44px;isolation:isolate}
+.logo h1{font-family:var(--disp);font-size:44px;letter-spacing:.07em;color:var(--gold2);text-shadow:0 0 26px rgba(240,195,90,.5),0 0 60px rgba(176,60,255,.45),0 3px 0 #4a2606}
+.logo p{font-family:var(--serif);color:#e7b8ff;letter-spacing:.26em;text-shadow:0 0 12px rgba(190,80,255,.7)}
+.logo .ring{border-color:var(--gold);box-shadow:0 0 26px rgba(240,195,90,.55),0 0 50px rgba(190,60,255,.3),inset 0 0 18px rgba(240,195,90,.35)}
+.seal{position:absolute;left:50%;top:6px;width:290px;height:290px;margin-left:-145px;z-index:-1;pointer-events:none;opacity:.5;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-100 -100 200 200' fill='none' stroke-linejoin='round'%3E%3Cg stroke='%23ff2d5f'%3E%3Ccircle r='96' stroke-opacity='.8' stroke-width='1.4'/%3E%3Ccircle r='89' stroke-opacity='.5' stroke-width='.8' stroke-dasharray='2 5'/%3E%3Cpath d='M0-70 60.6 35 -60.6 35Z' stroke-opacity='.85' stroke-width='1.2'/%3E%3Cpath d='M0 70 60.6-35 -60.6-35Z' stroke-opacity='.85' stroke-width='1.2'/%3E%3Ccircle r='70' stroke-opacity='.55' stroke-width='.8'/%3E%3Ccircle r='34' stroke-opacity='.7' stroke-width='1'/%3E%3C/g%3E%3Cg stroke='%23f0c35a' stroke-opacity='.8' stroke-width='1.4'%3E%3Cpath d='M0-100V-92M0 100V92M-100 0H-92M100 0H92M70.7-70.7 65-65M-70.7-70.7-65-65M70.7 70.7 65 65M-70.7 70.7-65 65'/%3E%3Cpath d='M0-14 12 0 0 14-12 0Z'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat;
+  animation:sealp 6s ease-in-out infinite;will-change:opacity,transform}
+.seal i{display:none}
+@keyframes sealp{0%,100%{opacity:.34;transform:rotate(-4deg) scale(.98)}50%{opacity:.62;transform:rotate(4deg) scale(1.03)}}
+.plist .card.prof{border-radius:var(--cut)}.av{background:linear-gradient(135deg,#4a1d86,#1a0a30);box-shadow:0 0 0 1px var(--gold) inset,var(--glow-p)}
+/* — верх игры, нижняя навигация — */
+.gtop{background:linear-gradient(180deg,rgba(14,6,26,.98),rgba(14,6,26,.78));border-bottom:1px solid rgba(240,195,90,.38);box-shadow:0 2px 16px rgba(120,30,180,.28);position:relative}
+.gtop::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold) 50%,transparent);opacity:.8;pointer-events:none}
+.gh b{font-family:var(--serif);color:#fff2d6}
+.gold{text-shadow:0 0 10px rgba(240,195,90,.4)}
+#nav{background:linear-gradient(180deg,rgba(20,9,36,.98),rgba(5,2,11,1));border-top:1px solid rgba(240,195,90,.45);box-shadow:0 -8px 26px rgba(120,30,190,.3)}
+#nav button{border-radius:8px;transition:color .18s}
+#nav button>span:not(.nb){display:grid;place-items:center;width:34px;height:28px;font-size:17px;filter:grayscale(.55) brightness(.9);position:relative;transition:transform .18s,filter .18s}
+#nav button>span:not(.nb)::before{content:"";position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;transform:rotate(45deg);border:1px solid rgba(205,150,255,.24);border-radius:3px;z-index:-1;transition:border-color .18s,background .18s,box-shadow .18s}
+#nav button em{font-family:var(--serif);font-weight:700;font-size:9px;letter-spacing:.02em}
+#nav button.on{color:var(--gold2);text-shadow:0 0 10px rgba(240,195,90,.7)}
+#nav button.on>span:not(.nb){filter:none;transform:translateY(-1px) scale(1.08)}
+#nav button.on>span:not(.nb)::before{border-color:var(--gold);background:radial-gradient(circle,rgba(190,70,255,.55),rgba(60,10,90,.5));box-shadow:0 0 14px rgba(190,70,255,.7),0 0 6px rgba(240,195,90,.6)}
+#nav button.on::before{background:linear-gradient(90deg,transparent,var(--gold),transparent);box-shadow:0 0 10px var(--gold);height:2px}
+#nav button:active>span:not(.nb){transform:scale(.9)}
+.nb{box-shadow:0 0 8px rgba(255,45,95,.7)}
+/* — вкладки: вход — */
+.content.tin{animation:tabin .26s ease-out}@keyframes tabin{from{opacity:.0;transform:translateY(7px)}to{opacity:1;transform:none}}
+/* — главная (Нимб) — */
+.hub{border:1px solid rgba(240,195,90,.5);border-radius:var(--cut);box-shadow:0 0 0 1px rgba(0,0,0,.6),0 0 24px rgba(150,50,230,.35),inset 0 0 40px rgba(0,0,0,.5)}
+.hubtxt h2{font-size:25px;text-shadow:0 0 16px rgba(240,195,90,.55),0 2px 4px #000}
+.hubtxt p{color:#efe3ff}
+/* — модалки, тосты — */
+.mback{background:rgba(3,1,8,.78)}
+.mbox{background:linear-gradient(180deg,#220f3c 0%,#0d0618 70%);border:1px solid rgba(240,195,90,.7);border-bottom:0;border-radius:18px 18px 0 0;box-shadow:0 -10px 44px rgba(150,40,220,.4),inset 0 1px 0 rgba(255,236,200,.12)}
+.mbox::before{content:"";display:block;flex:none;align-self:center;width:84px;height:5px;margin:-6px 0 -2px;background:linear-gradient(90deg,transparent,var(--gold) 20%,var(--gold2) 50%,var(--gold) 80%,transparent);clip-path:polygon(0 50%,38% 0,50% 40%,62% 0,100% 50%,62% 100%,50% 60%,38% 100%);opacity:.9}
+.mbox h3{font-family:var(--disp);font-weight:400;font-size:20px;color:var(--gold2);letter-spacing:.04em;text-shadow:0 0 12px rgba(240,195,90,.35)}
+.toast{border-radius:var(--cut);background:linear-gradient(180deg,rgba(40,16,66,.98),rgba(14,6,26,.98));border-color:var(--acc);box-shadow:0 4px 20px rgba(0,0,0,.6),var(--glow-p);font-family:var(--serif)}
+.toast.ok{box-shadow:0 4px 20px rgba(0,0,0,.6),0 0 14px rgba(116,232,162,.35)}.toast.bad{box-shadow:0 4px 20px rgba(0,0,0,.6),var(--glow-r)}.toast.gold,.toast.warn{box-shadow:0 4px 20px rgba(0,0,0,.6),var(--glow-g)}
+/* — создание героя, статы, навыки, свита — */
+.crtop{background:linear-gradient(180deg,rgba(14,6,26,.98),rgba(14,6,26,.84));border-bottom:1px solid rgba(240,195,90,.38)}
+.crhead .nm{font-family:var(--disp);font-weight:400;font-size:20px;text-shadow:0 0 12px rgba(240,195,90,.4)}
+.crfoot{background:rgba(6,2,12,.97);border-top:1px solid rgba(240,195,90,.38)}
+.pcard,.pf,.bchip,.abtn,.stline{border-radius:6px 12px 6px 12px}
+.pcard,.pf{background:linear-gradient(160deg,rgba(40,19,64,.9),rgba(15,7,27,.94));border-color:rgba(224,176,100,.24)}
+.pcard.sel,.pf.sel{box-shadow:var(--glow-g)}
+.bchip{background:linear-gradient(160deg,rgba(40,19,64,.9),rgba(15,7,27,.94))}
+.bchip b{font-family:var(--serif)}
+.pts{border-radius:6px 14px 6px 14px;background:linear-gradient(160deg,rgba(240,195,90,.2),rgba(150,60,10,.14));box-shadow:var(--glow-g)}.pts b{font-family:var(--disp);font-weight:400}
+.sbtn{border-radius:5px 10px 5px 10px;background:linear-gradient(180deg,rgba(62,30,96,.96),rgba(30,13,52,.96));border-color:rgba(205,150,255,.35)}
+.subtoggle{border-radius:var(--cut);font-family:var(--serif);background:linear-gradient(180deg,rgba(150,60,255,.28),rgba(60,20,110,.14));border-color:rgba(190,110,255,.5)}
+.acc{border-radius:6px 12px 6px 12px}
+.tipbox{border-radius:6px 12px 6px 12px;border-color:rgba(205,150,255,.4)}
+.tgraph .node .gi{background:radial-gradient(circle,rgba(70,20,110,.7),rgba(8,2,16,.85))}
+.tgraph .node.can .gi{border-color:var(--acc2);box-shadow:0 0 12px rgba(255,79,132,.6)}
+.ccard{border-radius:var(--cut)}
+.cc-ic{border-radius:6px 12px 6px 12px}
+.ccard.can{border-color:var(--acc2);box-shadow:0 0 16px rgba(255,79,132,.4)}
+/* — диалог новеллы — */
+.dlg{border-radius:var(--cut);border:1px solid rgba(240,195,90,.72);background:linear-gradient(180deg,rgba(24,9,42,.9),rgba(8,3,16,.96));box-shadow:0 0 0 1px rgba(0,0,0,.7),0 0 28px rgba(150,40,220,.38),inset 0 0 36px rgba(140,20,90,.2),inset 0 1px 0 rgba(255,236,200,.1)}
+.dlg::before{content:"";position:absolute;inset:4px;pointer-events:none;border-radius:inherit;opacity:.55;
+  background:linear-gradient(var(--gold),var(--gold)) 0 0/14px 1px no-repeat,linear-gradient(var(--gold),var(--gold)) 0 0/1px 14px no-repeat,linear-gradient(var(--gold),var(--gold)) 100% 0/14px 1px no-repeat,linear-gradient(var(--gold),var(--gold)) 100% 0/1px 14px no-repeat,
+  linear-gradient(var(--gold),var(--gold)) 0 100%/14px 1px no-repeat,linear-gradient(var(--gold),var(--gold)) 0 100%/1px 14px no-repeat,linear-gradient(var(--gold),var(--gold)) 100% 100%/14px 1px no-repeat,linear-gradient(var(--gold),var(--gold)) 100% 100%/1px 14px no-repeat}
+.dlg .spk{top:-15px;left:12px;padding:4px 18px 4px 16px;border:0;border-radius:0;background:linear-gradient(180deg,#3a1568,#16082c);box-shadow:inset 0 0 0 1px currentColor,0 0 12px rgba(150,40,220,.5);clip-path:polygon(9px 0,100% 0,calc(100% - 9px) 100%,0 100%);font-family:var(--serif);font-size:14.5px;text-shadow:0 0 8px currentColor}
+.dlg .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;color:#f6f0ff}
+.dlg .nx{color:var(--gold2);text-shadow:0 0 10px var(--gold)}
+.story .dlg{background:linear-gradient(180deg,rgba(22,8,40,.86),rgba(6,2,14,.95))}
+.story .mini{border-radius:6px 12px 6px 12px;background:linear-gradient(180deg,rgba(40,16,66,.85),rgba(10,4,20,.88));border:1px solid rgba(240,195,90,.45);font-family:var(--serif);font-weight:700;box-shadow:0 0 10px rgba(130,40,200,.3)}
+.story .mini.on{box-shadow:var(--glow-g);color:var(--gold2)}
+.choice{border-radius:var(--cut);background:linear-gradient(90deg,rgba(150,10,60,.5),rgba(46,18,84,.95) 22%,rgba(22,9,40,.97));border:1px solid rgba(240,195,90,.7);font-family:var(--serif);font-weight:700;box-shadow:0 0 18px rgba(150,40,220,.35)}
+.vlog{background:rgba(5,2,10,.95)}.vlog .lh{font-family:var(--disp);color:var(--gold2)}
+.tcard{background:radial-gradient(80% 60% at 50% 40%,rgba(70,16,100,.55),rgba(3,1,8,.95))}
+/* — бой — */
+.unit.foe{border-radius:var(--cut);background:linear-gradient(160deg,rgba(40,12,50,.72),rgba(8,3,16,.78));border-color:rgba(255,79,132,.34)}
+.unit.ally{border-radius:var(--cut)!important;border-color:rgba(190,110,255,.4)!important}
+.bt-act{border-radius:var(--cut);border-color:rgba(240,195,90,.45);background:linear-gradient(180deg,rgba(26,10,46,.96),rgba(7,3,15,.98));box-shadow:0 0 18px rgba(130,40,200,.28)}
+.abtn{font-family:var(--serif);font-weight:700;background:linear-gradient(180deg,rgba(62,30,96,.9),rgba(26,11,46,.92));border-color:rgba(205,150,255,.32)}
+.skgrid .sk{border-radius:5px 10px 5px 10px}
+.bt-log{border-radius:6px 12px 6px 12px;background:rgba(5,2,12,.6);border:1px solid rgba(205,150,255,.16)}
+.bub{border-radius:var(--cut);box-shadow:var(--glow-r)}
+.bt-top .mini{border-radius:6px 10px 6px 10px;border-color:rgba(240,195,90,.35)}
+/* — доступность: движение выключено, свечения остаются статичными — */
+@media (prefers-reduced-motion:reduce){.seal{animation:none;opacity:.42}.content.tin{animation:none}}
+/* исправление: .battle>*{position:relative} перебивал absolute у реплики/подсказки боя и сдвигал её за правый край (448>444 px) */
+.battle>.bubble{position:absolute}
+/* исправления переполнения на узких экранах (360 px): города-«здания» (имя .bgrid делили с сеткой Сил), перенос строк характеристик, мини-полосы создания */
+.bgrid.bcity{grid-template-columns:1fr 1fr}.bld{min-width:0}.bld small{overflow-wrap:anywhere}
+.item .il{display:inline-block}
+.sbs{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.sb span{width:58px;font-size:11.5px}.sb .bar{min-width:0}
+.card.ndet{position:sticky}

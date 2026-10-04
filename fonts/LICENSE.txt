@@ -1,0 +1,1 @@
+Шрифты: Ruslan Display (c) 2011 Oleg Snarsky, Denis Masharov, Vladimir Rabdu; Philosopher (c) Jovanny Lemonad. Лицензия SIL Open Font License 1.1 (https://openfontlicense.org). Подмножество (кириллица + латиница) в woff2.

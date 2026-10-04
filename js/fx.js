@@ -8,13 +8,13 @@
   F.resize = function () { const d = Math.min(2, window.devicePixelRatio || 1); const w = innerWidth, h = innerHeight; if (F.cv.width === Math.round(w * d) && F.cv.height === Math.round(h * d) && F.w === w && F.h === h) return; /* на Android resize сыплется при движении адресной строки: пересоздавать холст каждый раз = мерцание */ F.w = w; F.h = h; F.cv.width = F.w * d; F.cv.height = F.h * d; F.cv.style.width = F.w + 'px'; F.cv.style.height = F.h + 'px'; F.ctx.setTransform(d, 0, 0, d, 0, 0); };
   const rnd = (a, b) => a + Math.random() * (b - a);
   F.setMode = function (m) {
-    F.mode = m; F.parts = []; const n = m === 'snow' ? 60 : m === 'none' ? 0 : 38;
+    F.mode = m; F.parts = []; const calm = (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) || (typeof navigator !== 'undefined' && navigator.connection && navigator.connection.saveData); const n = calm ? 0 : m === 'snow' ? 60 : m === 'none' ? 0 : 38;   // «убрать анимации» / экономия данных — без частиц
     for (let i = 0; i < n; i++) F.parts.push(mk(m, true));
   };
   function mk(m, init) {
     const p = { x: rnd(0, F.w), y: init ? rnd(0, F.h) : (m === 'embers' ? F.h + 10 : -10), r: rnd(0.6, 2.2), a: rnd(0.2, 0.9), t: rnd(0, 6.28), vx: 0, vy: 0, c: '#fff' };
-    if (m === 'stars') { p.c = '#bcd2ff'; p.vy = rnd(0.02, 0.1); p.y = init ? p.y : -5; }
-    else if (m === 'embers') { p.c = Math.random() < 0.5 ? '#ff9a4a' : '#ff5a3a'; p.vy = -rnd(0.3, 1.0); p.vx = rnd(-0.2, 0.3); p.y = init ? p.y : F.h + 5; }
+    if (m === 'stars') { p.c = Math.random() < 0.7 ? '#d9b8ff' : '#ffb3c8'; p.vy = rnd(0.02, 0.1); p.y = init ? p.y : -5; }
+    else if (m === 'embers') { { const q = Math.random(); p.c = q < 0.4 ? '#ff3d6e' : q < 0.7 ? '#c04cff' : q < 0.9 ? '#ff7a3a' : '#ffd36b'; } p.vy = -rnd(0.3, 1.0); p.vx = rnd(-0.2, 0.3); p.y = init ? p.y : F.h + 5; }
     else if (m === 'fireflies') { p.c = '#d8ff8a'; p.vx = rnd(-0.2, 0.2); p.vy = rnd(-0.2, 0.2); p.r = rnd(1, 2.6); }
     else if (m === 'snow') { p.c = '#e8f4ff'; p.vy = rnd(0.4, 1.2); p.vx = rnd(-0.3, 0.3); p.r = rnd(1, 2.8); }
     else if (m === 'gold') { p.c = '#ffd36b'; p.vy = rnd(-0.3, 0.3); p.vx = rnd(-0.3, 0.3); }
@@ -34,7 +34,7 @@
       if (p.y > F.h + 12 || p.y < -14 || p.x < -10 || p.x > F.w + 10) Object.assign(p, mk(m, false));
       const tw = m === 'stars' || m === 'fireflies' ? 0.5 + 0.5 * Math.sin(p.t * 2) : 1;
       c.globalAlpha = p.a * tw; c.fillStyle = p.c; c.beginPath(); c.arc(p.x, p.y, p.r, 0, 6.28); c.fill();
-      if (m === 'fireflies') { c.globalAlpha = p.a * tw * 0.25; c.beginPath(); c.arc(p.x, p.y, p.r * 4, 0, 6.28); c.fill(); }
+      if (m === 'fireflies' || m === 'embers') { c.globalAlpha = p.a * tw * 0.22; c.beginPath(); c.arc(p.x, p.y, p.r * 4, 0, 6.28); c.fill(); }
     }
     for (let i = F.bursts.length - 1; i >= 0; i--) { const b = F.bursts[i]; b.t += 0.016 * k; b.x += b.vx * k; b.y += b.vy * k; b.vy += b.g * k; b.vx *= Math.pow(0.97, k); if (b.t > b.life) { F.bursts.splice(i, 1); continue; } c.globalAlpha = 1 - b.t / b.life; c.fillStyle = b.c; c.beginPath(); c.arc(b.x, b.y, b.r, 0, 6.28); c.fill(); }
     c.globalAlpha = 1;

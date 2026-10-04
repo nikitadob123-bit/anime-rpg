@@ -69,7 +69,7 @@
       return `<button class="card prof tap" data-act="pickProfile" data-id="${esc(s.id)}"><div class="av">${esc(s.avatar)}</div><div class="grow tl"><b>${esc(s.nick)}</b><div class="dim">${info}</div></div>${s.recovered ? '<span class="tag warn">из копии</span>' : ''}<span class="chev">›</span></button>`;
     }).join('');
     return `<div class="screen title">
-      <div class="logo"><div class="ring"></div><h1>Нимб Мира</h1><p>Король Демонов пробуждается</p></div>
+      <div class="logo"><div class="seal" aria-hidden="true"><i></i></div><div class="ring"></div><h1>Нимб Мира</h1><p>Король Демонов пробуждается</p></div>
       <div class="plist">${cards || '<div class="dim center pad">Профилей ещё нет. Создайте первый — и Король проснётся.</div>'}</div>
       <div class="col gap pad">
         <button class="btn primary big" data-act="newProfile" id="btnNewProfile">✦ Новый профиль</button>
