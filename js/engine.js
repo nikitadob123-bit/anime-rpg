@@ -20,13 +20,13 @@
   E.clamp = clamp;
 
   // ───── Новый персонаж/слот ─────
-  E.TREE_POINTS_PER_LEVEL = 1;
+  E.TREE_POINTS_PER_LEVEL = 2;
   E.newSlot = function (o) {
-    const cls = D.CLASSES[o.cls];
-    const hero = { name: String(o.name || 'Герой').slice(0, 16), sex: o.sex || 'm', race: o.race, cls: o.cls, portrait: o.portrait, uniq: o.uniq, prof1: o.prof1 || null, prof2: o.prof2 || null, profLocked: !!(o.prof1), level: 1, xp: 0, spent: {}, uspent: {}, bossPts: 0 };
+    o.cls = 'maou'; const cls = D.CLASSES.maou;
+    const hero = { name: String(o.name || 'Герой').slice(0, 16), sex: 'm', race: o.race || 'o_orphan', cls: 'maou', portrait: 'hero', uniq: o.uniq, prof1: o.prof1 || null, prof2: o.prof2 || null, profLocked: !!(o.prof1), level: 1, xp: 0, spent: {}, uspent: {}, bossPts: 0 };
     const slot = {
       hero, gold: 60, uid: 1, inv: [], mats: {}, cons: { pot_hp1: 3, pot_mp1: 1 }, eq: {}, profs: {}, story: { flags: {}, done: [], cur: 'prologue', log: [] }, prog: { cleared: {}, best: {}, boss: {} },
-      run: null, party: [], stats: { kills: 0, runs: 0, wins: 0, deaths: 0, crafted: 0, gathered: 0, goldEarned: 0 }, tut: {}, buffs: [], created: o.now || 0, played: 0, rev: 0
+      run: null, party: [], crew: {}, rom: {}, missions: [], crewTalk: 0, stats: { kills: 0, runs: 0, wins: 0, deaths: 0, crafted: 0, gathered: 0, goldEarned: 0 }, tut: {}, buffs: [], created: o.now || 0, played: 0, rev: 0
     };
     if (o.prof1) slot.profs[o.prof1] = { lv: 1, xp: 0 };
     if (o.prof2) slot.profs[o.prof2] = { lv: 1, xp: 0 };
@@ -42,12 +42,13 @@
   E.uSpent = (h) => Object.values(h.uspent).reduce((a, b) => a + b, 0);
   E.uTotal = (h) => Math.floor(h.level / 3) + (h.bossPts || 0);
   E.up = (h) => Math.max(0, E.uTotal(h) - E.uSpent(h));
+  E.fused = function (h) { const set = {}; D.TREES[h.cls].nodes.forEach((n) => { if (n.fuse && h.spent[n.id] > 0) n.fuse.forEach((x) => { set[x] = n.id; }); }); return set; };
   E.nodeOf = (h, id) => { const t = D.TREES[h.cls]; let n = t.nodes.find(x => x.id === id); if (n) return { n, u: false }; if (h.uniq) { n = D.UNIQ[h.uniq].nodes.find(x => x.id === id); if (n) return { n, u: true }; } return null; };
   E.canLearn = function (h, id) {
     const f = E.nodeOf(h, id); if (!f) return 'Нет такого узла';
     const { n, u } = f; const store = u ? h.uspent : h.spent; const r = store[id] || 0;
     if (r >= n.max) return 'Максимальный ранг';
-    if (u ? E.up(h) < 1 : E.sp(h) < 1) return u ? 'Нет искр Лиры' : 'Нет очков навыков';
+    if (u ? E.up(h) < 1 : E.sp(h) < 1) return u ? 'Нет искр Нимба' : 'Нет очков навыков';
     if (h.level < n.lv) return 'Нужен уровень ' + n.lv;
     for (const q of n.req) if (!(store[q] > 0)) { const rn = (u ? D.UNIQ[h.uniq].nodes : D.TREES[h.cls].nodes).find(x => x.id === q); return 'Нужно: ' + (rn ? rn.n : q); }
     return '';
@@ -57,7 +58,8 @@
   E.respec = function (slot, which) { const h = slot.hero; const c = E.respecCost(h); if (slot.gold < c) return false; slot.gold -= c; if (which === 'u') h.uspent = {}; else h.spent = {}; return true; };
   E.skillsOf = function (h) {
     const ids = D.CLASSES[h.cls].start.slice();
-    D.TREES[h.cls].nodes.forEach(n => { if (n.e.unlock && h.spent[n.id] > 0) ids.push(n.e.unlock); });
+    const fz = E.fused(h);
+    D.TREES[h.cls].nodes.forEach(n => { if (n.e.unlock && h.spent[n.id] > 0 && !fz[n.id]) ids.push(n.e.unlock); });
     if (h.uniq) ids.push('u_' + h.uniq);
     return ids;
   };
@@ -72,7 +74,8 @@
     const mods = {}, stats = {}, flat = {}, skb = {};
     D.STATS.forEach(s => stats[s] = cls.base[s] + Math.floor(cls.gr[s] * (h.level - 1)) + ((race.st && race.st[s]) || 0));
     addMods(mods, race.m); cls.perks.forEach(p => addMods(mods, p.m));
-    const tn = (nodes, spent) => nodes.forEach(n => { const r = spent[n.id] || 0; if (!r) return; addMods(mods, n.e.m, r); addMods(stats, n.e.st, r); if (n.e.sk) for (const k in n.e.sk) { const key = k === '$' ? 'u_' + h.uniq : k; skb[key] = (skb[key] || 0) + n.e.sk[k] * r; } });
+    const fz = E.fused(h);
+    const tn = (nodes, spent) => nodes.forEach(n => { const r = spent[n.id] || 0; if (!r || fz[n.id]) return; addMods(mods, n.e.m, r); addMods(stats, n.e.st, r); if (n.e.sk) for (const k in n.e.sk) { const key = k === '$' ? 'u_' + h.uniq : k; skb[key] = (skb[key] || 0) + n.e.sk[k] * r; } });
     tn(D.TREES[h.cls].nodes, h.spent); if (h.uniq) tn(D.UNIQ[h.uniq].nodes, h.uspent);
     [h.prof1, h.prof2].forEach(pid => { if (!pid) return; const lv = E.profLv(slot, pid); const pf = D.PROFS[pid]; for (const th in pf.perks) if (lv >= +th && (pid === h.prof1 || +th <= D.PROF_SUB_CAP)) addMods(mods, pf.perks[th].m); });
     // экипировка (бонус кузнеца множит плоские характеристики)
@@ -83,6 +86,7 @@
     // баффы вылазки (еда/эликсиры)
     const foodK = 1 + (mods.food || 0) / 100;
     (slot.buffs || []).forEach(b => { const k = b.food ? foodK : 1; addMods(mods, b.m, k); });
+    if (E.bondMods && !ctx.noBond) E.bondMods(slot, mods);
     (ctx.extraMods ? [ctx.extraMods] : []).forEach(m => addMods(mods, m));
     return { mods, stats, flat, skb };
   };
@@ -325,5 +329,5 @@
   E.finishScene = function (slot, id) { if (!slot.story.done.includes(id)) { slot.story.done.push(id); slot.rev++; } if (!slot.party.length) slot.party = E.unlockedComps(slot).slice(0, 2); };
   E.unlockedComps = (slot) => D.COMP_IDS.filter(id => { const n = D.COMPANIONS[id].need; return !!slot.story.flags[n]; });
   E.setParty = function (slot, ids) { const ok = E.unlockedComps(slot); slot.party = ids.filter(x => ok.includes(x)).slice(0, 2); };
-  E.fmtText = (s, slot) => String(s).replace(/\{name\}/g, slot.hero.name).replace(/\{echo\}/g, slot.hero.uniq ? D.UNIQ[slot.hero.uniq].n : 'Эхо');
+  E.fmtText = (s, slot) => String(s).replace(/\{name\}/g, slot.hero.name).replace(/\{echo\}/g, slot.hero.uniq ? D.UNIQ[slot.hero.uniq].n : 'Отголосок');
 })();
