@@ -26,7 +26,7 @@
     const hero = { name: String(o.name || 'Герой').slice(0, 16), sex: 'm', race: o.race || 'o_orphan', cls: 'maou', portrait: 'hero', uniq: o.uniq, prof1: o.prof1 || null, prof2: o.prof2 || null, profLocked: !!(o.prof1), level: 1, xp: 0, spent: {}, uspent: {}, bossPts: 0 };
     const slot = {
       hero, gold: 60, uid: 1, inv: [], mats: {}, cons: { pot_hp1: 3, pot_mp1: 1 }, eq: {}, profs: {}, story: { flags: {}, done: [], cur: 'prologue', log: [] }, prog: { cleared: {}, best: {}, boss: {} },
-      run: null, party: [], crew: {}, rom: {}, missions: [], crewTalk: 0, stats: { kills: 0, runs: 0, wins: 0, deaths: 0, crafted: 0, gathered: 0, goldEarned: 0 }, tut: {}, buffs: [], created: o.now || 0, played: 0, rev: 0
+      run: null, party: [], crew: {}, rom: {}, missions: [], crewTalk: 2, gifts: {}, cmd: false, stats: { kills: 0, runs: 0, wins: 0, deaths: 0, crafted: 0, gathered: 0, goldEarned: 0 }, tut: {}, buffs: [], created: o.now || 0, played: 0, rev: 0
     };
     if (o.prof1) slot.profs[o.prof1] = { lv: 1, xp: 0 };
     if (o.prof2) slot.profs[o.prof2] = { lv: 1, xp: 0 };
@@ -266,7 +266,7 @@
   E.dungeonUnlocked = function (slot, did) {
     const d = D.DUN[did]; if (!d) return false;
     if (d.need === 'ch1') return !!slot.story.flags.prologue_done;
-    if (d.id === 'cathedral' && !slot.story.done.includes('ch2_f')) return false;
+    if (d.id === 'cathedral' && !slot.story.done.includes('ch3_d')) return false;
     return !!slot.prog.cleared[d.need];
   };
   E.tierUnlocked = (slot, did, t) => t === 0 || !!(slot.prog.cleared[did] && slot.prog.cleared[did] >= t);  // cleared[did] = макс. пройденный тир + 1

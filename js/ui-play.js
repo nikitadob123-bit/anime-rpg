@@ -14,7 +14,7 @@
     const cards = D.DUNGEONS.map((d) => {
       const open = E.dungeonUnlocked(s, d.id), cl = s.prog.cleared[d.id] || 0;
       const tiers = D.TIERS.map((t, i) => `<i class="td ${cl > i ? 'on' : ''}" title="${t.n}">${t.ic}</i>`).join('');
-      const reason = !open ? (d.id === 'cathedral' && s.prog.cleared.spire ? 'Сначала прочтите главу «Совет у горна» в городе.' : d.need === 'ch1' ? 'Завершите пролог.' : 'Сначала пройдите «' + D.DUN[d.need].n + '».') : '';
+      const reason = !open ? (d.id === 'cathedral' && s.prog.cleared.spire ? 'Сначала прочтите главу «У врат собора».' : d.need === 'ch1' ? 'Завершите пролог.' : 'Сначала пройдите «' + D.DUN[d.need].n + '».') : '';
       return `<button class="card dcard ${open ? '' : 'lockd'}" style="--dc:${d.col}" data-act="dunOpen" data-id="${d.id}" ${open ? '' : 'data-quiet="1"'}><div class="dic">${d.ic}</div><div class="grow tl"><b>${d.n}</b><div class="dim small">ур. ${d.lv}–${d.lv + d.floors + 1} · этажей: ${d.floors}</div><div class="small tl dim">${open ? d.d : reason}</div></div><div class="tiers">${open ? tiers : '🔒'}</div></button>`;
     }).join('');
     return `<h2>Подземелья</h2><div class="small dim tl">Выберите место для вылазки. Сложность растёт после первой победы. Рекомендуемый уровень указан для «Обычного».</div>${cards}`;
@@ -28,19 +28,19 @@
     const s = UI.slot(), P = UI.prep, d = D.DUN[P.did], T = D.TIERS[P.tier], un = E.unlockedComps(s);
     const lv0 = d.lv + T.lv, power = E.power(s);
     const tiers = D.TIERS.map((t, i) => { const ok = E.tierUnlocked(s, d.id, i); return `<button class="tchip ${P.tier === i ? 'on' : ''} ${ok ? '' : 'lockd'}" data-act="prepTier" data-i="${i}" data-quiet="1">${ok ? t.ic : '🔒'}<b>${t.n}</b><small>ур. ${d.lv + t.lv}+</small></button>`; }).join('');
-    const comps = un.length ? un.map((id) => { const c = D.COMPANIONS[id], on = s.party.includes(id); return `<button class="item ${on ? 'selitem' : ''}" data-act="prepComp" data-id="${id}" data-quiet="1">${UI.por(c.portrait, 'xs', false)}<span class="grow tl"><b>${c.n}</b> <small>${D.CLASSES[c.cls].n}</small></span>${on ? '<span class="ok">✔</span>' : ''}</button>`; }).join('') : '<div class="small dim">Спутников пока нет — они присоединятся по ходу сюжета.</div>';
+    const comps = un.length ? un.filter((id) => !E.onMission(s, id)).map((id) => { const c = D.CREW[id], st = s.crew[id], on = s.party.includes(id); return `<button class="item ${on ? 'selitem' : ''}" data-act="prepComp" data-id="${id}" data-quiet="1">${UI.por(c.art, 'xs', false)}<span class="grow tl"><b>${c.n}</b> <small>${D.ARCH_N[c.arch]} · ур. ${st.lv} · ${D.loyTier(st.loy).n}</small></span>${on ? '<span class="ok">✔</span>' : ''}</button>`; }).join('') : '<div class="small dim">Подчинённые присоединятся по ходу сюжета.</div>';
     const buffs = Object.keys(s.cons).filter((k) => s.cons[k] > 0 && D.CONS[k] && D.CONS[k].buff);
     const bh = buffs.length ? buffs.map((k) => `<button class="chip btn-chip ${P.buffs[k] ? 'on' : ''}" data-act="prepBuff" data-id="${k}" data-quiet="1">${D.CONS[k].ic} ${D.CONS[k].n} ×${s.cons[k]}</button>`).join('') : '<span class="dim small">Нет (готовьте еду у повара, эликсиры — у алхимика)</span>';
     const pots = (s.cons.pot_hp1 || 0) + (s.cons.pot_hp2 || 0) + (s.cons.pot_hp3 || 0);
     UI.modal(`<div class="dhead" style="--dc:${d.col}"><span class="big-ic">${d.ic}</span><div class="grow tl"><h3 class="m0">${d.n}</h3><div class="dim small">${d.d}</div></div></div>
       <div class="small tl"><b>Сложность</b></div><div class="tiers4">${tiers}</div>
-      <div class="small dim tl">Враги: ур. ${lv0}–${lv0 + d.floors + 1}. Босс: ${D.ENEMIES[d.boss].ic} ${D.ENEMIES[d.boss].n}. Ваша мощь ${fmt(power)}${pots ? ' · зелий лечения: ' + pots : ' · <b class="bad">нет зелий лечения</b>'}.</div>
-      <div class="small tl"><b>Спутники</b> (до двух)</div>${comps}
+      <div class="small dim tl">Враги: ур. ${lv0}–${lv0 + d.floors + 1}. Босс: ${D.ENEMIES[d.boss].ic} ${D.ENEMIES[d.boss].n}.${D.ENEMIES[d.mini].duel ? ' Дуэль с героиней: ' + D.ENEMIES[d.mini].n + '.' : ''} Ваша мощь ${fmt(power)}${pots ? ' · зелий лечения: ' + pots : ' · <b class="bad">нет зелий лечения</b>'}.</div>
+      <div class="small tl"><b>Отряд</b> (до трёх, остальные — на заданиях)</div>${comps}
       <div class="small tl"><b>Еда и эликсиры</b> (до конца вылазки)</div><div class="chips">${bh}</div>
       <div class="row gap"><button class="btn ghost grow" data-act="closeModal">Отмена</button><button class="btn primary grow" data-act="dunGo" id="btnDunGo">⚔️ В путь</button></div>`, { cls: 'tall' });
   };
   UI.act.prepTier = (el) => { const s = UI.slot(), i = +el.dataset.i; if (!E.tierUnlocked(s, UI.prep.did, i)) { UI.toast('Сначала победите босса на предыдущей сложности', 'bad'); UI.sfx('err'); return; } UI.prep.tier = i; UI.prepModal(); };
-  UI.act.prepComp = (el) => { const s = UI.slot(), id = el.dataset.id; let p = s.party.slice(); if (p.includes(id)) p = p.filter((x) => x !== id); else { if (p.length >= 2) p.shift(); p.push(id); } E.setParty(s, p); UI.prepModal(); };
+  UI.act.prepComp = (el) => { const s = UI.slot(), id = el.dataset.id; let p = s.party.slice(); if (p.includes(id)) p = p.filter((x) => x !== id); else { if (p.length >= E.PARTY_MAX) p.shift(); p.push(id); } E.setParty(s, p); UI.prepModal(); };
   UI.act.prepBuff = (el) => { UI.prep.buffs[el.dataset.id] = !UI.prep.buffs[el.dataset.id]; UI.prepModal(); };
   UI.act.dunGo = async () => {
     const s = UI.slot(), P = UI.prep; if (s.run) { UI.closeModal(); return; }
@@ -58,7 +58,7 @@
     const run = s.run, d = D.DUN[run.did], T = D.TIERS[run.tier], dd = E.derive(s), node = run.nodes[run.node], fl = node ? node.f : d.floors - 1;
     const track = run.nodes.map((n, i) => `<span class="nd ${i < run.node ? 'past' : i === run.node ? 'cur' : ''} ${n.t === 'boss' ? 'bossn' : ''}">${i < run.node ? '✔' : nodeIc(n)}</span>`).join('');
     const party = [`<div class="pm">${UI.por(s.hero.portrait, 'xs', false)}<div class="grow"><b>${esc(s.hero.name)}</b>${bar(run.hp, dd.maxHp, 'hp')}${bar(run.mp, dd.maxMp, 'mp')}<small>${fmt(run.hp)}/${fmt(dd.maxHp)} · ${fmt(run.mp)}/${fmt(dd.maxMp)}</small></div></div>`]
-      .concat(s.party.map((id) => `<div class="pm">${UI.por(D.COMPANIONS[id].portrait, 'xs', false)}<div class="grow"><b>${D.COMPANIONS[id].n}</b>${bar((run.comp[id] == null ? 1 : run.comp[id]), 1, 'hp')}</div></div>`)).join('');
+      .concat(s.party.map((id) => `<div class="pm">${UI.por(D.CREW[id].art, 'xs', false)}<div class="grow"><b>${D.CREW[id].n}</b>${bar((run.comp[id] == null ? 1 : run.comp[id]), 1, 'hp')}</div></div>`)).join('');
     const b = run.bag, mats = Object.keys(b.mats).map((k) => `${D.MATS[k].ic}${b.mats[k]}`).join(' ');
     let label = 'Дальше'; if (node) label = node.t === 'boss' ? '👹 Сразиться с боссом' : node.t === 'mini' ? '💀 К мини-боссу' : node.t === 'ev' ? 'Исследовать ' + evIcon(node.ev) : node.elite ? '⚔️ Закалённый отряд' : '🗡️ В бой';
     return `<div class="runhead" style="--dc:${d.col}"><span class="big-ic">${d.ic}</span><div class="grow tl"><h3 class="m0">${d.n}</h3><div class="dim small">${T.ic} ${T.n} · этаж ${fl + 1}/${d.floors}</div></div></div>
@@ -80,9 +80,10 @@
     try {
       if (node.t === 'ev') { await doEvent(node); }
       else {
-        if (node.t === 'boss' && run.did === 'cathedral' && !s.story.done.includes('ch2_g')) { await UI.playScene('ch2_g'); UI.save(true); }
+        const pre = D.PRE_BOSS[run.did]; if (node.t === 'boss' && pre && !s.story.done.includes(pre)) { await UI.playScene(pre); UI.save(true); }
         const rep = await UI.battle();
         UI.save(true);
+        if (rep.result === 'win' && node.e && node.e.length === 1 && D.ENEMIES[node.e[0]].duel) { const ds = D.DUEL_SCENE[node.e[0]]; if (ds) { await UI.playScene(ds, !!s.story.done.includes(ds)); UI.save(true); } }
         if (rep.result === 'win' && rep.bossDown) { await finishRun('win'); }
         else if (rep.result === 'lose') { await finishRun('lose'); }
         else if (rep.result === 'flee') { await finishRun('flee'); }
@@ -111,12 +112,12 @@
 
   async function finishRun(outcome) {
     const s = UI.slot(), run = s.run; if (!run) return; const d = D.DUN[run.did], first = outcome === 'win' && !s.prog.cleared[run.did];
-    const xp = run.bag.xp, res = E.claimRun(s, outcome); UI.save(true);
+    const xp = run.bag.xp, res = E.claimRun(s, outcome); s.crewTalk = Math.min(6, (s.crewTalk || 0) + (outcome === 'win' ? 2 : 1)); UI.save(true);
     await new Promise((resolve) => {
       UI.sfx(outcome === 'win' ? 'win' : outcome === 'lose' ? 'lose' : 'ok');
       const mats = Object.keys(res.mats).map((k) => `${D.MATS[k].ic} ${D.MATS[k].n} ×${res.mats[k]}`).join('<br>');
       UI.modal(`<div class="big-ic xl center">${outcome === 'win' ? '🏆' : outcome === 'lose' ? '💀' : '🏃'}</div><h3 class="center">${outcome === 'win' ? 'Подземелье пройдено!' : outcome === 'lose' ? 'Отряд повержен' : 'Вы покинули вылазку'}</h3>
-        <div class="mtext small tl dim">${outcome === 'lose' ? 'Вы очнулись у ворот города. Половина добычи потеряна.' : outcome === 'win' ? `«${d.n}» (${D.TIERS[run.tier].n}) покорено. ${first ? 'Первая победа: +1 искра Эха!' : ''}` : 'Добыча вылазки сохранена.'}</div>
+        <div class="mtext small tl dim">${outcome === 'lose' ? 'Вы очнулись у ворот города. Половина добычи потеряна.' : outcome === 'win' ? `«${d.n}» (${D.TIERS[run.tier].n}) покорено. ${first ? 'Первая победа: +1 искра Нимба! Свободных вечеров для Свиты: +2.' : ''}` : 'Добыча вылазки сохранена.'}</div>
         <div class="card"><div>🪙 ${fmt(res.gold)} · ✨ ${fmt(xp)} опыта получено в боях</div>${mats ? `<div class="small">${mats}</div>` : ''}${res.items.map((it) => `<div>${rarSpan(it)}</div>`).join('') || '<div class="dim small">Предметов нет</div>'}</div>
         <button class="btn primary wide" id="runDone" data-act="runDone">В город</button>`, { lock: true });
       UI.runDone = resolve;
@@ -126,15 +127,15 @@
   UI.act.runDone = () => { if (UI.runDone) { const f = UI.runDone; UI.runDone = null; f(); } };
 
   // ═════ БОЙ ═════
-  const stIcons = (u) => u.st.map((s) => `<i class="si ${D.ST[s.id].k}" title="${D.ST[s.id].n}">${D.ST[s.id].ic}${s.dur > 1 && s.dur < 90 ? '<b>' + s.dur + '</b>' : ''}</i>`).join('');
+  const stIcons = (u) => u.st.map((s) => `<i class="si ${D.ST[s.id].k}" title="${D.ST[s.id].n}">${D.ST[s.id].ic}${s.id === 'mantra' ? '<b>×' + Math.pow(2, s.pow) + '</b>' : s.dur > 1 && s.dur < 90 ? '<b>' + s.dur + '</b>' : ''}</i>`).join('');
   UI.battle = async function () {
     const slot = UI.slot(), st = UI.p.settings;
-    const B = C.startNodeBattle(slot, { auto: !!st.auto }); UI.B = B; B.sel = null; B.speed = st.battleSpeed || 1;
+    const B = C.startNodeBattle(slot, { auto: !!st.auto, cmd: !!slot.cmd }); UI.B = B; B.sel = null; B.speed = st.battleSpeed || 1;
     const run = slot.run, dng = D.DUN[run.did], node = B.node, layer = $('#layer');
-    layer.innerHTML = `<div id="battle" class="battle bio-${dng.bio}"><div class="bsky"></div><div class="bt-top"><div class="bt-title">${dng.ic} ${node.t === 'boss' ? 'БОСС' : node.t === 'mini' ? 'Мини-босс' : node.elite ? 'Элита' : 'Бой'}</div><div class="turnstrip" id="turns"></div><button class="mini" data-act="bAuto" id="bAuto" data-quiet="1">🤖</button><button class="mini" data-act="bSpeed" id="bSpeed" data-quiet="1">×${B.speed}</button></div>
+    layer.innerHTML = `<div id="battle" class="battle bio-${dng.bio}"><div class="bsky"></div><div class="bt-top"><div class="bt-title">${dng.ic} ${node.t === 'boss' ? 'БОСС' : node.t === 'mini' ? 'Мини-босс' : node.elite ? 'Элита' : 'Бой'}</div><div class="turnstrip" id="turns"></div><button class="mini" data-act="bCmd" id="bCmd" data-quiet="1" title="Командовать Свитой">👥</button><button class="mini" data-act="bAuto" id="bAuto" data-quiet="1">🤖</button><button class="mini" data-act="bSpeed" id="bSpeed" data-quiet="1">×${B.speed}</button></div>
       <div class="foes" id="foes"></div><div class="bt-log" id="blog"></div><div class="party" id="party"></div><div class="bt-act" id="bact"></div><div class="bubble" id="bubble"></div></div>`;
     layer.classList.add('on'); UI.sfx('boom'); try { F.setMode('none'); } catch (e) { /* ignore */ }
-    $('#bAuto').classList.toggle('on', !!B.opts.auto);
+    $('#bAuto').classList.toggle('on', !!B.opts.auto); $('#bCmd').classList.toggle('on', !!B.opts.cmd);
     renderUnits(B, true);
     const boss = B.foes.find((f) => f.role === 'boss' || f.role === 'mini');
     if (boss && D.ENEMIES[boss.eid] && D.ENEMIES[boss.eid].lines) { await bubble(boss, D.ENEMIES[boss.eid].lines[0], B); }
@@ -186,10 +187,11 @@
     const us = B.units.filter((u) => u.alive).map((u) => ({ u, g: u.gauge })), out = [];
     if (B.cur && B.cur.alive) out.push(B.cur);
     for (let i = 0; i < 7; i++) { let best = null, bt = 1e9; us.forEach((x) => { const t = (100 - x.g) / C.spdOf(x.u); if (t < bt) { bt = t; best = x; } }); if (!best) break; us.forEach((x) => { x.g += Math.max(0, bt) * C.spdOf(x.u); }); best.g -= 100; out.push(best.u); }
-    el.innerHTML = out.slice(0, 7).map((u, i) => `<i class="tn ${u.side} ${i === 0 ? 'now' : ''}" title="${esc(u.name)}">${u.hero ? D.CLASSES[u.cls].ic : u.ic}</i>`).join('');
+    el.innerHTML = out.slice(0, 7).map((u, i) => `<i class="tn ${u.side} ${i === 0 ? 'now' : ''}" title="${esc(u.name)}">${u.hero ? '👑' : u.ic}</i>`).join('');
   }
   UI.act.bSel = (el) => { const B = UI.B; if (!B) return; const u = B.foes.find((f) => f.id === el.dataset.id); if (!u || !u.alive) return; B.sel = u.id; $$('.foe').forEach((c) => c.classList.toggle('sel', c.id === 'u_' + u.id)); UI.sfx('tab'); };
   UI.act.bAuto = () => { const B = UI.B; if (!B) return; B.opts.auto = !B.opts.auto; $('#bAuto').classList.toggle('on', B.opts.auto); UI.p.settings.auto = B.opts.auto; if (B.opts.auto && B.pending) { const p = B.pending; B.pending = null; p.res(C.choose(B, p.u)); } };
+  UI.act.bCmd = () => { const B = UI.B; if (!B) return; B.opts.cmd = !B.opts.cmd; UI.slot().cmd = B.opts.cmd; $('#bCmd').classList.toggle('on', B.opts.cmd); UI.toast(B.opts.cmd ? 'Вы командуете Свитой сами' : 'Свита действует сама', 'ok'); };
   UI.act.bSpeed = () => { const B = UI.B; if (!B) return; B.speed = B.speed === 1 ? 2 : 1; UI.p.settings.battleSpeed = B.speed; $('#bSpeed').textContent = '×' + B.speed; };
 
   // ───── панель действий игрока ─────
@@ -200,7 +202,7 @@
       const basic = D.BASIC[u.cls] || D.BASIC.warrior;
       const sk = skills.map((id) => {
         const k = C.skillOf(u, id), why = C.canUse(B, u, id), cost = (k.mp ? `💧${k.mp}` : '') + (k.rc ? ` ${D.CLASSES[u.cls].rc.n}${k.rc}` : '') + (k.rcAll ? ' всё' : '');
-        return `<button class="sk ${why ? 'off' : ''} ${id.startsWith('u_') ? 'echo' : ''}" data-act="bSkill" data-id="${id}" data-quiet="1" ${why ? 'data-why="' + why + '"' : ''}><span>${k.ic}</span><b>${esc(k.n)}</b><small>${why ? why : cost || '—'}</small></button>`;
+        return `<button class="sk ${why ? 'off' : ''} ${id.startsWith('u_') ? 'echo' : id.startsWith('c_') ? 'echo conc' : ''}" data-act="bSkill" data-id="${id}" data-quiet="1" ${why ? 'data-why="' + why + '"' : ''}><span>${k.ic}</span><b>${esc(k.n)}</b><small>${why ? why : cost || '—'}</small></button>`;
       }).join('');
       const rc = u.rcMax > 0 ? `<div class="rcl">${D.CLASSES[u.cls].rc.n}: <b>${Math.round(u.rc)}/${u.rcMax}</b></div>` : '';
       $('#bact').innerHTML = `<div class="actrow"><div class="turnof">Ход: <b>${esc(u.name)}</b></div>${rc}</div><div class="mainbtns"><button class="abtn" data-act="bBasic" data-quiet="1"><span>${basic.ic}</span>${basic.n}</button><button class="abtn" data-act="bGuard" data-quiet="1"><span>🛡️</span>Защита</button><button class="abtn" data-act="bItems" data-quiet="1"><span>🧪</span>Предметы</button><button class="abtn" data-act="bFlee" data-quiet="1" ${B.opts.noFlee ? 'disabled' : ''}><span>🏃</span>Бегство</button></div><div class="skgrid">${sk}</div>`;
@@ -278,85 +280,4 @@
   }
   UI.act.btDone = () => { UI.closeModal(); if (UI.btDone) { const f = UI.btDone; UI.btDone = null; f(); } };
 
-  // ═════ СЮЖЕТНЫЙ ПЛЕЕР ═════
-  UI.playScene = function (id, replay) {
-    const sc = D.SCENES[id]; if (!sc) return Promise.resolve();
-    return UI.playLines(sc.lines, { bg: sc.bg, replay: !!replay, id, title: sc.t });
-  };
-  UI.playLines = function (lines, o) {
-    return new Promise((resolve) => {
-      const slot = UI.slot(), st = UI.p.settings, layer = $('#layer'); o = o || {};
-      layer.innerHTML = `<div id="story" class="story"><div class="sbg" id="sbg"></div><div class="sbg2" id="sbg2"></div><div class="stage"><div class="actor left" id="actL"></div><div class="actor right" id="actR"></div></div>
-        <div class="stbar"><button class="mini" data-act="sSkip" id="sSkip" data-quiet="1">⏭ Пропуск</button></div>
-        <div class="dlg" id="dlg" data-act="sNext" data-quiet="1"><div class="spk" id="spk"></div><div class="txt" id="stxt"></div><i class="nx">▾</i></div><div class="schoice" id="schoice"></div><div class="tcard" id="tcard"></div><div class="flash" id="sflash"></div></div>`;
-      layer.classList.add('on'); const root = $('#story');
-      const Q = lines.slice(); let typing = null, waitNext = null, skipping = false, curBg = '';
-      const hero = slot.hero; let rightId = null, leftOn = false;
-      const setBg = (bg) => { if (!bg || bg === curBg) return; curBg = bg; const b2 = $('#sbg2'), b1 = $('#sbg'); b2.className = 'sbg2 bg-' + bg + ' in'; b2.innerHTML = silFor(bg); setTimeout(() => { b1.className = 'sbg bg-' + bg; b1.innerHTML = b2.innerHTML; b2.className = 'sbg2'; b2.innerHTML = ''; }, 620); };
-      const done = () => { layer.classList.remove('on'); layer.innerHTML = ''; try { F.setMode(st.particles ? (UI.v === 'game' ? 'embers' : 'stars') : 'none'); } catch (e) { /* ignore */ } if (!o.replay && o.id) { E.finishScene(slot, o.id); } resolve(); };
-      const portraitFor = (sp, mood) => (sp.hero ? hero.portrait : (sp.p ? sp.p + '_' + (mood || 'n') : ''));
-      const showActor = (key, mood) => {
-        const sp = D.SPEAKERS[key]; if (!sp || !sp.n) { $('#actL').classList.remove('on'); $('#actR').classList.remove('on'); return; }
-        const L = $('#actL'), R = $('#actR'), pid = portraitFor(sp, mood);
-        if (sp.hero) { if (!leftOn) { L.innerHTML = UI.por(pid, 'st', false); leftOn = true; } L.className = 'actor left on talk m-' + (mood || 'n'); R.classList.remove('talk'); }
-        else { if (rightId !== key + (mood || 'n')) { R.innerHTML = UI.por(pid, 'st', false); rightId = key + (mood || 'n'); } R.className = 'actor right on talk m-' + (mood || 'n'); L.classList.remove('talk'); }
-      };
-      const typeText = (txt, narr) => new Promise((r) => {
-        const el = $('#stxt'); el.className = 'txt' + (narr ? ' narr' : ''); el.textContent = ''; const sp = [0, 44, 20, 7][st.textSpeed || 2]; let i = 0; const nx = $('#dlg .nx'); nx.style.opacity = 0;
-        if (skipping) { el.textContent = txt; nx.style.opacity = 1; r(); return; }
-        const tick = () => { i++; el.textContent = txt.slice(0, i); if (i >= txt.length) { typing = null; nx.style.opacity = 1; r(); return; } const ch = txt[i - 1]; typing = { timer: setTimeout(tick, sp * (/[.!?…]/.test(ch) ? 7 : /[,;:—]/.test(ch) ? 3 : 1)), finish: () => { clearTimeout(typing && typing.timer); el.textContent = txt; typing = null; nx.style.opacity = 1; r(); } }; };
-        tick();
-      });
-      const waitTap = () => new Promise((r) => { if (skipping) { setTimeout(r, 90); return; } waitNext = r; });
-      UI.sNext = () => { if (typing) { typing.finish(); return; } if (waitNext) { const f = waitNext; waitNext = null; UI.sfx('page'); f(); } };
-      UI.sSkip = () => { skipping = !skipping; $('#sSkip').classList.toggle('on', skipping); $('#sSkip').textContent = skipping ? '⏩ Идёт…' : '⏭ Пропуск'; if (skipping) { if (typing) typing.finish(); if (waitNext) { const f = waitNext; waitNext = null; f(); } } };
-      const fx = async (name) => {
-        switch (name) {
-          case 'stars': case 'embers': case 'fireflies': case 'snow': try { F.setMode(st.particles ? name : 'none'); } catch (e) { /* ignore */ } break;
-          case 'silence': root.classList.add('silence'); UI.sfx('boom'); await UI.wait(skipping ? 50 : 1800); setTimeout(() => root.classList.remove('silence'), 2500); break;
-          case 'flash': { const f = $('#sflash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); UI.sfx('magic'); await UI.wait(skipping ? 30 : 450); break; }
-          case 'shake': case 'dungeon_door': root.classList.remove('shk'); void root.offsetWidth; root.classList.add('shk'); UI.sfx('boom'); await UI.wait(skipping ? 30 : 500); break;
-          case 'bells_mute': UI.sfx('miss'); await UI.wait(skipping ? 30 : 700); break;
-          default: break;
-        }
-      };
-      (async () => {
-        setBg(o.bg); await UI.wait(150);
-        while (Q.length) {
-          const l = Q.shift(), k = l[0];
-          if (k === 'bg') { setBg(l[1]); await UI.wait(skipping ? 20 : 500); continue; }
-          if (k === 'fx') { await fx(l[1]); continue; }
-          if (k === 'title') {
-            if (o.noTitle) continue;
-            const t = $('#tcard'); t.innerHTML = `<h1>${esc(l[1])}</h1><p>${esc(l[2] || '')}</p>`; t.classList.add('on'); UI.sfx('level'); await UI.wait(skipping ? 150 : 2600); t.classList.remove('on'); await UI.wait(300); continue;
-          }
-          if (k === 'set') { if (!o.replay) E.setFlags(slot, l[1]); continue; }
-          if (k === 'give') { if (!o.replay) { E.give(slot, l[1]); UI.toast('🎁 Получено: ' + giveTxt(l[1]), 'gold'); } continue; }
-          if (k === 'cls') { const L = (l[1][hero.cls]) || []; Q.unshift(...L); continue; }
-          if (k === 'if') { if (slot.story.flags[l[1]]) Q.unshift(...l[2]); continue; }
-          if (k === 'choice') {
-            skipping = false; $('#sSkip').classList.remove('on'); $('#sSkip').textContent = '⏭ Пропуск';
-            const pick = await new Promise((r) => { const c = $('#schoice'); c.innerHTML = l[1].map((op, i) => `<button class="choice" data-act="sChoice" data-i="${i}" data-quiet="1">${esc(E.fmtText(op.t, slot))}</button>`).join(''); c.classList.add('on'); UI.sChoice = (i) => { c.classList.remove('on'); c.innerHTML = ''; UI.sfx('ok'); r(i); }; });
-            const op = l[1][pick]; if (!o.replay && op.f) E.setFlags(slot, op.f); if (op.r) Q.unshift(...op.r); continue;
-          }
-          // реплика
-          const sp = D.SPEAKERS[k]; if (!sp) continue; const narr = !sp.n;
-          showActor(k, l[2]); const spk = $('#spk'); spk.textContent = narr ? '' : E.fmtText(sp.n, slot); spk.style.color = sp.c || '#fff'; spk.style.display = narr ? 'none' : 'block';
-          $('#dlg').classList.toggle('narr', narr);
-          if (narr) { $('#actL').classList.remove('talk'); $('#actR').classList.remove('talk'); }
-          await typeText(E.fmtText(l[1], slot), narr); await waitTap();
-        }
-        done();
-      })();
-    });
-  };
-  UI.act.sNext = () => UI.sNext && UI.sNext();
-  UI.act.sSkip = () => UI.sSkip && UI.sSkip();
-  UI.act.sChoice = (el) => UI.sChoice && UI.sChoice(+el.dataset.i);
-  const giveTxt = (g) => [g.gold ? g.gold + ' 🪙' : '', g.sp ? '+' + g.sp + ' искра Эха' : '', g.item ? 'артефакт' : '', Object.keys(g.cons || {}).map((k) => D.CONS[k].ic + g.cons[k]).join(' '), Object.keys(g.mats || {}).map((k) => D.MATS[k].ic + g.mats[k]).join(' ')].filter(Boolean).join(' ');
-  function silFor(bg) {
-    const m = { lira_sky: 'lira', village_festival: 'village', echo_awaken: 'lira', village_night: 'village', dawn_mill: 'mill', forge: 'village', crypt: 'arches', tavern: 'village', shrine: 'trees', forest: 'trees', mines: 'peaks', swamp_camp: 'trees', spire: 'spire', cathedral: 'cathedral', cathedral_end: 'cathedral' }[bg] || 'village';
-    return `<div class="sil sil-${m}"></div>${m === 'lira' || bg === 'village_festival' ? '<div class="lira"></div>' : ''}`;
-  }
-  UI.silFor = silFor;
 })();

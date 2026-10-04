@@ -55,6 +55,32 @@
     brum: { race: 'dwarf', sex: 'm', hs: 'bald', hc: '#b4421f', ec: '#e8a040', beard: 'full', acc: 'goggles', cloth: '#6a4a3a' }
   };
 
+
+  // Запасные образы для новых персонажей (когда арт ещё не загружен)
+  Object.assign(RPG.NPC_LOOK, {
+    hero: { race: 'human', sex: 'm', hs: 'spike', hc: '#1a1a24', ec: '#9a6aff', cloth: '#3a2a4a' },
+    sister: { race: 'human', sex: 'f', hs: 'long', hc: '#7a4a2a', ec: '#c98a4a', cloth: '#8a6a4a' },
+    gen1: { race: 'demon', sex: 'f', hs: 'long', hc: '#f4f4fa', ec: '#ff3a4a', horns: 'curve', cloth: '#1c1c28' },
+    gen2: { race: 'beast', sex: 'f', hs: 'tail', hc: '#e8501f', ec: '#ffb35a', ears: 'fox', cloth: '#8a3a2a' },
+    gen3: { race: 'human', sex: 'f', hs: 'bob', hc: '#7a4aa8', ec: '#d89aff', acc: 'goggles', cloth: '#3a2a5a' },
+    gen4: { race: 'elf', sex: 'f', hs: 'long', hc: '#6ad88a', ec: '#a0ff7a', cloth: '#2e7d6a' },
+    gen5: { race: 'beast', sex: 'f', hs: 'bob', hc: '#2a2a35', ec: '#ffd35a', ears: 'cat', skin: '#c88a64', cloth: '#2b2f45' },
+    gen6: { race: 'human', sex: 'f', hs: 'tail', hc: '#e8c15a', ec: '#7ad0ff', cloth: '#aab0c0' },
+    gen7: { race: 'elf', sex: 'f', hs: 'long', hc: '#7ad0ff', ec: '#5ac8ff', acc: 'circlet', cloth: '#9bb8e8' },
+    gen8: { race: 'human', sex: 'f', hs: 'twin', hc: '#ff8ac0', ec: '#ff5ad0', cloth: '#7a3b6a' },
+    gen9: { race: 'human', sex: 'f', hs: 'long', hc: '#15151f', ec: '#b08aff', skin: '#efe2dc', cloth: '#2a1f3a' },
+    hero1: { race: 'human', sex: 'f', hs: 'long', hc: '#f0c850', ec: '#7ad0ff', cloth: '#e8e4f8' },
+    hero2: { race: 'human', sex: 'f', hs: 'bob', hc: '#cfd6e8', ec: '#9aa4b8', cloth: '#e0e4f0' },
+    hero3: { race: 'human', sex: 'f', hs: 'twin', hc: '#e8d49a', ec: '#a0c8ff', cloth: '#f0ece0' },
+    apostle: { race: 'elf', sex: 'm', hs: 'long', hc: '#ffe9a0', ec: '#ffd35a', acc: 'circlet', cloth: '#f8f4e0' },
+    sub_grak: { race: 'beast', sex: 'm', hs: 'bald', hc: '#6aa84a', ec: '#ffd35a', skin: '#8ac86a', cloth: '#5a4a2a' },
+    sub_skril: { race: 'human', sex: 'm', hs: 'bald', hc: '#e8e8f0', ec: '#7ad0ff', skin: '#e8e4dc', cloth: '#3a3f55' },
+    sub_tik: { race: 'demon', sex: 'm', hs: 'spike', hc: '#9a5ad8', ec: '#ffd35a', skin: '#a87ad0', horns: 'up', cloth: '#5a2a7a' },
+    sub_garm: { race: 'dwarf', sex: 'm', hs: 'bald', hc: '#3a5a2a', ec: '#ff9a5a', skin: '#7a9a5a', beard: 'stubble', cloth: '#6a3a2a' },
+    sub_vesper: { race: 'elf', sex: 'm', hs: 'swept', hc: '#cfd6e8', ec: '#d89aff', skin: '#6a5a8a', cloth: '#1c1c28' },
+    sub_brum: { race: 'dwarf', sex: 'm', hs: 'bald', hc: '#b4421f', ec: '#e8a040', beard: 'full', acc: 'goggles', cloth: '#6a4a3a' }
+  });
+
   const OPEN = { n: 1, h: 1, s: 1, x: 1 };
 
   function portraitSVG(o) {

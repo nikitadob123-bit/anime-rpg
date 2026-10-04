@@ -2,7 +2,7 @@
 (function () {
   const RPG = globalThis.RPG || (globalThis.RPG = {});
   const S = RPG.S = {};
-  S.VERSION = 3;
+  S.VERSION = 4;
   S.PREFIX = 'arpg.';
   S.SLOTS = 3;
   S.AVATARS = ['🦉', '🐺', '🦊', '🐉', '🦅', '🌙', '⭐', '🔥', '❄️', '🍀', '⚔️', '🛡️'];
@@ -27,6 +27,19 @@
       p.slots = (p.slots || []).map(s => { if (!s) return s; s.buffs = s.buffs || []; s.rev = s.rev || 0; s.shopSeed = s.shopSeed || 0; s.prog = s.prog || { cleared: {}, best: {}, boss: {} };
         for (const k in s.prog.cleared) if (s.prog.cleared[k] === true) s.prog.cleared[k] = 1; s.hero.uspent = s.hero.uspent || {}; s.hero.spent = s.hero.spent || {}; s.eq = s.eq || {}; s.inv = s.inv || []; s.mats = s.mats || {}; s.cons = s.cons || {}; s.profs = s.profs || {}; s.played = s.played || 0; return s; });
       p.v = 3; return p;
+    },
+    3: function (p) { // v3 → v4: «Нимб Мира». Классы → Король Демонов, очки навыков пересчитываются, сюжет перезапускается с главы 1, добавлены Свита и Романтика
+      const ORIG = { human: 'o_guard', elf: 'o_scholar', dwarf: 'o_guard', beast: 'o_street', demon: 'o_void' };
+      p.slots = (p.slots || []).map(s => {
+        if (!s) return s; const h = s.hero = s.hero || {};
+        h.oldCls = h.cls; h.cls = 'maou'; h.sex = 'm'; h.portrait = 'hero'; h.race = ORIG[h.race] || (String(h.race).startsWith('o_') ? h.race : 'o_orphan');
+        h.spent = {}; h.uspent = h.uspent || {}; h.level = h.level || 1; h.xp = h.xp || 0;
+        const hadPro = s.story && s.story.done && s.story.done.includes('prologue');
+        s.story = { flags: hadPro ? { prologue_done: 1 } : {}, done: hadPro ? ['prologue'] : [], cur: 'prologue', log: [] };
+        s.run = null; s.party = []; s.crew = {}; s.rom = {}; s.missions = []; s.crewTalk = 2; s.gifts = {}; s.cmd = false; s.migrated = 4; s.rev = (s.rev || 0) + 1;
+        return s;
+      });
+      p.v = 4; return p;
     }
   };
   S.migrate = function (p) {
