@@ -12,7 +12,7 @@
   E('valdor_blade', { n: 'Вальдор, Клинок Чести', ic: '⚔️', role: 'boss', duel: 'valdor', tags: ['spirit'], sk: ['e_goldcut', 'e_holysword', 'e_slam', 'e_guard', 'e_thunder'], ph2: 'enrage', weak: ['dark'], res: ['phys', 'light'], loot: [['gem_fr', 1, 2, 3], ['ess_l', 1, 3, 4], ['ore_ms', 1, 3, 4], ['gem_ae', 1, 2, 3]], title: 'Вальдор', lines: ['Бей. Не жалей меня и не жалей себя.', 'Вот теперь — честно.'] });
 
   ST.defineDungeon({ id: 'arena_gods', n: 'Арена Богов', ic: '🏟️', lv: 79, floors: 2, bio: 'ash', col: '#e07a4a', d: 'Круглая арена на вершине горы мечей. Трибуны заняты статуями павших; они не аплодируют, но смотрят очень внимательно.',
-    pool: ['fallen_statue', 'honor_duelist', 'blade_wraith', 'armory_ward'], mini: 'honor_marshal', boss: 'valdor_blade', ev: ['chest', 'rest', 'shrine'], gate: '#pending', lockHint: 'Сначала прочтите главу «Подготовка к бою».' });
+    pool: ['fallen_statue', 'honor_duelist', 'blade_wraith', 'armory_ward'], mini: 'honor_marshal', boss: 'valdor_blade', ev: ['chest', 'rest', 'shrine'], gate: '#pending', lockHint: 'Сначала прочтите главу «Арена Богов».' });
   D.INTROS.arena_gods = [['bg', 'battlefield'], ['n', 'Песок арены пахнет железом и дождём, которого здесь никогда не было. С трибун на вас смотрят статуи — тысячи, и у каждой в руках меч остриём вниз.'], ['h', 'Зрители тихие. Мне нравятся такие зрители: не свистят и не просят повторить.', 'h']];
 
   // ════════════ Глава 211 · Лестница меча ════════════
