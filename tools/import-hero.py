@@ -77,7 +77,7 @@ if FORM == 'demon':          # старый ключ hero.demon -> нейтра�
     for d in (man['dim'], man['src']): d.pop('hero_demon.webp', None)
     if os.path.exists(os.path.join(OUT, 'hero_demon.webp')): os.remove(os.path.join(OUT, 'hero_demon.webp'))
 print('записано (KB):', files)
-man['pre'] = sorted(set(list(man['cg'].values()) + [v['neutral'] for v in man['portraits'].values() if 'neutral' in v] + list(man.get('av', {}).values())))   # аватары героя — в прекэш
+man['pre'] = sorted(set(list(man['cg'].values()) + [v['neutral'] for v in man['portraits'].values() if 'neutral' in v] + list(man.get('av', {}).values()) + list(man['portraits']['hero'].values()) + list(man['portraits'].get('hero_demon', {}).values())))   # аватары и все эмоции героя — в прекэш (офлайн)
 man['v'] = hashlib.md5(json.dumps([man['portraits'], man['cg'], man['src'], man['dim'], man.get('av')], sort_keys=True).encode()).hexdigest()[:8]
 json.dump(man, open(man_path, 'w'), ensure_ascii=False, separators=(',', ':'), sort_keys=True)
 print('manifest v', man['v'], man['portraits'][cid])
