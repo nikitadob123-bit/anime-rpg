@@ -33,6 +33,7 @@ let ok = 0, bad = 0; const check = (n, c, x) => { c ? ok++ : bad++; console.log(
   const tabs = ['city', 'story', 'dun', 'hero', 'skills', 'crew', 'hearts', 'prof', 'inv', 'set'];
   for (const t of tabs) { await click(`#nav button[data-t="${t}"]`); await shot('tab-' + t, 900); await over('вкладка ' + t); }
   await click('#nav button[data-t="city"]'); await act('shop').catch(() => {}); await shot('modal-shop', 600); await over('модалка: лавка'); await ev(() => __RPG.UI.closeModal());
+  for (const m of ['forge', 'tavern', 'altar', 'tutorial']) { await click('#nav button[data-t="city"]'); await act(m).catch(() => {}); await shot('modal-' + m, 500); await over('модалка: ' + m); await ev(() => __RPG.UI.closeModal()).catch(() => {}); }
   const fonts = await ev(() => ({ r: document.fonts.check('20px "Ruslan Display"'), p: document.fonts.check('bold 16px "Philosopher"') })); check('шрифты Ruslan Display / Philosopher загружены', fonts.r && fonts.p, JSON.stringify(fonts));
   await click('#nav button[data-t="hero"]'); await page.waitForTimeout(300); if (await page.locator('[data-act="toggleSubs"]').count()) { await act('toggleSubs'); await shot('hero-subs'); await over('герой: субстаты'); }
   await ev(() => { __RPG.UI.vnTest = __RPG.UI.playLines([['bg', 'ruins'], ['i', 'Государь, мы ждали вас всю ночь.', 'n'], ['h', 'Я не собираюсь вас развоплощать.', 'h']], { replay: true }); }).catch((e) => console.log('vn', e.message));
