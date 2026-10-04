@@ -156,12 +156,11 @@
   // ═════ ГЕРОЙ ═════
   UI.tabs.hero = function (s) {
     const h = s.hero, d = E.derive(s), cls = D.CLASSES[h.cls], race = D.RACES[h.race], c = E.collect(s);
-    const rows = D.STATS.map((k) => `<div class="sb"><span>${D.STAT_N[k]}</span>${bar(d[k], 60)}<em>${d[k]}</em></div>`).join('');
     const mods = Object.keys(c.mods).filter((k) => c.mods[k] && D.MODN[k]).map((k) => `<span class="chip">${c.mods[k] > 0 && !/aken/.test(k) ? '+' : ''}${Math.round(c.mods[k] * 10) / 10} ${(D.MODN[k]).replace(/\s*%$/, '')}${/%$/.test(D.MODN[k]) ? '%' : ''}</span>`).join('');
     const eq = Object.keys(D.SLOTS).map((sl) => { const it = s.eq[sl]; return `<button class="eqs" style="--rc:${it ? rar(it).c : '#444'}" data-act="${it ? 'itemOpen' : 'tab'}" data-id="${it ? it.id : ''}" data-t="inv"><span>${it ? D.BASES[it.k].ic : D.SLOT_IC[sl]}</span><small>${it ? esc(it.nm) + (it.up ? ' +' + it.up : '') : D.SLOTS[sl]}</small></button>`; }).join('');
     const st = s.stats;
     return `<div class="herocard"><div class="bg bg-hero"></div>${UI.por(h.portrait, 'xl', false)}<div class="hinfo"><h2 class="m0">${esc(h.name)}</h2><div class="dim">Король Демонов · ${race.n} · ур. ${h.level}${h.level >= D.LEVEL_CAP ? ' (макс.)' : ''}</div><div class="dim small">Мощь ${fmt(E.power(s))}</div><div class="xpb">${bar(h.level >= D.LEVEL_CAP ? 1 : h.xp, h.level >= D.LEVEL_CAP ? 1 : D.xpNeed(h.level), 'xp')}<small>${h.level >= D.LEVEL_CAP ? 'МАКС' : fmt(h.xp) + ' / ' + fmt(D.xpNeed(h.level))}</small></div></div></div>
-      <div class="card"><b>Характеристики</b><div class="sbs">${rows}</div>${UI.statRow(d)}<div class="stats"><span>🎯 крит ${Math.round(d.crit)}%</span><span>💥 ×${d.critDmg.toFixed(2)}</span><span>🌀 укл. ${Math.round(d.eva)}%</span></div></div>
+      ${UI.statsCard(s, d)}
       <div class="card"><b>Снаряжение</b><div class="eqgrid">${eq}</div></div>
       <div class="card"><b>${race.ic} ${race.pn}</b> <span class="dim small">(прошлое: ${race.n})</span><div class="small tl dim">${race.pd}</div><b>${cls.ic} Перки класса</b><ul class="perks small">${cls.perks.map((p) => `<li><b>${p.n}</b> — ${p.d}</li>`).join('')}</ul><div class="small tl dim"><b>${cls.rc.n}:</b> копится в бою и усиливает навыки.</div></div>
       <div class="card"><b>Все бонусы</b><div class="chips">${mods || '<span class="dim">нет</span>'}</div></div>

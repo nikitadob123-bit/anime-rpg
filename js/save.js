@@ -2,7 +2,7 @@
 (function () {
   const RPG = globalThis.RPG || (globalThis.RPG = {});
   const S = RPG.S = {};
-  S.VERSION = 4;
+  S.VERSION = 5;
   S.PREFIX = 'arpg.';
   S.SLOTS = 3;
   S.AVATARS = ['🦉', '🐺', '🦊', '🐉', '🦅', '🌙', '⭐', '🔥', '❄️', '🍀', '⚔️', '🛡️'];
@@ -40,6 +40,10 @@
         return s;
       });
       p.v = 4; return p;
+    },
+    4: function (p) { // v4 → v5: 8 характеристик, ручные очки (hero.alloc), кап уровня 100, субстаты считаются из статов — прогресс не теряется
+      p.slots = (p.slots || []).map((s) => { if (!s) return s; const h = s.hero = s.hero || {}; h.alloc = h.alloc || {}; h.statVer = 5; h.level = h.level || 1; s.rev = (s.rev || 0) + 1; return s; });
+      p.v = 5; return p;
     }
   };
   S.migrate = function (p) {

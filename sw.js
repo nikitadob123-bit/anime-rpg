@@ -1,10 +1,10 @@
 /* Service worker: офлайн-режим. Ядро — в прекеше; CG и нейтральные портреты берутся из assets/vn/manifest.json, остальные настроения кэшируются при первом показе. */
-const VERSION = 'arpg-v2.1.0';
+const VERSION = 'arpg-v2.2.0';
 const CORE = `${VERSION}-core`, RUNTIME = `${VERSION}-rt`;
 const ASSETS = [
   './', 'index.html', 'manifest.json', 'css/style.css', 'css/vn.css',
-  'js/data-core.js', 'js/data-maou.js', 'js/data-prof.js', 'js/data-world.js', 'js/data-crew.js', 'js/data-theme.js', 'js/data-story.js', 'js/data-story2.js', 'js/data-story3.js', 'js/data-romance.js',
-  'js/portrait.js', 'js/engine.js', 'js/combat.js', 'js/crew.js', 'js/save.js', 'js/audio.js', 'js/fx.js', 'js/ui.js', 'js/ui-vn.js', 'js/ui-game.js', 'js/ui-crew.js', 'js/ui-play.js', 'js/main.js',
+  'js/data-core.js', 'js/data-stats.js', 'js/data-maou.js', 'js/data-prof.js', 'js/data-world.js', 'js/data-world2.js', 'js/data-crew.js', 'js/data-theme.js', 'js/data-story.js', 'js/data-story2.js', 'js/data-story3.js', 'js/data-romance.js',
+  'js/portrait.js', 'js/engine.js', 'js/stats.js', 'js/combat.js', 'js/crew.js', 'js/save.js', 'js/audio.js', 'js/fx.js', 'js/ui.js', 'js/ui-vn.js', 'js/ui-game.js', 'js/ui-hero.js', 'js/ui-crew.js', 'js/ui-play.js', 'js/main.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-192.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
   'assets/vn/manifest.json'
 ];

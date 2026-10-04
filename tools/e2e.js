@@ -208,6 +208,28 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
   for (const t of ['story', 'dun', 'hero', 'skills', 'crew', 'hearts', 'prof', 'inv', 'set', 'city']) {
     await click(`#nav button[data-t="${t}"]`); await page.waitForTimeout(150); await shot('tab-' + t); await noOverflow('вкладка ' + t);
   }
+  // ───── Герой: характеристики, очки, субстаты ─────
+  await ev(() => { const s = __RPG.UI.slot(); s.hero.level = 12; s.hero.alloc = {}; s.gold = 99999; __RPG.UI.draft = {}; __RPG.UI.refresh(); });
+  await click('#nav button[data-t="hero"]');
+  check('8 основных характеристик в списке', await page.locator('.stline').count() === 8);
+  const str0 = await ev(() => __RPG.E.derive(__RPG.UI.slot()).str);
+  await click('.stline:nth-child(1) .sbtn:nth-child(2)'); await click('.stline:nth-child(2) .sbtn:nth-child(3)');
+  check('черновик очков не меняет героя до подтверждения', await ev(() => Object.keys(__RPG.UI.slot().hero.alloc).length === 0 && Object.keys(__RPG.UI.draft).length === 2));
+  await click('[data-act="draftApply"]'); sl = await slot();
+  check('очки применены (+1 Сила, +5 Ловкость)', sl.hero.alloc.str === 1 && sl.hero.alloc.agi === 5, JSON.stringify(sl.hero.alloc));
+  check('Сила выросла на 1', await ev(() => __RPG.E.derive(__RPG.UI.slot()).str) === str0 + 1);
+  await click('.stline:nth-child(3) .sbtn:nth-child(4)'); await click('[data-act="draftApply"]'); sl = await slot();
+  check('«макс» тратит все свободные очки', await ev(() => __RPG.E.statFree(__RPG.UI.slot().hero)) === 0);
+  await click('.stname'); check('подсказка по строке характеристики', await page.locator('.tipbox').count() === 1); await click('.stname');
+  await click('[data-act="toggleSubs"]'); await page.waitForTimeout(100);
+  check('меню субстатов раскрылось, есть шанс крита', (await page.locator('.subs').innerText()).includes('Шанс крита'));
+  await click('[data-act="subGrp"][data-g="def"]'); await click('[data-act="subGrp"][data-g="elem"]');
+  check('блок стихий: 10 строк сопротивлений', await page.locator('.subr.elr').count() === 10);
+  await click('.subr.elr'); check('тултип стихии с формулой', (await page.locator('.tipbox').last().innerText()).includes('Сопротивление'));
+  await noOverflow('герой: субстаты'); await page.locator('.subtoggle').scrollIntoViewIfNeeded(); await shot('hero-stats-substats');
+  await click('[data-act="statRespec"]'); await click('[data-act="statRespecOk"]'); sl = await slot();
+  check('сброс очков за золото', Object.keys(sl.hero.alloc).length === 0 && sl.gold < 99999);
+  await ev(() => { __RPG.UI.heroUi.subs = false; __RPG.UI.refresh(); });
   // ───── Силы ─────
   await ev(() => { const s = __RPG.UI.slot(); s.hero.level = 10; s.hero.bossPts = 1; __RPG.UI.refresh(); });
   await click('#nav button[data-t="skills"]');

@@ -1,58 +1,19 @@
 {
  "mantra": {
   "build": "Мантра Силы (Плоть+Корень)",
-  "avgLevel": 30,
+  "avgLevel": 100,
   "winRateByTier": [
-   0.96,
-   0.89,
-   0.85,
-   0.87
-  ],
-  "runsPerGame": 39.8,
-  "actionsPerBattle": 17,
-  "gold": 55361,
-  "crewAvgLevel": 29.9,
-  "firstClear": {
-   "mill": {
-    "runs": 1,
-    "lv": 3.7
-   },
-   "wood": {
-    "runs": 2,
-    "lv": 5.8
-   },
-   "mines": {
-    "runs": 3,
-    "lv": 7
-   },
-   "swamp": {
-    "runs": 5.7,
-    "lv": 10
-   },
-   "spire": {
-    "runs": 8.6,
-    "lv": 12.7
-   },
-   "cathedral": {
-    "runs": 13.2,
-    "lv": 15.9
-   }
-  },
-  "runsToL30": 39.8
- },
- "dark": {
-  "build": "Тьма и Разрушение",
-  "avgLevel": 30,
-  "winRateByTier": [
-   0.99,
    1,
-   0.96,
-   0.93
+   1,
+   1,
+   0.93,
+   0.89,
+   1
   ],
-  "runsPerGame": 39.2,
-  "actionsPerBattle": 11.1,
-  "gold": 61081,
-  "crewAvgLevel": 29.9,
+  "runsPerGame": 91.7,
+  "actionsPerBattle": 11.9,
+  "gold": 418029,
+  "crewAvgLevel": 100,
   "firstClear": {
    "mill": {
     "runs": 1,
@@ -67,59 +28,221 @@
     "lv": 7
    },
    "swamp": {
-    "runs": 5.1,
+    "runs": 5,
     "lv": 10
    },
    "spire": {
-    "runs": 7.3,
-    "lv": 12.2
+    "runs": 7,
+    "lv": 12
    },
    "cathedral": {
-    "runs": 11.3,
-    "lv": 15.5
+    "runs": 10.3,
+    "lv": 15.3
+   },
+   "chapel": {
+    "runs": 16.5,
+    "lv": 20.2
+   },
+   "ossuary": {
+    "runs": 28.3,
+    "lv": 28.1
+   },
+   "crater": {
+    "runs": 38.3,
+    "lv": 35.5
+   },
+   "tempest": {
+    "runs": 49.5,
+    "lv": 44.8
+   },
+   "sunken": {
+    "runs": 60.1,
+    "lv": 56.7
+   },
+   "garden": {
+    "runs": 69,
+    "lv": 66.5
+   },
+   "citadel": {
+    "runs": 76.8,
+    "lv": 76.6
+   },
+   "abyss": {
+    "runs": 83.8,
+    "lv": 87.1
+   },
+   "nowhere": {
+    "runs": 90.2,
+    "lv": 97.3
    }
   },
-  "runsToL30": 39.2
+  "runsToL30": 31,
+  "runsToL100": 91.7,
+  "reachedL100": "6/6",
+  "maxHp": 12371
  },
- "dominion": {
-  "build": "Власть и Подчинение",
-  "avgLevel": 30,
+ "dark": {
+  "build": "Тьма и Разрушение",
+  "avgLevel": 100,
   "winRateByTier": [
-   0.99,
    1,
    1,
-   0.97
+   1,
+   1,
+   1,
+   1
   ],
-  "runsPerGame": 38.5,
-  "actionsPerBattle": 18.6,
-  "gold": 78253,
-  "crewAvgLevel": 29.7,
+  "runsPerGame": 92.7,
+  "actionsPerBattle": 9,
+  "gold": 432188,
+  "crewAvgLevel": 100,
   "firstClear": {
    "mill": {
     "runs": 1,
-    "lv": 3.9
+    "lv": 4
    },
    "wood": {
     "runs": 2,
-    "lv": 5.8
+    "lv": 6
    },
    "mines": {
     "runs": 3,
     "lv": 7
    },
    "swamp": {
-    "runs": 5.1,
+    "runs": 5,
     "lv": 10
    },
    "spire": {
-    "runs": 7.1,
-    "lv": 12.1
+    "runs": 7,
+    "lv": 12
    },
    "cathedral": {
-    "runs": 10.5,
-    "lv": 15.3
+    "runs": 10,
+    "lv": 15
+   },
+   "chapel": {
+    "runs": 16.4,
+    "lv": 20.8
+   },
+   "ossuary": {
+    "runs": 27.8,
+    "lv": 28.1
+   },
+   "crater": {
+    "runs": 38,
+    "lv": 35.5
+   },
+   "tempest": {
+    "runs": 48.8,
+    "lv": 44.3
+   },
+   "sunken": {
+    "runs": 60,
+    "lv": 56.7
+   },
+   "garden": {
+    "runs": 69.3,
+    "lv": 66.6
+   },
+   "citadel": {
+    "runs": 77.5,
+    "lv": 76.8
+   },
+   "abyss": {
+    "runs": 84.4,
+    "lv": 87
+   },
+   "nowhere": {
+    "runs": 90.9,
+    "lv": 97.1
    }
   },
-  "runsToL30": 38.5
+  "runsToL30": 30.5,
+  "runsToL100": 92.7,
+  "reachedL100": "6/6",
+  "maxHp": 11616
+ },
+ "dominion": {
+  "build": "Власть и Подчинение",
+  "avgLevel": 100,
+  "winRateByTier": [
+   1,
+   1,
+   1,
+   1,
+   0.99,
+   1
+  ],
+  "runsPerGame": 92.2,
+  "actionsPerBattle": 20.2,
+  "gold": 641520,
+  "crewAvgLevel": 100,
+  "firstClear": {
+   "mill": {
+    "runs": 1,
+    "lv": 4
+   },
+   "wood": {
+    "runs": 2,
+    "lv": 6
+   },
+   "mines": {
+    "runs": 3,
+    "lv": 7
+   },
+   "swamp": {
+    "runs": 5,
+    "lv": 10
+   },
+   "spire": {
+    "runs": 7,
+    "lv": 12
+   },
+   "cathedral": {
+    "runs": 10,
+    "lv": 15
+   },
+   "chapel": {
+    "runs": 16,
+    "lv": 20.3
+   },
+   "ossuary": {
+    "runs": 27.7,
+    "lv": 28.1
+   },
+   "crater": {
+    "runs": 37.7,
+    "lv": 35.5
+   },
+   "tempest": {
+    "runs": 48.7,
+    "lv": 44.7
+   },
+   "sunken": {
+    "runs": 59.4,
+    "lv": 56.8
+   },
+   "garden": {
+    "runs": 68.6,
+    "lv": 66.5
+   },
+   "citadel": {
+    "runs": 77,
+    "lv": 76.8
+   },
+   "abyss": {
+    "runs": 84.2,
+    "lv": 87.2
+   },
+   "nowhere": {
+    "runs": 90.4,
+    "lv": 97
+   }
+  },
+  "runsToL30": 30.3,
+  "runsToL100": 92.2,
+  "reachedL100": "6/6",
+  "maxHp": 10785
  }
 }
