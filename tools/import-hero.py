@@ -1,83 +1,75 @@
 #!/usr/bin/env python3
-"""Точечный импорт «обычного» облика героя (не демона): /workspace/vn-art/newhero/hero_<mood>.png (настоящие PNG с альфой, 1024×1536) ->
-assets/vn/hero_<mood>.webp тем же пайплайном, что tools/import-art.py (бюст 720 px по высоте, кадр по bbox альфы, масштаб FS=0.7, геометрия лица tools/geom.py),
-но БЕЗ вырезания фона и без пересборки остальных портретов: обновляет только записи hero_* в manifest.json (portraits/dim/src/pre/v).
-hero_despair = hero_sad (старый ключ). hero_demon не трогается. Запуск: python3 tools/import-hero.py [папка]"""
+"""Импорт героя (не вырезание фона: исходники — настоящие PNG с альфой 1024×1536): /workspace/vn-art/newhero (обычный облик, cid hero) и /workspace/vn-art/newdemon (форма Короля, cid hero_demon)
+-> assets/vn/hero_<mood>.webp / hero_demon_<mood>.webp. Обновляет только записи героя в manifest.json (portraits/dim/src/pre/av/v); остальные портреты не трогает.
+Ключевые свойства (v2.5.2):
+  • ОДИН кадр на все эмоции формы: общий bbox объединения альф всех эмоций → одинаковый размер холста, масштаб и якорь (плечи/ноги не прыгают при смене эмоции);
+  • родное разрешение исходника (никакого даунскейла): файл = кроп исходника 1:1, webp q=92, alpha_quality=100;
+  • лицо (fx, fy, fw) — консенсус каскада lbpcascade_animeface по всем эмоциям и ОДНО значение для всех файлов формы; логические единицы раскладки: лицо = 240 (как у остальных бюстов);
+  • dim = [w, h, 1, fx, fy, fw, x0, y0, vh, fs]: vh — «видимая высота» кадра в логических единицах (герой в рост до бёдер, ниже — под диалогом), fs — масштаб файла к логическим единицам.
+Запуск: python3 tools/import-hero.py normal|demon"""
 import os, sys, json, hashlib
 from PIL import Image
 import numpy as np
+import cv2
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE); OUT = os.path.join(ROOT, 'assets', 'vn')
 FORM = sys.argv[1] if len(sys.argv) > 1 else 'normal'          # normal — обычный облик (cid hero), demon — форма Короля Демонов (cid hero_demon)
 CFG = {'normal': dict(src='/workspace/vn-art/newhero', pre='hero_', cid='hero', alias={'despair': 'sad'}),
        'demon': dict(src='/workspace/vn-art/newdemon', pre='herod_', cid='hero_demon', alias={})}[FORM]
 SRC = sys.argv[2] if len(sys.argv) > 2 else CFG['src']
-sys.path.insert(0, HERE); import geom
-import cv2
 CASCADE = cv2.CascadeClassifier(os.path.join(HERE, 'data', 'lbpcascade_animeface.xml'))
-PORT_H, Q, AQ, FS = 720, 74, 68, 0.7
 MOODS = ['neutral', 'angry', 'sad', 'smirk', 'shy', 'surprised']
+Q, AQ = 92, 100
+FACE_W = 240.0          # лицо в логических единицах раскладки (как у остальных бюстов)
+BODY_FW = 3.8           # от центра лица вниз до линии «под диалогом» — в ширинах лица (бёдра/верх бедра)
 
-def silhouette_estimate(alpha):
-    a = np.asarray(alpha) > 127; h, w = a.shape
-    est = 0.45 * float(np.sqrt(a.sum())); rows = np.where(a.sum(axis=1) > 6)[0]; top = int(rows[0]) if len(rows) else 0
-    hb = a[top: top + max(30, int((h - top) * 0.3))]; ys, xs = np.where(hb)
-    return (float(xs.mean()) if len(xs) else w / 2, top + 0.62 * est, est)
-
-def detect_faces(rgb, alpha, minsz=40):
-    a = np.asarray(alpha) > 127; h, w = a.shape; est = 0.45 * float(np.sqrt(a.sum())); out = []
-    g = cv2.equalizeHist(cv2.cvtColor(np.asarray(rgb), cv2.COLOR_RGB2GRAY))
-    for r in CASCADE.detectMultiScale(g, scaleFactor=1.05, minNeighbors=2, minSize=(minsz, minsz)):
+def detect_faces(raw):
+    bg = Image.new('RGB', raw.size, (128, 128, 128)); bg.paste(raw, mask=raw.getchannel('A'))
+    g = cv2.equalizeHist(cv2.cvtColor(np.asarray(bg), cv2.COLOR_RGB2GRAY)); a = np.asarray(raw.getchannel('A')) > 127; h, w = a.shape; out = []
+    for r in CASCADE.detectMultiScale(g, scaleFactor=1.05, minNeighbors=2, minSize=(60, 60)):
         x, y, ww, hh = [int(v) for v in r]
-        if y + hh / 2 > h * 0.6 or not (0.3 * est <= ww <= 1.5 * est): continue
-        if not a[min(h - 1, y + hh // 2), min(w - 1, x + ww // 2)]: continue
+        if y + hh / 2 > h * 0.6 or not (80 <= ww <= 400) or not a[min(h - 1, y + hh // 2), min(w - 1, x + ww // 2)]: continue
         out.append((x + ww / 2, y + hh / 2, float(ww)))
     return out
 
-RAW, DET = {}, {}
-for m in MOODS:
-    raw = Image.open(os.path.join(SRC, CFG['pre'] + m + '.png')).convert('RGBA'); RAW[m] = raw
-    bg = Image.new('RGB', raw.size, (128, 128, 128)); bg.paste(raw, mask=raw.getchannel('A'))      # детекция лица — на исходном разрешении
-    DET[m] = detect_faces(bg, raw.getchannel('A'), 60)
-alphas = {m: RAW[m].getchannel('A') for m in MOODS}
-res, how, T = geom.solve(alphas, lambda mn: DET[mn], silhouette_estimate)
-print('лица (исходные px):', {m: (tuple(round(v) for v in res[m]), how[m]) for m in MOODS})
-# Исходник — персонаж в полный рост (1024×1536, голова ≈170 px). Остальные бюсты в игре: высота 720, лицо ≈240 логических px (раскладка VN выравнивает головы по fw).
-# Поэтому масштабируем так, чтобы лицо героя стало FACE_W логических px, и берём верхние PORT_H строк (голова + грудь/плечи) — тот же кадр, что у прежних бюстов, и родное разрешение (FS·k ≈ 1).
-FACE_W = 240.0; K = FACE_W / res['neutral'][2]
-CUT = {}
-for m in MOODS:
-    raw = RAW[m]; im = raw.resize((round(raw.width * K), round(raw.height * K)), Image.LANCZOS); CUT[m] = im.crop((0, 0, im.width, PORT_H))
-    fx, fy, fw = res[m]; res[m] = (fx * K, fy * K, fw * K)
-print('масштаб K=%.3f, исходник %s -> %s' % (K, RAW['neutral'].size, CUT['neutral'].size))
+RAW = {m: Image.open(os.path.join(SRC, CFG['pre'] + m + '.png')).convert('RGBA') for m in MOODS}
+assert len({im.size for im in RAW.values()}) == 1, 'размеры исходников различаются'
+dets = [d for m in MOODS for d in detect_faces(RAW[m])]
+assert dets, 'лицо не найдено'
+fx, fy, fw = (float(np.median([d[i] for d in dets])) for i in range(3))
+print('лицо (исходные px): центр (%.0f, %.0f) ширина %.0f по %d детекциям' % (fx, fy, fw, len(dets)))
+# общий кадр: объединение альф всех эмоций (+ отступ)
+bbs = [im.getchannel('A').point(lambda v: 255 if v > 8 else 0).getbbox() for im in RAW.values()]
+W0, H0 = RAW['neutral'].size; pad = 4
+x0 = max(0, min(b[0] for b in bbs) - pad); y0 = max(0, min(b[1] for b in bbs) - pad); x1 = min(W0, max(b[2] for b in bbs) + pad); y1 = min(H0, max(b[3] for b in bbs) + pad)
+cw, ch = x1 - x0, y1 - y0; K = FACE_W / fw
+dims = [round(cw * K), round(ch * K), 1, round((fx - x0) * K), round((fy - y0) * K), round(FACE_W), round(x0 * K), round(y0 * K), 0, round(1 / K, 4)]
+dims[8] = min(dims[1], round(dims[4] + BODY_FW * FACE_W))
+print('кадр %dx%d px (из %dx%d) -> логические %dx%d, K=%.3f, видимая высота vh=%d' % (cw, ch, W0, H0, dims[0], dims[1], K, dims[8]))
 
 man_path = os.path.join(OUT, 'manifest.json'); man = json.load(open(man_path))
+for d in (man['dim'], man['src']): d.pop('hero_despair.webp', None)      # v2.5.1 хранил дубль файла despair — теперь алиас на hero_sad.webp
 cid = CFG['cid']; files = {}
 def webp_name(m): return ('hero_%s.webp' % m) if FORM == 'normal' else ('hero_demon_%s.webp' % m)
 for m in MOODS:
-    k = CUT[m]; fx, fy, fw = res[m]
-    bb = k.getchannel('A').point(lambda v: 255 if v > 10 else 0).getbbox()
-    pad = max(6, int(0.02 * k.size[0])); x0 = max(0, bb[0] - pad); x1 = min(k.size[0], bb[2] + pad); y0 = max(0, bb[1] - pad)
-    kk = k.crop((x0, y0, x1, k.size[1])); fx -= x0; fy -= y0; w, h = kk.size    # низ — кадр целиком (уходит под окно диалога)
-    dims = [w, h, 1, round(fx), round(fy), round(fw), x0, y0]
-    sig = 'm6n-' + hashlib.md5(open(os.path.join(SRC, CFG['pre'] + m + '.png'), 'rb').read()).hexdigest()[:10]
-    names = [webp_name(m)] + [webp_name(a) for a, t in CFG['alias'].items() if t == m]
-    for name in names:
-        kk.resize((max(1, round(w * FS)), max(1, round(h * FS))), Image.LANCZOS).save(os.path.join(OUT, name), 'WEBP', quality=Q, method=6, alpha_quality=AQ, exact=False)
-        man['dim'][name] = dims; man['src'][name] = sig; files[name] = os.path.getsize(os.path.join(OUT, name)) // 1024
+    sig = 'n1-' + hashlib.md5(open(os.path.join(SRC, CFG['pre'] + m + '.png'), 'rb').read()).hexdigest()[:10]
+    crop = RAW[m].crop((x0, y0, x1, y1))
+    for name in [webp_name(m)]:
+        crop.save(os.path.join(OUT, name), 'WEBP', quality=Q, method=6, alpha_quality=AQ, exact=False)
+        man['dim'][name] = list(dims); man['src'][name] = sig; files[name] = os.path.getsize(os.path.join(OUT, name)) // 1024
     man['portraits'].setdefault(cid, {})[m] = webp_name(m)
     for a, t in CFG['alias'].items():
-        if t == m: man['portraits'][cid][a] = webp_name(a)
-    if m == 'neutral':       # аватар для маленьких карточек (профиль, бой, список слотов): кроп лица ~ 4:5, 256 px по ширине
-        cw = 2.3 * fw; ch = cw * 1.25; ax = min(max(0, fx + x0 - cw / 2), k.size[0] - cw); ay = min(max(0, fy + y0 - 1.05 * fw), k.size[1] - ch)
-        av = k.crop((round(ax), round(ay), round(ax + cw), round(ay + ch))).resize((256, 320), Image.LANCZOS)
-        an = cid + '_av.webp'; av.save(os.path.join(OUT, an), 'WEBP', quality=80, method=6, alpha_quality=80, exact=False)
+        if t == m: man['portraits'][cid][a] = webp_name(m)      # алиас despair -> тот же файл hero_sad.webp (без дубля в весе и прекэше)
+    if m == 'neutral':       # аватар для маленьких карточек (профиль, бой, слоты, список): кроп лица 4:5, 256×320
+        aw = 2.3 * fw; ah = aw * 1.25; ax = min(max(0, fx - aw / 2), W0 - aw); ay = min(max(0, fy - 1.05 * fw), H0 - ah)
+        av = RAW[m].crop((round(ax), round(ay), round(ax + aw), round(ay + ah))).resize((256, 320), Image.LANCZOS)
+        an = cid + '_av.webp'; av.save(os.path.join(OUT, an), 'WEBP', quality=88, method=6, alpha_quality=100, exact=False)
         man.setdefault('av', {})[cid] = an; man['src'][an] = sig; files[an] = os.path.getsize(os.path.join(OUT, an)) // 1024
-if FORM == 'demon':          # старый ключ hero.demon -> нейтральный облик Короля (прежний hero_demon.webp заменён)
+if FORM == 'demon':          # старый ключ hero.demon -> нейтральный облик Короля
     man['portraits']['hero']['demon'] = 'hero_demon_neutral.webp'
     for d in (man['dim'], man['src']): d.pop('hero_demon.webp', None)
     if os.path.exists(os.path.join(OUT, 'hero_demon.webp')): os.remove(os.path.join(OUT, 'hero_demon.webp'))
-print('записано (KB):', files)
-man['pre'] = sorted(set(list(man['cg'].values()) + [v['neutral'] for v in man['portraits'].values() if 'neutral' in v] + list(man.get('av', {}).values()) + list(man['portraits']['hero'].values()) + list(man['portraits'].get('hero_demon', {}).values())))   # аватары и все эмоции героя — в прекэш (офлайн)
+print('записано (KB):', files, '| сумма', sum(files.values()), 'KB')
+man['pre'] = sorted(set(list(man['cg'].values()) + [v['neutral'] for v in man['portraits'].values() if 'neutral' in v] + list(man.get('av', {}).values()) + list(man['portraits']['hero'].values()) + list(man['portraits'].get('hero_demon', {}).values())))
 man['v'] = hashlib.md5(json.dumps([man['portraits'], man['cg'], man['src'], man['dim'], man.get('av')], sort_keys=True).encode()).hexdigest()[:8]
 json.dump(man, open(man_path, 'w'), ensure_ascii=False, separators=(',', ':'), sort_keys=True)
 print('manifest v', man['v'], man['portraits'][cid])

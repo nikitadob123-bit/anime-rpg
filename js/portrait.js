@@ -303,16 +303,16 @@ RPG.avatarOf = (manifest, art) => (manifest && manifest.av && manifest.av[art]) 
 RPG.VN = { FR_W: 1800, FR_CX: 900, FR_T: 220, BUST: 720, SINK: 140, SLOTS: { 1: [0.5], 2: [0.28, 0.72], 3: [0.17, 0.5, 0.83] }, FACE_K: { 1: 0.5, 2: 0.4, 3: 0.3 } };
 RPG.artMetricsOf = (manifest, art, mood) => {
   const f = RPG.artFileOf(manifest, art, mood), d = f && manifest.dim && manifest.dim[f];
-  if (d && d.length >= 6) return { w: d[0], h: d[1], fx: d[3], fy: d[4], fw: d[5], img: true };
-  if (d) return { w: d[0], h: d[1], fx: d[0] / 2, fy: d[1] * 0.18, fw: d[0] * 0.32, img: true };
-  return { w: 256, h: 320, fx: 128, fy: 100, fw: 130, img: false };
+  if (d && d.length >= 6) return { w: d[0], h: d[1], fx: d[3], fy: d[4], fw: d[5], vh: d[8] || d[1], img: true };   // vh — видимая высота кадра (герой в рост: ниже — под диалогом); у остальных = h
+  if (d) return { w: d[0], h: d[1], fx: d[0] / 2, fy: d[1] * 0.18, fw: d[0] * 0.32, vh: d[1], img: true };
+  return { w: 256, h: 320, fx: 128, fy: 100, fw: 130, vh: 320, img: false };
 };
 RPG.vnLayout = (refs, W, Yb) => {
   const V = RPG.VN, n = refs.length; if (!n) return [];
   let Ft = V.FACE_K[Math.min(3, n)] * W;
-  refs.forEach((r) => { Ft = Math.min(Ft, ((Yb - 58) / ((r.h - r.fy) + 0.75 * r.fw - V.SINK)) * r.fw); });   // голова не уходит за верх экрана
+  refs.forEach((r) => { Ft = Math.min(Ft, ((Yb - 58) / (((r.vh || r.h) - r.fy) + 0.75 * r.fw - V.SINK)) * r.fw); });   // голова не уходит за верх экрана
   return refs.map((r, i) => {
-    const s = Ft / r.fw, ext = V.SINK, frH = V.FR_T + r.h, slot = V.SLOTS[Math.min(3, n)][Math.min(2, i)];
+    const s = Ft / r.fw, ext = V.SINK, frH = V.FR_T + (r.vh || r.h), slot = V.SLOTS[Math.min(3, n)][Math.min(2, i)];
     return { s, x: slot * W - V.FR_CX * s, y: Yb + ext * s - frH * s, frH, face: Ft };
   });
 };
