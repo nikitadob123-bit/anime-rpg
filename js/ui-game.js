@@ -71,7 +71,7 @@
     const sp = E.sp(h) + E.up(h);
     const party = un.length ? `<div class="small dim">Отряд: ${s.party.map((c) => D.CREW[c].n).join(', ') || 'не выбран'} · свободных вечеров: ${s.crewTalk || 0}</div>` : '';
     const rp = UI.romPending ? UI.romPending(s) : 0;
-    return `<div class="hub"><div class="bg bg-hub"><div class="sil sil-ruins"></div></div><div class="hubtxt"><h2>Лагерь у руин Хельмора</h2><p>Город стёрт. Над пустотой — Нимб, что смотрит на вас.</p></div></div>
+    return `<div class="hub"><div class="bg bg-hub"><div class="hubcg"></div><div class="lira"></div><div class="sil sil-ruins"></div></div><div class="hubtxt"><h2>Лагерь у руин Хельмора</h2><p>Город стёрт. Над пустотой — Нимб, что смотрит на вас.</p></div></div>
       ${story}${run}
       ${sp ? `<button class="card tap hint" data-act="tab" data-t="skills">🌟 Есть неиспользованные очки: <b>${sp}</b></button>` : ''}
       ${rp ? `<button class="card tap hint" data-act="tab" data-t="hearts">💞 Новых сцен с героинями: <b>${rp}</b></button>` : ''}

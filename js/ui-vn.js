@@ -45,7 +45,8 @@
   };
   const giveTxt = (g) => [g.gold ? g.gold + ' 🪙' : '', g.sp ? '+' + g.sp + ' искр Нимба' : '', g.item ? 'артефакт' : '', Object.keys(g.cons || {}).map((k) => D.CONS[k].ic + g.cons[k]).join(' '), Object.keys(g.mats || {}).map((k) => D.MATS[k].ic + g.mats[k]).join(' ')].filter(Boolean).join(' ');
   const SIL = { courtyard: 'cathedral', street_fest: 'village', void: '', void_dusk: '', camp: 'trees', ruins: 'arches', forest: 'trees', mines: 'peaks', swamp: 'trees', spire: 'spire', cathedral: 'cathedral' };
-  UI.silFor = (bg) => { const m = SIL[bg]; return m ? `<div class="sil sil-${m}"></div>` : ''; };
+  const RING_BG = new Set(['street_fest', 'void_dusk', 'lira_sky', 'echo_awaken']);
+  UI.silFor = (bg) => { const m = SIL[bg]; return (m ? `<div class="sil sil-${m}"></div>` : '') + (RING_BG.has(bg) ? '<div class="lira"></div>' : ''); };   // кольцо Нимба над небом (вернули: пропало в 701e6cf)
 
   // ───── Сцена: геометрия спрайтов (расчёты — RPG.vnLayout / RPG.vnPlaceRect в portrait.js) ─────
   // У каждого портрета в манифесте: dim = [w, h, keyed, fx, fy, fw] — центр лица и его ширина (px). Размер голов выравнивается по fw,

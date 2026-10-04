@@ -63,7 +63,7 @@ button.card,.card.tap{text-align:left;width:100%;color:inherit}
 #nav button.on{color:var(--gold2)}#nav button.on span{filter:none;transform:translateY(-1px) scale(1.1)}#nav button.on::before{content:"";position:absolute;top:-4px;left:25%;right:25%;height:2px;background:var(--gold);box-shadow:0 0 8px var(--gold);border-radius:2px}
 .nb{position:absolute;top:0;right:12%;min-width:15px;height:15px;border-radius:8px;background:var(--bad);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 3px}.nb.dot{background:var(--gold);color:#241706}
 /* город */
-.hub{position:relative;height:150px;border-radius:16px;overflow:hidden;flex:none;border:1px solid var(--line)}.hub .bg{position:absolute;inset:0}.hubtxt{position:absolute;left:14px;bottom:10px;text-shadow:0 2px 6px #000}.hubtxt h2{margin:0}.hubtxt p{margin:0;font-size:12.5px;color:#dfe3ff}
+.hub{position:relative;height:176px;border-radius:16px;overflow:hidden;flex:none;border:1px solid var(--line)}.hub .bg{position:absolute;inset:0}.hubtxt{position:absolute;left:14px;bottom:10px;text-shadow:0 2px 6px #000}.hubtxt h2{margin:0}.hubtxt p{margin:0;font-size:12.5px;color:#dfe3ff}
 .card.story.glow{border-color:var(--gold);box-shadow:0 0 22px rgba(242,195,92,.25);animation:glw 2.4s ease-in-out infinite}@keyframes glw{50%{box-shadow:0 0 34px rgba(242,195,92,.5)}}
 .card.hint{background:rgba(139,123,255,.16)}.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.bld{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:12px;border-radius:14px;background:var(--panel);border:1px solid var(--line);text-align:left;min-height:84px}.bld span{font-size:26px}.bld b{font-family:var(--serif)}.bld small{color:var(--dim);font-size:11.5px}.bld:active{transform:scale(.97)}
 .runbar{border-color:var(--bad)!important;background:rgba(255,107,122,.1)}
@@ -192,3 +192,7 @@ body.noshake .shake,body.noshake .shk{animation:none!important}body.nopart #fx{d
 .ndet{z-index:6;box-shadow:0 -6px 18px rgba(0,0,0,.55)}.tgraph{margin-bottom:10px}
 
 .shrine-ic{filter:drop-shadow(0 0 10px rgba(255,214,102,.55))}.shrine-t{color:var(--dim,#b9bddb)}.shrine-opts{display:flex;flex-direction:column;gap:8px}.shrine-opts .btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 14px;line-height:1.25}.shrine-opts .btn small{opacity:.8;font-size:12px;font-weight:400}
+
+/* Главная: ключевая иллюстрация «Нимб над городом» (cg_halo_city) под затемнением + светящееся кольцо Нимба; без CG — прежний градиент */
+.hub .hubcg{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,9,30,.15),rgba(8,9,30,.45) 60%,rgba(5,6,15,.88)),var(--title-cg,none) 50% 38%/cover no-repeat}
+.hub .lira{top:5%;height:30%}
