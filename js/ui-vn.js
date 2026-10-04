@@ -65,7 +65,7 @@
       };
       const setCg = (id) => { const el = $('#vcg'); if (id === curCg) return; curCg = id; if (!id) { el.classList.remove('on'); return; } const f = UI.cgFile(id); if (!f) { el.classList.remove('on'); return; } el.style.backgroundImage = `url(assets/vn/${f})`; el.className = 'vcg on kb'; Object.keys(actors).forEach(hideActor); };
       const done = () => {
-        finished = true; timers.forEach(clearTimeout); timers.clear(); clearTimeout(bgTimer); window.removeEventListener('resize', layout);
+        finished = true; timers.forEach(clearTimeout); timers.clear(); clearTimeout(bgTimer); window.removeEventListener('resize', onResize); cancelAnimationFrame(rz);
         layer.classList.remove('on'); layer.innerHTML = ''; UI.sNext = UI.sSkip = UI.vAuto = null; try { F.setMode(st.particles ? (UI.v === 'game' ? 'embers' : 'stars') : 'none'); } catch (e) { /* ignore */ } if (!o.replay && o.id) E.finishScene(slot, o.id); resolve(result);
       };
       const spriteEl = (art, mood) => { const wrap = document.createElement('div'); wrap.innerHTML = UI.por(art, 'vsp', false, mood); return wrap.firstElementChild; };
@@ -76,16 +76,17 @@
         const keys = live(); if (!keys.length || finished) return;
         const W = stage.clientWidth || 390, dlg = $('#dlg'), Yb = (dlg ? dlg.offsetTop : stage.clientHeight - 140) + 16;
         const L = UI.vnLayout(keys.map((k) => actors[k].ref), W, Yb);
-        keys.forEach((k, i) => { const a = actors[k], g = L[i]; a.el.style.height = g.frH + 'px'; a.el.style.transform = `translate(${g.x.toFixed(1)}px,${g.y.toFixed(1)}px) scale(${g.s.toFixed(4)})`; a.el.style.setProperty('--sx', (i === 0 && keys.length > 1 ? -40 : i === keys.length - 1 && keys.length > 1 ? 40 : 0) + 'px'); });
+        keys.forEach((k, i) => { const a = actors[k], g = L[i]; a.el.style.height = g.frH + 'px'; a.el.style.transform = `translate(${(Math.round(g.x * 2) / 2)}px,${(Math.round(g.y * 2) / 2)}px) scale(${g.s.toFixed(4)})`; a.el.style.setProperty('--sx', (i === 0 && keys.length > 1 ? -40 : i === keys.length - 1 && keys.length > 1 ? 40 : 0) + 'px'); });
       }
-      window.addEventListener('resize', layout);
+      let rz = 0, rzT = 0; const onResize = () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => { if (finished) return; stage.classList.add('nofx'); layout(); clearTimeout(rzT); rzT = setTimeout(() => stage.classList.remove('nofx'), 80); }); };   // resize на Android сыплется при движении адресной строки — без переходов и дребезга
+      window.addEventListener('resize', onResize);
       const showActor = (key, mood) => {
         const sp = D.SPEAKERS[key]; if (!sp || !sp.art) return null;
         if (curCg) { curCg = null; $('#vcg').classList.remove('on'); }
         mood = mood || 'n'; let a = actors[key];
         if (!a) {
           const ref = UI.artMetrics(sp.art, 'n'), m = UI.artMetrics(sp.art, mood);
-          const el = document.createElement('div'); el.className = 'vact'; el.innerHTML = '<div class="vslide"><div class="vbr"><div class="vfx"><div class="vimgs"></div></div></div></div>';
+          const el = document.createElement('div'); el.className = 'vact'; el.innerHTML = '<div class="vpp"><div class="vbr"><div class="vslide"><div class="vimgs"></div></div></div></div>';
           const img = spriteEl(sp.art, mood); UI.vnPlace(ref, m, img); el.querySelector('.vimgs').appendChild(img); stage.appendChild(el);
           a = actors[key] = { el, mood, art: sp.art, ord: ord++, ref, timer: 0 }; layout();
           decoded(img).then(() => { if (!finished && actors[key] === a) el.classList.add('in'); });
@@ -94,7 +95,7 @@
           while (box.children.length > 1) box.firstElementChild.remove();         // быстрые смены: оставляем только текущий верхний слой
           const nw = spriteEl(sp.art, mood); UI.vnPlace(a.ref, UI.artMetrics(sp.art, mood), nw); nw.classList.add('xf'); box.appendChild(nw);
           decoded(nw).then(() => { if (finished || actors[key] !== a || a.mood !== mood) return; void nw.offsetWidth; nw.classList.add('on'); a.timer = later(() => { while (box.children.length > 1) box.firstElementChild.remove(); nw.classList.remove('xf', 'on'); }, 400); });
-          if (mood === 'a' || mood === 'm') { const fx = a.el.querySelector('.vfx'); fx.classList.remove('pop'); void fx.offsetWidth; fx.classList.add('pop'); }
+          if (mood === 'a' || mood === 'm') { const fx = a.el.querySelector('.vpp'); fx.classList.remove('pop'); void fx.offsetWidth; fx.classList.add('pop'); }
         }
         Object.keys(actors).forEach((k) => actors[k].el.classList.toggle('talk', k === key));
         return a;

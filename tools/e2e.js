@@ -309,6 +309,80 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
   check('нет внешних запросов', external.length === 0, external.join(','));
   check('нет упавших запросов', failed.length === 0, failed.slice(0, 3).join(','));
   check('нет ошибок консоли', errors.length === 0, errors.slice(0, 5).join(' || '));
+
+  // ───── Телефон: 400×880, DPR 3 (как Android 1220×2712): Лирия + герой, низ спрайтов без размазывания ─────
+  {
+    const state = await ctx.storageState();
+    const ctx3 = await browser.newContext({ viewport: { width: 400, height: 880 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, locale: 'ru-RU', storageState: state });
+    const p3 = await ctx3.newPage(); const err3 = []; p3.on('pageerror', (x) => err3.push(x.message)); p3.on('console', (m) => { if (m.type() === 'error') err3.push(m.text()); });
+    await p3.goto(url, { waitUntil: 'load' }); await p3.waitForTimeout(1200);
+    await p3.waitForFunction(() => window.__RPG && __RPG.UI && __RPG.UI.manifest && Object.keys(__RPG.UI.manifest.portraits || {}).length > 10, null, { timeout: 8000 });
+    await p3.evaluate(() => { const UI = __RPG.UI, S = __RPG.S; const id = S.listIds()[0]; UI.p = S.load(id).p; if (UI.p.active == null || !UI.p.slots[UI.p.active]) UI.p.active = UI.p.slots.findIndex((x) => x); });
+    const okSlot = await p3.evaluate(() => { try { return !!__RPG.UI.slot(); } catch (x) { return String(x); } });
+    check('телефон: слот доступен для сцены', okSlot === true, String(okSlot));
+    await p3.evaluate(() => { __RPG.UI.vnTest = __RPG.UI.playLines([['bg', 'camp'], ['h', 'Лирия, ты цела?', 'n'], ['l', 'Брат… я так испугалась.', 'h'], ['h', 'Всё позади. Я рядом.', 'n'], ['l', 'Спасибо… правда.', 'h']], { bg: 'camp', replay: true }); });
+    await p3.waitForSelector('#story', { timeout: 4000 });
+    for (let i = 0; i < 2; i++) { await p3.waitForTimeout(900); await p3.locator('#dlg').click({ force: true }); }
+    await p3.waitForTimeout(1800);
+    await p3.screenshot({ path: path.join(outDir, 'vn-phone-lirya.jpg'), type: 'jpeg', quality: 80, scale: 'device' });
+    const bm = await p3.evaluate(() => ({ dlg: document.querySelector('#dlg').getBoundingClientRect().top, imgs: [...document.querySelectorAll('.vact:not(.out) .vsp')].map((i) => ({ f: (i.getAttribute('src') || '').split('/').pop(), nw: i.naturalWidth, nh: i.naturalHeight, b: i.getBoundingClientRect().bottom, h: i.getBoundingClientRect().height, w: i.getBoundingClientRect().width })) }));
+    check('телефон: спрайты не растянуты (пропорции кадра = пропорции файла), низ уходит под диалог', bm.imgs.length === 2 && bm.imgs.every((i) => Math.abs(i.h / i.w - i.nh / i.nw) < 0.01 && i.nh === 720 && i.b > bm.dlg), JSON.stringify(bm));
+    check('телефон: без ошибок консоли', err3.length === 0, err3.join(' | '));
+
+    // плавность на телефоне: семплируем computed transform в разные моменты (8 с), движение должно быть плавным (мелкие шаги, без скачков и рестартов)
+    const sample = async (pg, n, dt) => {
+      const rows = [];
+      for (let i = 0; i < n; i++) {
+        rows.push(await pg.evaluate(() => {
+          const mx = (el) => { if (!el) return null; const m = new DOMMatrix(getComputedStyle(el).transform); return [m.a, m.e, m.f]; };
+          const anims = document.getAnimations().filter((a) => a.effect && a.effect.getComputedTiming().iterations === Infinity && a.playState === 'running');
+          window.__ct = window.__ct || {};
+          const restarts = anims.filter((a) => { const k = (a.animationName || '') + ':' + (a.effect.target && (a.effect.target.id || a.effect.target.className)); const prev = window.__ct[k]; window.__ct[k] = a.currentTime; return prev != null && a.currentTime < prev; }).length;
+          return { act: [...document.querySelectorAll('.vact.in')].map(mx), br: [...document.querySelectorAll('.vact.talk .vbr')].map(mx), bg: mx(document.querySelector('#sbg')), run: anims.map((a) => a.animationName).sort().join(','), restarts, t: performance.now() };
+        }));
+        await pg.waitForTimeout(dt);
+      }
+      return rows;
+    };
+    const maxStep = (rows, f) => { let m = 0; for (let i = 1; i < rows.length; i++) { const a = f(rows[i - 1]), b = f(rows[i]); if (a != null && b != null) m = Math.max(m, Math.abs(b - a)); } return m; };
+    const span = (rows, f) => { const v = rows.map(f).filter((x) => x != null); return v.length ? Math.max(...v) - Math.min(...v) : 0; };
+    const rows = await sample(p3, 32, 250);
+    const stepBr = maxStep(rows, (r) => r.br[0] && r.br[0][2]), spBr = span(rows, (r) => r.br[0] && r.br[0][2]);
+    const stepBg = Math.max(maxStep(rows, (r) => r.bg && r.bg[1]), maxStep(rows, (r) => r.bg && r.bg[2]));
+    const actJit = rows.reduce((m, r, i) => i && JSON.stringify(r.act) !== JSON.stringify(rows[0].act) ? m + 1 : m, 0);
+    check('телефон: позиции актёров (.vact transform) стоят на месте, не дрожат', actJit === 0 && rows[0].act.length === 2, 'jit=' + actJit);
+    check('телефон: дыхание говорящего плавное (шаг за 250 мс < 1.5 px, размах > 0.3 px)', stepBr < 1.5 && spBr > 0.3, 'step=' + stepBr.toFixed(3) + ' span=' + spBr.toFixed(3));
+    check('телефон: дрейф фона плавный (шаг за 250 мс < 1 px)', stepBg < 1, 'step=' + stepBg.toFixed(3));
+    check('телефон: CSS-анимации не перезапускаются (currentTime не уменьшается)', rows.every((r) => r.restarts === 0), String(rows.map((r) => r.restarts).join('')));
+    check('телефон: набор бесконечных анимаций стабилен во времени', new Set(rows.map((r) => r.run)).size === 1, rows[0].run);
+    // перерисовка DOM не происходит: узлы актёров те же самые
+    const same = await p3.evaluate(async () => { const a = [...document.querySelectorAll('.vact, .vsp')]; await new Promise((r) => setTimeout(r, 1500)); const b = [...document.querySelectorAll('.vact, .vsp')]; return a.length === b.length && a.every((x, i) => x === b[i]); });
+    check('телефон: DOM сцены не пересоздаётся по таймеру', same === true);
+    // resize (адресная строка Android) не вызывает дребезга: позиции не меняются при resize на ~56px и обратно
+    await p3.setViewportSize({ width: 400, height: 824 }); await p3.waitForTimeout(400); await p3.setViewportSize({ width: 400, height: 880 }); await p3.waitForTimeout(900);
+    const after = await p3.evaluate(() => [...document.querySelectorAll('.vact.in')].map((el) => el.style.transform));
+    check('телефон: resize туда-обратно возвращает те же позиции', after.length === 2 && JSON.stringify(after) === JSON.stringify(await p3.evaluate(() => [...document.querySelectorAll('.vact.in')].map((el) => el.style.transform))));
+    await ctx3.close();
+
+    // reduced-motion на телефоне: ни одной бесконечной анимации, всё стоит неподвижно
+    const ctx4 = await browser.newContext({ viewport: { width: 400, height: 880 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, locale: 'ru-RU', reducedMotion: 'reduce', storageState: state });
+    const p4 = await ctx4.newPage(); const err4 = []; p4.on('pageerror', (x) => err4.push(x.message));
+    await p4.goto(url, { waitUntil: 'load' }); await p4.waitForTimeout(1200);
+    await p4.waitForFunction(() => window.__RPG && __RPG.UI && __RPG.UI.manifest && Object.keys(__RPG.UI.manifest.portraits || {}).length > 10, null, { timeout: 8000 });
+    await p4.evaluate(() => { const UI = __RPG.UI, S = __RPG.S; const id = S.listIds()[0]; UI.p = S.load(id).p; if (UI.p.active == null || !UI.p.slots[UI.p.active]) UI.p.active = UI.p.slots.findIndex((x) => x); __RPG.UI.vnTest = __RPG.UI.playLines([['bg', 'camp'], ['h', 'Лирия, ты цела?', 'n'], ['l', 'Брат…', 'h'], ['h', 'Всё позади.', 'n'], ['l', 'Спасибо.', 'h']], { bg: 'camp', replay: true }); });
+    await p4.waitForSelector('#story', { timeout: 4000 });
+    for (let i = 0; i < 2; i++) { await p4.waitForTimeout(900); await p4.locator('#dlg').click({ force: true }); }
+    await p4.waitForTimeout(1200);
+    await p4.screenshot({ path: path.join(outDir, 'vn-phone-reduced.jpg'), type: 'jpeg', quality: 80, scale: 'device' });
+    const r4 = await sample(p4, 12, 250);
+    const fixed = r4.every((r) => JSON.stringify([r.act, r.br, r.bg]) === JSON.stringify([r4[0].act, r4[0].br, r4[0].bg]));
+    check('телефон reduced-motion: бесконечных анимаций нет', r4.every((r) => r.run === ''), r4[0].run);
+    check('телефон reduced-motion: всё неподвижно (transform актёров/дыхания/фона постоянны)', fixed && r4[0].act.length === 2, JSON.stringify(r4[0]));
+    check('телефон reduced-motion: спрайты видимы, опасных 0.01s-анимаций нет', await p4.evaluate(() => [...document.querySelectorAll('.vact.in')].length === 2 && document.getAnimations().every((a) => a.effect.getComputedTiming().duration > 10 || a.playState === 'finished')));
+    check('телефон reduced-motion: без ошибок консоли', err4.length === 0, err4.join(' | '));
+    await ctx4.close();
+  }
+
   console.log(`\nИтого: ${ok} ✓, ${bad} ✗`);
   await browser.close(); if (srv) srv.close(); process.exit(bad ? 1 : 0);
 })().catch((e) => { console.error('E2E упал:', e); process.exit(2); });

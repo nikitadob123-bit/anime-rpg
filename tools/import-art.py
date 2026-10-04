@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Импорт арта в assets/vn: <src>/<id>_<mood>.(png|jpg|jpeg|webp) -> assets/vn/<id>_<mood>.webp (бюст 720 px по высоте + продление вниз 180 px),
+"""Импорт арта в assets/vn: <src>/<id>_<mood>.(png|jpg|jpeg|webp) -> assets/vn/<id>_<mood>.webp (бюст 720 px по высоте),
 cg_*.png -> assets/vn/cg_*.webp (≤1280 px). Генерирует assets/vn/manifest.json.
 Вырезание фона: tools/matte.py (нейро-маска + closed-form matting + defringe) — или готовая альфа, если исходник PNG с прозрачностью.
 Геометрия лица (центр, ширина) для выравнивания голов и настроений: tools/geom.py. Запуск: tools/import-art.sh [папка]."""
@@ -13,7 +13,6 @@ OUT = os.path.join(ROOT, 'assets', 'vn')
 os.makedirs(OUT, exist_ok=True)
 EXT = ('.png', '.jpg', '.jpeg', '.webp')
 PORT_H, CG_MAX, Q = 720, 1280, 88
-BOTTOM_EXT = 180
 
 def key_bg(im, thresh=48):
     """Вырезает однотонный светло-серый фон (заливка от краёв). Возвращает RGBA или None, если фон не однотонный."""
@@ -65,7 +64,7 @@ try:
     import cv2; CASCADE = cv2.CascadeClassifier(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'lbpcascade_animeface.xml')); HAVE_FACE = not CASCADE.empty()
 except Exception: HAVE_FACE = False
 import geom
-METHOD = 'm4' if HAVE_MATTE else 'k8'   # m3 — нейро-маска + closed-form matting + defringe; k8 — запасной chroma-ключ
+METHOD = 'm5' if HAVE_MATTE else 'k8'   # m3 — нейро-маска + closed-form matting + defringe; k8 — запасной chroma-ключ
 OVERRIDES = {}
 _ov = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'face-overrides.json')
 if os.path.exists(_ov): OVERRIDES = json.load(open(_ov))
@@ -92,15 +91,6 @@ def detect_faces(rgb, alpha):
         if not a[min(h - 1, y + hh // 2), min(w - 1, x + ww // 2)]: continue
         out.append((x + ww / 2, y + hh / 2, float(ww)))
     return out
-
-def extend_bottom(im, ext=BOTTOM_EXT):
-    """Бюст обрезан кадром по низу: продлеваем нижнюю строку вниз с затуханием альфы и лёгким затемнением — под окном диалога нет линии обреза."""
-    a = np.asarray(im.convert('RGBA')).astype(np.float32)
-    if (a[-1, :, 3] > 200).mean() < 0.25: return im
-    last = np.median(a[-4:], axis=0, keepdims=True)
-    t = np.linspace(0.0, 1.0, ext, dtype=np.float32)[:, None, None]
-    rows = np.repeat(last, ext, axis=0); rows[..., :3] *= (1 - 0.5 * t); rows[..., 3] *= ((1 - t) ** 1.2)[..., 0]
-    return Image.fromarray(np.concatenate([a, rows]).clip(0, 255).astype('uint8'), 'RGBA')
 
 def soften_borders(im, side=90, top=60):
     """Персонаж, обрезанный краем исходного кадра (руки, плащ, волосы), даёт прямую «бумажную» кромку внутри экрана — плавно растворяем альфу у боковых/верхней границ там, где контент их касается."""
@@ -185,7 +175,7 @@ for low, p, cg, sig in files:
     bb = k.split()[3].point(lambda v: 255 if v > 10 else 0).getbbox()
     pad = max(6, int(0.02 * k.size[0])); x0 = max(0, bb[0] - pad) if bb else 0; x1 = min(k.size[0], bb[2] + pad) if bb else k.size[0]
     k = soften_borders(k); kk = k.crop((x0, 0, x1, k.size[1])); fx -= x0
-    kk = extend_bottom(kk); w, h = kk.size
+    w, h = kk.size                      # без синтетического продления: низ бюста просто уходит под окно диалога (затухание — маской в CSS)
     dims = [w, h, 1, round(fx), round(fy), round(fw)]
     if old.get(out_name) != sig or not os.path.exists(dst) or olddim.get(out_name) != dims:
         kk.save(dst, 'WEBP', quality=Q, method=6, alpha_quality=100, exact=False); n_new += 1; print('+', out_name, os.path.getsize(dst) // 1024, 'KB', '|', HOW[low])

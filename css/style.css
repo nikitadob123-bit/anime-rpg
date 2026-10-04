@@ -150,9 +150,8 @@ button.card,.card.tap{text-align:left;width:100%;color:inherit}
 .battle.shake{animation:shk .4s}.btsum .mbox,.mbox.btsum{border-radius:20px 20px 0 0}
 body.noshake .shake,body.noshake .shk{animation:none!important}body.nopart #fx{display:none}
 @media (max-height:700px){.dlg{min-height:130px}.dlg .txt{min-height:80px;font-size:14.5px}.stage{bottom:180px}.unit.foe .spr{font-size:36px}}
-/* reduce-motion: бесконечные анимации отключаем (раньше 0.01s в цикле давали мерцание), разовые укорачиваем, всплывающие числа остаются видимыми */
+/* reduce-motion (на Android включается и «убрать анимации», и экономией заряда): никакого движения вообще — спокойная статика; допускаются только короткие плавные смены прозрачности/цвета.
+   Раньше тут стояло «ускоренные в 0.01s анимации» — бесконечные анимации превращались в мерцание/дрожание. */
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important;transition-delay:0s!important;scroll-behavior:auto!important}
-  .vbg,.vbg .sil,.vbr,.vcg.kb,.unit.foe .spr,.ring,.card.story.glow,.node.can,.charging,.sdot.on,.flt,.vfx.pop{animation:none!important}
-  .vact::before{transition:none}
+  *,*::before,*::after{animation:none!important;transition-property:opacity,background-color,border-color,color,filter,box-shadow!important;transition-duration:.25s!important;transition-delay:0s!important;scroll-behavior:auto!important}
 }
