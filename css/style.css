@@ -174,7 +174,7 @@ body.noshake .shake,body.noshake .shk{animation:none!important}body.nopart #fx{d
 .bchip i{display:block;width:80%;height:3px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:2px}.bchip i u{display:block;height:100%;background:var(--bc,var(--gold));text-decoration:none}
 .bchip.on{border-color:var(--bc);box-shadow:0 0 12px color-mix(in srgb,var(--bc) 55%,transparent),inset 0 0 0 1px var(--bc);background:linear-gradient(180deg,color-mix(in srgb,var(--bc) 25%,#170e29),#170e29)}
 .tgraph{position:relative;width:100%;margin:4px 0}.tsvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
-.tsvg .edge{fill:none;stroke:rgba(194,160,255,.22);stroke-width:2;vector-effect:non-scaling-stroke}.tsvg .edge.open{stroke:rgba(255,79,132,.6);stroke-dasharray:5 4}.tsvg .edge.on{stroke:var(--bc,var(--gold));stroke-width:3}
+.tsvg .edge{fill:none;stroke:rgba(194,160,255,.22);stroke-width:2;vector-effect:non-scaling-stroke}.tsvg .edge.open{stroke:rgba(255,79,132,.45);stroke-dasharray:none;stroke-width:2}.tsvg .edge.on{stroke:var(--bc,var(--gold));stroke-width:3}
 .tgraph .gtl{position:absolute;left:2px;font-size:9px;color:var(--dim);opacity:.8}
 .tgraph .node{position:absolute;transform:translateX(-50%);width:19.4%;max-width:84px;min-width:60px;padding:5px 1px 4px;flex:none;gap:0;z-index:1}
 .tgraph .node .gi{font-size:20px;line-height:1.1;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(0,0,0,.35);border:2px solid var(--line)}

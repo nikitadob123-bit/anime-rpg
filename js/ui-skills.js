@@ -31,17 +31,18 @@
   function graph(h, bi, sel) {
     const L = layout(bi), fz = E.fused(h), H = TOP + L.rows * ROWH, br = D.MAOU_BRANCHES[bi];
     // прямые линии (без кубических Безье) — при preserveAspectRatio=none кривые выглядели эллипсами
+    const yAt = (ri, o) => ((TOP + ri * ROWH + o) / H) * 100;
     const lines = L.nodes.map((n) => n.req.filter((q) => L.pos[q]).map((q) => {
       const a = L.pos[q], b = L.pos[n.id], pa = h.spent[q] > 0, pb = h.spent[n.id] > 0, cls = pa && pb ? 'on' : pa ? 'open' : '';
-      const y1 = TOP + a.ri * ROWH + 28, y2 = TOP + b.ri * ROWH - 4, mid = (y1 + y2) / 2;
-      return `<path class="edge ${cls}" d="M${a.x.toFixed(2)} ${y1} L${a.x.toFixed(2)} ${mid} L${b.x.toFixed(2)} ${mid} L${b.x.toFixed(2)} ${y2}"/>`;
+      const y1 = yAt(a.ri, 28), y2 = yAt(b.ri, -4), mid = (y1 + y2) / 2;
+      return `<path class="edge ${cls}" d="M${a.x.toFixed(2)} ${y1.toFixed(2)} L${a.x.toFixed(2)} ${mid.toFixed(2)} L${b.x.toFixed(2)} ${mid.toFixed(2)} L${b.x.toFixed(2)} ${y2.toFixed(2)}"/>`;
     }).join('')).join('');
     const tl = L.tiers.map((t, ri) => `<span class="gtl" style="top:${TOP + ri * ROWH - 22}px">ур. ${D.MAOU_TIER_LV[t]}</span>`).join('');
     const btn = L.nodes.map((n) => {
       const p = L.pos[n.id], s = nodeState(h, n, fz, false), cls = ['gn', s.r ? 'got' : '', s.max ? 'max' : '', s.can ? 'can' : '', s.lock ? 'lock' : '', n.id === sel ? 'sel' : '', n.concept ? 'concept' : '', n.fuse ? 'tf' : '', s.fused ? 'fused' : '', n.e && n.e.unlock && !n.concept ? 'act' : ''].filter(Boolean).join(' ');
       return `<button class="node ${cls}" style="left:${p.x.toFixed(2)}%;top:${TOP + p.ri * ROWH - 4}px;--bc:${br.c}" data-act="nodeSel" data-id="${n.id}" data-quiet="1"><span class="gi">${icon(n)}</span><em>${s.fused ? '⚗️' : s.r + '/' + n.max}</em><b>${esc(n.n)}</b></button>`;
     }).join('');
-    return `<div class="tgraph" style="height:${H}px;--bc:${br.c}">${tl}<svg class="tsvg" viewBox="0 0 100 ${H}" preserveAspectRatio="none">${lines}</svg>${btn}</div>`;
+    return `<div class="tgraph" style="height:${H}px;--bc:${br.c}">${tl}<svg class="tsvg" viewBox="0 0 100 100" preserveAspectRatio="none">${lines}</svg>${btn}</div>`;
   }
   function detail(h, n, isU) {
     const fz = isU ? {} : E.fused(h), s = nodeState(h, n, fz, isU), sk = n.e && n.e.unlock && D.SKILLS[n.e.unlock];
