@@ -7,8 +7,8 @@
   D.STATS = ['str', 'agi', 'vit', 'int', 'spi', 'wis', 'luk', 'cha'];
   D.STAT_N = { str: 'Сила', agi: 'Ловкость', vit: 'Выносливость', int: 'Интеллект', spi: 'Воля', wis: 'Мудрость', luk: 'Удача', cha: 'Харизма' };
   D.STAT_IC = {
-    str: '<svg class="stsvg c-str" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.5 20.5 3 17l1.4-1.4 2.1 2.1 9.2-9.2-2.1-2.1L15 5l3.5 3.5-1.4 1.4-2.1-2.1-9.2 9.2 2.1 2.1L6.5 20.5zM14 4l2 2 4-4-2-2-4 4zM4 14l2 2-3 3-2-2 3-3z"/></svg>',
-    agi: '<svg class="stsvg c-agi" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 12.5 14.5 2l1.4 1.4-2.1 2.1 5.7 5.7-1.4 1.4-5.7-5.7-2.1 2.1L4 12.5zm13.2 1.3 1.4-1.4 3.5 3.5-1.4 1.4-3.5-3.5zM2 20l4-1-3-3-1 4z"/></svg>',
+    str: '<svg class="stsvg c-str" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 3l-1.2 4.6-8.6 8.6-3.4-3.4L16.4 4.2 21 3z"/><path fill="currentColor" d="M5.2 12.4l6.4 6.4-1.4 1.4-1.8-1.8-3 3-1.9-1.9 3-3-1.8-1.8z"/></svg>',
+    agi: '<svg class="stsvg c-agi" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20 19 5"/><path d="M13 4.5h6.5V11"/><path d="M4 20v-4M4 20h4M7 17v-3M7 17h3"/></g></svg>',
     vit: '<svg class="stsvg c-vit" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 22 3.5 14.2c-2-2.1-2-5.5.2-7.5 2-1.9 5.1-1.7 6.9.4l1.4 1.5 1.4-1.5c1.8-2.1 4.9-2.3 6.9-.4 2.2 2 2.2 5.4.2 7.5L12 22z" opacity=".25"/><path fill="none" stroke="currentColor" stroke-width="1.8" d="M12 20.2 4.7 13.5c-1.5-1.6-1.5-4.1.2-5.6 1.5-1.4 3.8-1.3 5.1.3L12 10l2-1.8c1.3-1.6 3.6-1.7 5.1-.3 1.7 1.5 1.7 4 .2 5.6L12 20.2z"/></svg>',
     int: '<svg class="stsvg c-int" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 4h12v2H6V4zm1 3h10v1.2c0 1.5.6 2.9 1.6 4L20 14v2H4v-2l1.4-1.8A5.8 5.8 0 0 0 7 8.2V7zm3 11h4v2H10v-2z"/></svg>',
     spi: '<svg class="stsvg c-spi" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5 13.8 9H20l-5 3.6 1.9 6.4L12 15.8 7.1 19l1.9-6.4L4 9h6.2L12 2.5z"/></svg>',

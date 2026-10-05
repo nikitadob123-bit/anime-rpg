@@ -77,7 +77,7 @@
       ['tavern', 'Костёр', 'Отдых и разговоры', 'fire'],
       ['altar', 'Алтарь троп', 'Сброс Сил', 'altar']
     ].map(([act, n, d, img]) => `<button class="bld" data-act="${act}" data-quiet="1"><img class="bldimg" src="assets/ui/tile_${img}.webp" alt="" loading="lazy" decoding="async" width="360" height="480"><span class="bldtxt"><b>${n}</b><small>${d}</small></span></button>`).join('');
-    return `<div class="hub"><div class="bg bg-hub"><div class="hubcg"></div><div class="lira"></div><div class="sil sil-ruins"></div></div><img class="hubart" src="assets/ui/banner.webp" alt="" loading="lazy" decoding="async" width="900" height="988"><div class="hubtxt"><h2>Лагерь у руин Хельмора</h2><i class="huborn" aria-hidden="true"></i></div></div>
+    return `<div class="hub"><img class="hubart" src="assets/ui/banner.webp" alt="" loading="lazy" decoding="async" width="900" height="988"><div class="hubtxt"><h2>Лагерь у руин Хельмора</h2><i class="huborn" aria-hidden="true"></i></div></div>
       ${story}${run}
       ${sp ? `<button class="card tap hint ptsrow" data-act="tab" data-t="hero"><span class="ptsic" aria-hidden="true">✦</span><span class="grow tl">Доступно очков: <b>${sp}</b></span><span class="chev">›</span></button>` : ''}
       ${rp ? `<button class="card tap hint" data-act="tab" data-t="hearts">💞 Новых сцен с героинями: <b>${rp}</b></button>` : ''}

@@ -12,7 +12,8 @@ let ok = 0, bad = 0; const check = (n, c, x) => { c ? ok++ : bad++; console.log(
   const page = await ctx.newPage(); const errs = [], bad404 = [];
   page.on('console', (m) => m.type() === 'error' && errs.push(m.text())); page.on('pageerror', (e) => errs.push(e.message)); page.on('response', (r) => { if (r.status() >= 400) bad404.push(r.status() + ' ' + r.url()); });
   const ev = (f, a) => page.evaluate(f, a);
-  const click = async (sel) => { const l = page.locator(sel).first(); await l.waitFor({ state: 'visible', timeout: 8000 }); await l.click(); await page.waitForTimeout(80); };
+  const navSel = async (sel) => { const m = /data-t="(\w+)"/.exec(sel); if (!m) return sel; const l = page.locator(sel).first(); if (await l.count() && /\bnavx\b/.test((await l.getAttribute('class')) || '')) { await page.locator('#nav [data-act="navMore"]').click(); await page.waitForTimeout(300); return `#modal [data-act="tab"][data-t="${m[1]}"]`; } return sel; };   // v2.7.0: редкие вкладки — в меню «Ещё»
+  const click = async (sel) => { sel = await navSel(sel); const l = page.locator(sel).first(); await l.waitFor({ state: 'visible', timeout: 8000 }); await l.click(); await page.waitForTimeout(80); };
   const act = (a, x) => click(`[data-act="${a}"]${x || ''}`);
   await page.goto(url, { waitUntil: 'load' }); await page.waitForTimeout(2500);
   await act('newProfile'); await page.fill('#npNick', 'Проверка'); await act('npAv', '[data-i="3"]'); await act('npCreate');
@@ -24,8 +25,9 @@ let ok = 0, bad = 0; const check = (n, c, x) => { c ? ok++ : bad++; console.log(
   await page.waitForTimeout(400); if (await page.locator('#modal.on').count()) await ev(() => __RPG.UI.closeModal());
   // главная: кольцо Нимба и арт
   await act('tab', '[data-t="city"]').catch(() => {}); await page.waitForTimeout(900);
-  const hub = await ev(() => { const h = document.querySelector('.hub'); if (!h) return null; const cg = document.querySelector('.hub .hubcg'), r = document.querySelector('.hub .lira'); return { cg: getComputedStyle(cg).backgroundImage.includes('cg_halo_city'), ring: !!r && r.getBoundingClientRect().width > 100, h: Math.round(h.getBoundingClientRect().height) }; });
-  check('главная: арт cg_halo_city и кольцо Нимба на месте', hub && hub.cg && hub.ring, JSON.stringify(hub));
+  await page.waitForFunction(() => { const i = document.querySelector('.hub .hubart'); return i && i.complete; }, null, { timeout: 5000 }).catch(() => {});
+  const hub = await ev(() => { const h = document.querySelector('.hub'); if (!h) return null; const im = document.querySelector('.hub .hubart'); return { art: !!im && /assets\/ui\/banner\.webp$/.test(im.getAttribute('src')) && im.naturalWidth > 0, title: (h.querySelector('h2') || {}).textContent, h: Math.round(h.getBoundingClientRect().height) }; });
+  check('главная (v2.7.0): рисованный баннер руин с кольцом Нимба загружен, заголовок на месте', hub && hub.art && /Хельмора/.test(hub.title || ''), JSON.stringify(hub));
   await page.screenshot({ path: path.join(out, 'fix2-home.jpg'), type: 'jpeg', quality: 84, scale: 'css' });
 
   const cdp = await ctx.newCDPSession(page);

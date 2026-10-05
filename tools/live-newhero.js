@@ -13,7 +13,8 @@ const sha = (b) => crypto.createHash('sha1').update(b).digest('hex');
   const page = await ctx.newPage(); const errs = [], bad404 = [];
   page.on('console', (m) => m.type() === 'error' && errs.push(m.text())); page.on('pageerror', (e) => errs.push(e.message)); page.on('response', (r) => { if (r.status() >= 400) bad404.push(r.status() + ' ' + r.url()); });
   const ev = (f, a) => page.evaluate(f, a);
-  const click = async (sel) => { const l = page.locator(sel).first(); await l.waitFor({ state: 'visible', timeout: 8000 }); await l.click(); await page.waitForTimeout(80); };
+  const navSel = async (sel) => { const m = /data-t="(\w+)"/.exec(sel); if (!m) return sel; const l = page.locator(sel).first(); if (await l.count() && /\bnavx\b/.test((await l.getAttribute('class')) || '')) { await page.locator('#nav [data-act="navMore"]').click(); await page.waitForTimeout(300); return `#modal [data-act="tab"][data-t="${m[1]}"]`; } return sel; };   // v2.7.0: редкие вкладки — в меню «Ещё»
+  const click = async (sel) => { sel = await navSel(sel); const l = page.locator(sel).first(); await l.waitFor({ state: 'visible', timeout: 8000 }); await l.click(); await page.waitForTimeout(80); };
   const act = (a, x) => click(`[data-act="${a}"]${x || ''}`);
   await page.goto(url, { waitUntil: 'load' }); await page.evaluate(() => navigator.serviceWorker.ready); await page.waitForTimeout(3000);
   // манифест и подлинность файлов

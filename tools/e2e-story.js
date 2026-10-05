@@ -17,7 +17,8 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
   page.on('response', (r) => { if (r.status() >= 400) failed.push(r.status() + ' ' + r.url()); });
   page.on('request', (r) => reqs.push(r.url()));
   const shot = (n) => page.screenshot({ path: path.join(outDir, 'story-' + n + '.jpg'), type: 'jpeg', quality: 70, scale: 'css' });
-  const click = async (sel, o) => { const l = page.locator(sel).first(); await l.waitFor({ state: 'visible', timeout: 6000 }); await l.click(o); await page.waitForTimeout(60); };
+  const navSel = async (sel) => { const m = /data-t="(\w+)"/.exec(sel); if (!m) return sel; const l = page.locator(sel).first(); if (await l.count() && /\bnavx\b/.test((await l.getAttribute('class')) || '')) { await page.locator('#nav [data-act="navMore"]').click(); await page.waitForTimeout(300); return `#modal [data-act="tab"][data-t="${m[1]}"]`; } return sel; };   // v2.7.0: редкие вкладки — в меню «Ещё»
+  const click = async (sel, o) => { sel = await navSel(sel); const l = page.locator(sel).first(); await l.waitFor({ state: 'visible', timeout: 6000 }); await l.click(o); await page.waitForTimeout(60); };
   const act = (a, extra) => click(`[data-act="${a}"]${extra || ''}`);
   const ev = (f, a) => page.evaluate(f, a);
   const slot = () => ev(() => JSON.parse(JSON.stringify(__RPG.UI.slot())));
