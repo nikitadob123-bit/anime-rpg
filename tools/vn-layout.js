@@ -4,6 +4,8 @@ const { chromium } = require('playwright-core');
 const fs = require('fs'), path = require('path');
 const url = process.argv[2] || 'http://127.0.0.1:8802/', tag = process.argv[3] || 'x', [VW, VH] = (process.argv[4] || '400x880').split('@')[0].split('x').map(Number), DPR = +((process.argv[4] || '').split('@')[1] || 2);
 const out = process.env.SHOTS || '/workspace/shots'; fs.mkdirSync(out, { recursive: true });
+const HEAD = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'head-metrics.json'), 'utf8'));   // разметка глаз/подбородка по спрайтам (tools/measure-heads.py)
+const LIM = { size: 0.15, eye: 6, overlap: 0.12 };   // допуски: разброс голов взрослых, линия глаз (css px), перекрытие лица чужой головой
 (async () => {
   const exe = ['/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'].find((p) => fs.existsSync(p));
   const b = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
@@ -40,6 +42,50 @@ const out = process.env.SHOTS || '/workspace/shots'; fs.mkdirSync(out, { recursi
   await run('demon-two', [['bg', 'ruins'], ['i', 'Государь.', 'n'], ['h', 'Я не собираюсь вас развоплощать.', 'mh']], 2);
   await run('demon-three', [['bg', 'ruins'], ['g', 'Эй, не бейте!', 'a'], ['i', 'Государь.', 'n'], ['h', 'Довольно.', 'ma']], 3);
   for (const mo of ['n', 'a', 'h', 'd', 's', 'u']) await run('mood-' + mo, [['bg', 'ruins'], ['i', 'Государь.', 'n'], ['h', 'Реплика.', mo]], 2);
+  // ── головы: размер, линия глаз, перекрытие и обрез лиц в комбинациях персонажей ──
+  const heads = () => ev((HEAD) => {
+    const M = __RPG.UI.manifest, st = document.querySelector('#story'), sr = st.getBoundingClientRect(), dl = document.querySelector('#dlg').getBoundingClientRect(), top = document.querySelector('.vtop').getBoundingClientRect();
+    const acts = Array.from(document.querySelectorAll('.vact.in'));
+    return acts.map((a, i) => {
+      const im = Array.from(a.querySelectorAll('img.vsp')).pop(); if (!im) return null;
+      const f = im.getAttribute('src').split('/').pop(), d = M.dim[f], art = f.replace(/_(neutral|angry|happy|shy|sad|smirk|surprised|av)\.webp$/, ''), H = HEAD[art] || { eye: -1.2, chin: 2.8, kind: 'adult' }, Hs = (H.same && HEAD[H.same]) || H;
+      const r = im.getBoundingClientRect(), k = r.width / d[0], fw = d[5] * k, cx = r.left + d[3] * k, ey = r.top + (d[4] + H.eye * d[5] / 10) * k, chin = r.top + (d[4] + H.chin * d[5] / 10) * k;
+      const head = 0.5 * fw * (1 + (Hs.chin - Hs.eye) / 4.2);                     // «единица головы»: среднее ширины лица по каскаду и длины глаза→подбородок
+      return { art, kind: H.kind, talk: a.classList.contains('talk'), z: (a.classList.contains('talk') ? 100 : 0) + i, head: +head.toFixed(1), ec: +(chin - ey).toFixed(1), eye: +ey.toFixed(1), cx: +cx.toFixed(1),
+        face: [cx - 0.3 * fw, ey - 0.3 * fw, cx + 0.3 * fw, chin], hair: [cx - 0.55 * fw, ey - 0.9 * fw, cx + 0.55 * fw, chin + 0.1 * fw], vw: sr.width, dlgTop: dl.top, barB: top.bottom };
+    }).filter(Boolean);
+  }, HEAD);
+  const inter = (a, b) => Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])) * Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
+  const spreadOf = (xs) => (xs.length > 1 ? Math.max(...xs) / Math.min(...xs) - 1 : 0);
+  const report = [];
+  const combo = async (name, L, n) => {
+    await ev((L) => { __RPG.UI.vnTest = __RPG.UI.playLines(L, { bg: 'ruins', replay: true }); }, L); await page.waitForSelector('#story');
+    for (let g = 0; g < 14; g++) { if ((await page.locator('.vact.in').count()) >= n) break; await page.locator('#dlg').click({ force: true, timeout: 400 }).catch(() => {}); await page.waitForTimeout(450); }
+    await page.waitForTimeout(1400); const h = await heads(); await page.screenshot({ path: path.join(out, `${tag}-heads-${name}.jpg`), type: 'jpeg', quality: 80, scale: 'css' });
+    const ad = h.filter((x) => x.kind === 'adult'), sAd = spreadOf(ad.map((x) => x.head)), sAll = spreadOf(h.map((x) => x.head)), eyeD = Math.max(...h.map((x) => x.eye)) - Math.min(...h.map((x) => x.eye));
+    const fails = [];
+    if (sAd > LIM.size) fails.push(`головы взрослых различаются на ${(sAd * 100).toFixed(0)}%`);
+    if (h.length > 1 && eyeD > LIM.eye) fails.push(`линия глаз гуляет на ${eyeD.toFixed(0)}px`);
+    h.forEach((x) => {
+      const F = x.face, A = (F[2] - F[0]) * (F[3] - F[1]);
+      if (F[0] < 0 || F[2] > x.vw || F[1] < x.barB || F[3] > x.dlgTop) fails.push(`${x.art}: лицо обрезано [${F.map((v) => v.toFixed(0))}]`);
+      h.forEach((y) => { if (y !== x && y.z > x.z) { const o = inter(F, y.hair) / A; if (o > LIM.overlap) fails.push(`${x.art}: лицо закрыто ${y.art} на ${(o * 100).toFixed(0)}%`); } });
+    });
+    report.push({ name, sAd, sAll, eyeD, fails });
+    console.log('heads', name, h.map((x) => `${x.art}${x.talk ? '*' : ''} head=${x.head} ec=${x.ec} eye=${x.eye} cx=${x.cx}`).join(' | '), `→ разброс взрослых ${(sAd * 100).toFixed(1)}%, всех ${(sAll * 100).toFixed(1)}%, глаза ±${eyeD.toFixed(1)}px`, fails.length ? 'FAIL ' + fails.join('; ') : 'ok');
+    fails.forEach((f) => bad.push(name + ': ' + f));
+    await ev(() => { __RPG.UI.sSkip && __RPG.UI.sSkip(); }); await page.waitForTimeout(800);
+  };
+  await combo('hero+gen1', [['bg', 'ruins'], ['h', 'Слушаю.', 'n'], ['i', 'Государь.', 'n']], 2);
+  await combo('hero+gen1-heroTalk', [['bg', 'ruins'], ['i', 'Государь.', 'n'], ['h', 'Слушаю.', 'n']], 2);
+  await combo('hero+sister+gen1', [['bg', 'ruins'], ['l', 'Братик!', 'n'], ['i', 'Тише.', 'n'], ['h', 'Кто ты?', 'd']], 3);
+  await combo('hero+hero2+sister', [['bg', 'ruins'], ['h', 'Эй.', 'a'], ['l', 'Нет!', 'n'], ['t', 'Источник найден.', 'n']], 3);
+  await combo('demon+grak+gen1', [['bg', 'ruins'], ['g', 'Эй, не бейте!', 'a'], ['i', 'Государь.', 'n'], ['h', 'Довольно.', 'ma']], 3);
+  await combo('gen1+gen5+gen9', [['bg', 'ruins'], ['i', 'Сёстры.', 'n'], ['y', 'Ну?', 'n'], ['v', 'Тише.', 'n']], 3);
+  await combo('gen2+gen7', [['bg', 'ruins'], ['m', 'Огонь!', 'n'], ['r', 'Вода.', 'n']], 2);
+  await combo('hero+vesper+skril', [['bg', 'ruins'], ['z', 'Государь.', 'n'], ['k', 'Кости помнят.', 'n'], ['h', 'Вольно.', 'n']], 3);
+  const mx = (k) => Math.max(...report.map((r) => r[k]));
+  console.log(`HEADS SUMMARY: макс. разброс голов взрослых ${(mx('sAd') * 100).toFixed(1)}% (лимит ${LIM.size * 100}%), всех ${(mx('sAll') * 100).toFixed(1)}%, линия глаз до ${mx('eyeD').toFixed(1)}px; комбинаций с ошибками: ${report.filter((r) => r.fails.length).length}/${report.length}`);
   await ev(() => { __RPG.UI.vnTest = __RPG.UI.playLines([['bg', 'void_dusk'], ['n', 'Над руинами тихо.']], { replay: true }); }); await page.waitForSelector('#story'); await page.waitForTimeout(1500);
   const bg = await ev(() => ({ bg: getComputedStyle(document.querySelector('#sbg')).backgroundImage.slice(0, 60), cls: document.querySelector('#sbg').className, ring: !!document.querySelector('#story .lira'), ringW: (document.querySelector('#story .lira') || { getBoundingClientRect: () => ({ width: 0 }) }).getBoundingClientRect().width }));
   console.log('empty-bg', JSON.stringify(bg)); await page.screenshot({ path: path.join(out, `${tag}-empty.jpg`), type: 'jpeg', quality: 84, scale: 'css' });
