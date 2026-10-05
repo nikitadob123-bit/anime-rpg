@@ -7,7 +7,7 @@
 по каскаду и длины «глаза→подбородок» (EC_ref — медиана взрослых того же пола). Раскладка (RPG.artMetricsOf) масштабирует по k·fw и выравнивает по глазам.
   python3 tools/measure-heads.py          — записать manifest.head (+ сверка с каскадом lbpcascade_animeface)
   python3 tools/measure-heads.py --avatars — пересобрать аватары <id>_av.webp (256×320) из нейтральных спрайтов с ОДИНАКОВЫМ кадром головы
-  python3 tools/measure-heads.py --sheet  — сетки для разметки/проверки: shots/heads-grid-*.jpg (≤1200 px)"""
+  python3 tools/measure-heads.py --sheet  — сетки для разметки/проверки: $SHOTS (/workspace/shots)/heads-grid-*.jpg (≤1200 px)"""
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE); V = os.path.join(ROOT, 'assets', 'vn')
 HM = json.load(open(os.path.join(HERE, 'data', 'head-metrics.json'))); MP = os.path.join(V, 'manifest.json'); man = json.load(open(MP))
@@ -30,7 +30,7 @@ def sheet():
     for k in range(0, len(ids), 3):
         sh = Image.new('RGB', (3 * TW, TH))
         for i, n in enumerate(ids[k:k + 3]): sh.paste(tile(n), (i * TW, 0))
-        out = os.path.join(ROOT, 'shots', 'heads-grid-%d.jpg' % (k // 3)); sh.save(out, quality=85); print(out)
+        out = os.path.join(os.environ.get('SHOTS', '/workspace/shots'), 'heads-grid-%d.jpg' % (k // 3)); sh.save(out, quality=85); print(out)
 
 def apply():
     head = {}
