@@ -18,14 +18,16 @@
       const src = c.sby[k] || {}; const st = Object.keys(src).filter((x) => src[x]).map((x) => ({ n: E.srcName(x), v: src[x] }));
       return `<div class="stline ${tip ? 'open' : ''}"><div class="strow"><button class="stname" data-act="heroTip" data-k="st:${k}" data-quiet="1"><span class="sti">${D.STAT_IC[k]}</span><span class="grow tl"><b>${D.STAT_N[k]}</b><small class="dim">${esc(D.STAT_D[k])}</small></span></button>
         <span class="stval">${cur}${add ? `<em class="up">+${add}</em>` : ''}</span>
-        <span class="stbtns"><button class="sbtn" data-act="draftAdd" data-k="${k}" data-n="-1" data-quiet="1" ${add > 0 ? '' : 'disabled'}>−</button><button class="sbtn" data-act="draftAdd" data-k="${k}" data-n="1" data-quiet="1" ${left > 0 ? '' : 'disabled'}>+1</button><button class="sbtn" data-act="draftAdd" data-k="${k}" data-n="5" data-quiet="1" ${left > 0 ? '' : 'disabled'}>+5</button><button class="sbtn" data-act="draftAdd" data-k="${k}" data-n="max" data-quiet="1" ${left > 0 ? '' : 'disabled'}>макс</button></span></div>
+        <span class="stbtns"><button class="sbtn" data-act="draftAdd" data-k="${k}" data-n="-1" data-quiet="1" ${add > 0 ? '' : 'disabled'}>−</button><button class="sbtn splus" data-act="draftAdd" data-k="${k}" data-n="1" data-quiet="1" ${left > 0 ? '' : 'disabled'}>+</button><button class="sbtn" data-act="draftAdd" data-k="${k}" data-n="5" data-quiet="1" ${left > 0 ? '' : 'disabled'}>+5</button><button class="sbtn" data-act="draftAdd" data-k="${k}" data-n="max" data-quiet="1" ${left > 0 ? '' : 'disabled'}>макс</button></span></div>
         ${tip ? `<div class="tipbox"><div class="small tl"><b>${D.STAT_N[k]}</b>: ${esc(D.STAT_D[k])}.</div>${parts(st)}<div class="dim small">Вложено вами: ${(h.alloc && h.alloc[k]) || 0}</div></div>` : ''}</div>`;
     }).join('');
     const cost = E.statRespecCost(h), spent = E.statSpent(h);
-    return `<div class="card"><div class="row between center-v"><b>Характеристики</b><span class="pts mini"><b>${left}</b><small>очков</small></span></div>
+    const hp = Math.round(s.hero.hp != null ? s.hero.hp : dp.maxHp), mp = Math.round(s.hero.mp != null ? s.hero.mp : dp.maxMp);
+    return `<div class="card stcard"><div class="row between center-v"><b>Характеристики</b><span class="pts mini"><b>${left}</b><small>очков</small></span></div>
       <div class="small dim tl">+${D.STAT_PER_LEVEL} очков за уровень. Нажмите на название — формула и источники.</div>
       <div class="stlist">${rows}</div>
-      ${UI.statRow(dp)}<div class="stats"><span>🎯 крит ${Math.round(dp.crit)}%</span><span>💥 ×${dp.critDmg.toFixed(2)}</span><span>🌀 укл. ${Math.round(dp.eva)}%</span></div>
+      <div class="hpmprow"><div class="hpm"><span class="hpmic c-hp" aria-hidden="true">❤</span><span>${fmt(hp)} / ${fmt(dp.maxHp)}</span><span class="bar hp"><i style="width:${Math.max(0, Math.min(100, hp / dp.maxHp * 100))}%"></i></span></div><div class="hpm"><span class="hpmic c-mp" aria-hidden="true">◆</span><span>${fmt(mp)} / ${fmt(dp.maxMp)}</span><span class="bar mp"><i style="width:${Math.max(0, Math.min(100, mp / dp.maxMp * 100))}%"></i></span></div></div>
+      <div class="stats"><span>🎯 крит ${Math.round(dp.crit)}%</span><span>💥 ×${dp.critDmg.toFixed(2)}</span><span>🌀 укл. ${Math.round(dp.eva)}%</span></div>
       <div class="row gap"><button class="btn primary grow" data-act="draftApply" data-quiet="1" ${draftSum() ? '' : 'disabled'}>Применить${draftSum() ? ' (' + draftSum() + ')' : ''}</button><button class="btn ghost" data-act="draftClear" data-quiet="1" ${draftSum() ? '' : 'disabled'}>Отмена</button></div>
       <button class="btn ghost danger" data-act="statRespec" data-quiet="1" ${spent ? '' : 'disabled'}>Сбросить вложенные очки (${spent}) — ${fmt(cost)} 🪙</button>
       <button class="subtoggle ${UI.heroUi.subs ? 'open' : ''}" data-act="toggleSubs" data-quiet="1"><span>Субстаты и стихии</span><i>${UI.heroUi.subs ? '▴' : '▾'}</i></button>

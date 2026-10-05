@@ -7,9 +7,13 @@
   // ───── Фоны новых глав: градиенты и цвет обводки спрайтов ─────
   (function injectBg() {
     const css = [];
+    const artBg = { kings_hall: 'vn_ruins.webp', court: 'vn_ruins.webp', god_hall: 'vn_cathedral.webp', gallery: 'vn_cathedral_night.webp', cradle: 'vn_cathedral.webp', belltower: 'vn_ruins.webp', cult: 'vn_cathedral_night.webp' };
     Object.keys(ST.BG).forEach((id) => {
       const b = ST.BG[id]; if (b.native || !b.c) return;
-      css.push(`.bg-${id}{background:linear-gradient(180deg,${b.c[0]} 0%,${b.c[1]} 55%,${b.c[2]} 100%)}`);
+      const art = artBg[id];
+      css.push(art
+        ? `.bg-${id}{background:linear-gradient(180deg,rgba(8,4,16,.2),rgba(6,3,12,.4)),url(assets/ui/${art}) 50% 40%/cover no-repeat,linear-gradient(180deg,${b.c[0]} 0%,${b.c[1]} 55%,${b.c[2]} 100%)}`
+        : `.bg-${id}{background:linear-gradient(180deg,${b.c[0]} 0%,${b.c[1]} 55%,${b.c[2]} 100%)}`);
     });
     css.push(`.arcrow{display:flex;align-items:center;gap:9px;text-align:left;width:100%}.arcrow .an{width:30px;height:30px;border-radius:50%;background:rgba(242,195,92,.16);color:var(--gold2);display:grid;place-items:center;font-weight:700;flex:none;font-size:13px}`,
       `.arcrow.done .an{background:rgba(110,224,138,.2);color:var(--ok)}.arcrow.cur .an{background:rgba(242,195,92,.35)}.arcbox.cur{box-shadow:0 0 0 1px rgba(242,195,92,.55)}`,

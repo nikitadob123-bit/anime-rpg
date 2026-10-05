@@ -3,7 +3,7 @@
   const RPG = globalThis.RPG, D = RPG.D, E = RPG.E, S = RPG.S, A = RPG.A, UI = RPG.UI;
   const { $, $$, esc, fmt } = UI;
   D.RACE_IDS = D.RACE_IDS || Object.keys(D.RACES);
-  const TABS = [['city', '🏰', 'Город'], ['story', '📖', 'Сюжет'], ['dun', '🗝️', 'Вылазки'], ['hero', '👑', 'Герой'], ['skills', '🌟', 'Силы'], ['crew', '🛡️', 'Свита'], ['hearts', '💞', 'Сердца'], ['prof', '⚒️', 'Ремесло'], ['inv', '🎒', 'Сумка'], ['set', '⚙️', 'Меню']];
+  const TABS = [['city', '🏰', 'Лагерь'], ['story', '📖', 'Сюжет'], ['dun', '🗝️', 'Вылазки'], ['hero', '👑', 'Герой'], ['skills', '🌟', 'Силы'], ['crew', '🛡️', 'Свита'], ['hearts', '💞', 'Сердца'], ['prof', '⚒️', 'Ремесло'], ['inv', '🎒', 'Сумка'], ['set', '⚙️', 'Меню']];
   UI.TABS = TABS;
   UI.sub = { skills: 'root', crew: null, hearts: null, prof: null, inv: 'gear', filt: 'all', shop: 'gear' };
   const rar = (it) => D.RARITY[it.r];
@@ -51,7 +51,7 @@
     const s = UI.slot(), h = s.hero, main = $('#view');
     const need = D.xpNeed(h.level);
     const sp = E.sp(h), up = E.up(h);
-    main.innerHTML = `<div class="gtop"><div class="gh">${UI.por(h.portrait, 'xs', false)}<div class="grow tl"><b>${esc(h.name)}</b><div class="xpb">${bar(h.level >= D.LEVEL_CAP ? 1 : h.xp, h.level >= D.LEVEL_CAP ? 1 : need, 'xp')}<small>Ур. ${h.level}</small></div></div><div class="gold">🪙 ${fmt(s.gold)}</div><i id="saveDot" class="sdot" title="Сохранено"></i></div></div>
+    main.innerHTML = `<div class="gtop"><div class="gh">${UI.por(h.portrait, 'xs avring', false)}<div class="grow tl"><b>${esc(h.name)}</b><div class="xpb"><small>Ур. ${h.level}</small>${bar(h.level >= D.LEVEL_CAP ? 1 : h.xp, h.level >= D.LEVEL_CAP ? 1 : need, 'xp')}</div></div><div class="gold">🪙 ${fmt(s.gold)}</div><i id="saveDot" class="sdot" title="Сохранено"></i></div></div>
       <div class="content tab-${UI.tab}">${(UI.tabs[UI.tab])(s)}</div>`;
     $$('#nav button').forEach((b) => { const t = b.dataset.t; b.classList.toggle('on', t === UI.tab); const badge = b.querySelector('.nb'); if (badge) badge.remove(); const n = t === 'skills' ? sp + up : 0; if (n > 0) b.insertAdjacentHTML('beforeend', `<span class="nb">${n}</span>`); if (t === 'city') { const ns = UI.nextStory(s); if (ns && ns.ok && !s.run) b.insertAdjacentHTML('beforeend', '<span class="nb dot">!</span>'); } });
     if (UI.tab === 'city') try { RPG.F.setMode(UI.p.settings.particles ? 'embers' : 'none'); } catch (e) { /* ignore */ }
@@ -65,23 +65,24 @@
     const h = s.hero, ns = UI.nextStory(s), un = E.recruited(s);
     let story;
     if (!ns) story = `<div class="card story done"><b>Первая арка завершена</b><div class="small dim">Апостол Света пал. Врата Богов приоткрыты — но то, что за ними, ещё ждёт. Продолжение следует.</div></div>`;
-    else if (ns.ok) story = `<div class="card story glow"><div class="small gold">Сюжет</div><b>${esc(D.SCENES[ns.st.id].t)}: ${esc(D.SCENES[ns.st.id].sub)}</b><button class="btn primary wide" data-act="playNext" id="btnStory">▶ Продолжить историю</button></div>`;
-    else story = `<div class="card story"><div class="small gold">Цель</div><b>${esc(D.SCENES[ns.st.id].t)}: ${esc(D.SCENES[ns.st.id].sub)}</b><div class="small dim">${esc(ns.st.hint || '')}</div><button class="btn ghost wide" data-act="tab" data-t="dun">К вылазкам</button></div>`;
+    else if (ns.ok) story = `<div class="card story glow goal"><div class="goalh"><span class="goali" aria-hidden="true">📜</span><div class="grow tl"><div class="small gold">ТЕКУЩАЯ ЦЕЛЬ</div><b>${esc(D.SCENES[ns.st.id].t)}: ${esc(D.SCENES[ns.st.id].sub)}</b></div></div><button class="btn primary wide big" data-act="playNext" id="btnStory">▶ Продолжить историю</button></div>`;
+    else story = `<div class="card story goal"><div class="goalh"><span class="goali" aria-hidden="true">📜</span><div class="grow tl"><div class="small gold">ТЕКУЩАЯ ЦЕЛЬ</div><b>${esc(D.SCENES[ns.st.id].t)}</b><div class="small dim">${esc(ns.st.hint || D.SCENES[ns.st.id].sub)}</div></div></div><button class="btn primary wide big" data-act="tab" data-t="dun">⚔ К ВЫЛАЗКАМ ›</button></div>`;
     const run = s.run ? `<button class="card tap runbar" data-act="tab" data-t="dun"><b>⚔️ Вылазка идёт: ${D.DUN[s.run.did].n}</b><div class="small dim">Узел ${s.run.node + 1} из ${s.run.nodes.length}. Нажмите, чтобы продолжить.</div></button>` : '';
-    const sp = E.sp(h) + E.up(h);
+    const sp = E.sp(h) + E.up(h) + E.statFree(h);
     const party = un.length ? `<div class="small dim">Отряд: ${s.party.map((c) => D.CREW[c].n).join(', ') || 'не выбран'} · свободных вечеров: ${s.crewTalk || 0}</div>` : '';
     const rp = UI.romPending ? UI.romPending(s) : 0;
-    return `<div class="hub"><div class="bg bg-hub"><div class="hubcg"></div><div class="lira"></div><div class="sil sil-ruins"></div></div><div class="hubtxt"><h2>Лагерь у руин Хельмора</h2><p>Город стёрт. Над пустотой — Нимб, что смотрит на вас.</p></div></div>
+    const tiles = [
+      ['shop', 'Лавка', 'Снаряжение, зелья, подарки', 'shop'],
+      ['forge', 'Кузница', 'Улучшение до +' + E.upCap(s), 'forge'],
+      ['tavern', 'Костёр', 'Отдых и разговоры', 'fire'],
+      ['altar', 'Алтарь троп', 'Сброс Сил', 'altar']
+    ].map(([act, n, d, img]) => `<button class="bld" data-act="${act}" data-quiet="1"><img class="bldimg" src="assets/ui/tile_${img}.webp" alt="" loading="lazy" decoding="async" width="360" height="480"><span class="bldtxt"><b>${n}</b><small>${d}</small></span></button>`).join('');
+    return `<div class="hub"><div class="bg bg-hub"><div class="hubcg"></div><div class="lira"></div><div class="sil sil-ruins"></div></div><img class="hubart" src="assets/ui/banner.webp" alt="" loading="lazy" decoding="async" width="900" height="988"><div class="hubtxt"><h2>Лагерь у руин Хельмора</h2><i class="huborn" aria-hidden="true"></i></div></div>
       ${story}${run}
-      ${sp ? `<button class="card tap hint" data-act="tab" data-t="skills">🌟 Есть неиспользованные очки: <b>${sp}</b></button>` : ''}
+      ${sp ? `<button class="card tap hint ptsrow" data-act="tab" data-t="hero"><span class="ptsic" aria-hidden="true">✦</span><span class="grow tl">Доступно очков: <b>${sp}</b></span><span class="chev">›</span></button>` : ''}
       ${rp ? `<button class="card tap hint" data-act="tab" data-t="hearts">💞 Новых сцен с героинями: <b>${rp}</b></button>` : ''}
-      <div class="bgrid bcity">
-        <button class="bld" data-act="shop" data-quiet="1"><span>🏪</span><b>Лавка</b><small>Снаряжение, зелья, подарки</small></button>
-        <button class="bld" data-act="forge" data-quiet="1"><span>⚒️</span><b>Кузница</b><small>Улучшение до +${E.upCap(s)}</small></button>
-        <button class="bld" data-act="tavern" data-quiet="1"><span>🔥</span><b>Костёр</b><small>Слухи и разговоры</small></button>
-        <button class="bld" data-act="altar" data-quiet="1"><span>🕯️</span><b>Алтарь троп</b><small>Сброс Сил</small></button>
-      </div>${party}
-      <div class="card small"><b>Подсказка дня</b><div class="dim">${tip()}</div><button class="btn ghost small" data-act="tutorial">📘 Обучение</button></div>`;
+      <div class="bgrid bcity">${tiles}</div>${party}
+      <div class="card tipday"><div class="tiph"><span aria-hidden="true">📖</span><b>ПОДСКАЗКА ДНЯ</b></div><i class="huborn" aria-hidden="true"></i><div class="dim">${tip()}</div><button class="btn ghost small" data-act="tutorial">📘 Обучение</button></div>`;
   };
   const TIPS = ['Враги показывают намерение значком над собой. ⚠️ — готовится мощный удар: прикройтесь щитом или оглушите врага.', 'Стихии складываются: «Промокший» + молния = разряд; «Промокший» + лёд = заморозка; «Охлаждённый» + огонь = паровой взрыв.', 'Профессия «Травник/Шахтёр/Охотник/Рыбак» даёт больше добычи в событиях подземелий и позволяет ходить на промысел.', 'Еда и эликсиры действуют до конца вылазки — принимайте их перед входом.', 'Легендарные предметы выпадают с боссов на высоких сложностях. Лёд, молния и огонь — у каждого босса свои слабости.', 'Сложность растёт: пройдите подземелье на «Обычном», чтобы открыть «Героический», и дальше.', 'Мантра Силы: каждый ход боя удваивает атаку и защиту по значениям до боя — но только на этот бой.', 'Дуэли с героиней Света: победа открывает выбор — пощадить или убить. Пощажённая может присоединиться.', 'Верность Свиты растёт от решений в сюжете и подарков. Низкая верность — шанс, что подчинённый не послушается.', 'Свидания в «Сердцах» — тёплые и безопасные; они дают постоянные бонусы.'];
   const tip = () => TIPS[(new Date().getDate() + (UI.slot() ? UI.slot().stats.runs : 0)) % TIPS.length];
@@ -158,13 +159,15 @@
     const h = s.hero, d = E.derive(s), cls = D.CLASSES[h.cls], race = D.RACES[h.race], c = E.collect(s);
     const mods = Object.keys(c.mods).filter((k) => c.mods[k] && D.MODN[k]).map((k) => `<span class="chip">${c.mods[k] > 0 && !/aken/.test(k) ? '+' : ''}${Math.round(c.mods[k] * 10) / 10} ${(D.MODN[k]).replace(/\s*%$/, '')}${/%$/.test(D.MODN[k]) ? '%' : ''}</span>`).join('');
     const eq = Object.keys(D.SLOTS).map((sl) => { const it = s.eq[sl]; return `<button class="eqs" style="--rc:${it ? rar(it).c : '#444'}" data-act="${it ? 'itemOpen' : 'tab'}" data-id="${it ? it.id : ''}" data-t="inv"><span>${it ? D.BASES[it.k].ic : D.SLOT_IC[sl]}</span><small>${it ? esc(it.nm) + (it.up ? ' +' + it.up : '') : D.SLOTS[sl]}</small></button>`; }).join('');
-    const st = s.stats;
-    return `<div class="herocard"><div class="bg bg-hero"></div>${UI.por(h.portrait, 'xl', false)}<div class="hinfo"><h2 class="m0">${esc(h.name)}</h2><div class="dim">Король Демонов · ${race.n} · ур. ${h.level}${h.level >= D.LEVEL_CAP ? ' (макс.)' : ''}</div><div class="dim small">Мощь ${fmt(E.power(s))}</div><div class="xpb">${bar(h.level >= D.LEVEL_CAP ? 1 : h.xp, h.level >= D.LEVEL_CAP ? 1 : D.xpNeed(h.level), 'xp')}<small>${h.level >= D.LEVEL_CAP ? 'МАКС' : fmt(h.xp) + ' / ' + fmt(D.xpNeed(h.level))}</small></div></div></div>
+    const st = s.stats, need = D.xpNeed(h.level);
+    const xpTxt = h.level >= D.LEVEL_CAP ? 'МАКС' : fmt(h.xp) + ' / ' + fmt(need);
+    return `<h2 class="herotitle">Герой</h2>
+      <div class="herocard"><img class="herobg" src="assets/ui/hero_bg.webp" alt="" loading="lazy" decoding="async" width="640" height="702"><div class="heropor">${UI.por(h.portrait, 'xl', false)}</div><div class="hinfo"><h2 class="m0">${esc(h.name)}</h2><div class="dim">Король Демонов</div><div class="dim">Уровень ${h.level}${h.level >= D.LEVEL_CAP ? ' (макс.)' : ''}</div><div class="xpb">${bar(h.level >= D.LEVEL_CAP ? 1 : h.xp, h.level >= D.LEVEL_CAP ? 1 : need, 'xp')}<small>${xpTxt}</small></div></div></div>
       ${UI.statsCard(s, d)}
       <div class="card"><b>Снаряжение</b><div class="eqgrid">${eq}</div></div>
       <div class="card"><b>${race.ic} ${race.pn}</b> <span class="dim small">(прошлое: ${race.n})</span><div class="small tl dim">${race.pd}</div><b>${cls.ic} Перки класса</b><ul class="perks small">${cls.perks.map((p) => `<li><b>${p.n}</b> — ${p.d}</li>`).join('')}</ul><div class="small tl dim"><b>${cls.rc.n}:</b> копится в бою и усиливает навыки.</div></div>
       <div class="card"><b>Все бонусы</b><div class="chips">${mods || '<span class="dim">нет</span>'}</div></div>
-      <div class="card small"><b>Путь</b><div class="dim">Вылазок: ${st.runs} · побед над боссами: ${st.wins} · поражений: ${st.deaths}<br>Врагов повержено: ${fmt(st.kills)} · создано: ${st.crafted} · добыто: ${st.gathered}<br>Заработано золота: ${fmt(st.goldEarned)} · время: ${Math.round((s.played || 0) / 60)} мин</div></div>`;
+      <div class="card small"><b>Путь</b><div class="dim">Вылазок: ${st.runs} · побед над боссами: ${st.wins} · поражений: ${st.deaths}<br>Врагов повержено: ${fmt(st.kills)} · создано: ${st.crafted} · добыто: ${st.gathered}<br>Заработано золота: ${fmt(st.goldEarned)} · время: ${Math.round((s.played || 0) / 60)} мин · мощь ${fmt(E.power(s))}</div></div>`;
   };
 
   // ═════ НАВЫКИ ═════

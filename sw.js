@@ -1,5 +1,5 @@
 /* Service worker: офлайн-режим. Ядро — в прекеше; CG и нейтральные портреты берутся из assets/vn/manifest.json, остальные настроения кэшируются при первом показе. */
-const VERSION = 'arpg-v2.6.0';
+const VERSION = 'arpg-v2.7.0';
 const CORE = `${VERSION}-core`, RUNTIME = `${VERSION}-rt`;
 const ASSETS = [
   './', 'index.html', 'manifest.json', 'css/style.css', 'css/vn.css', 'css/demon.css', 'fonts/ruslan.woff2', 'fonts/philosopher.woff2',
@@ -8,6 +8,7 @@ const ASSETS = [
   'js/story/cast.js', 'js/story/core.js', 'js/story/enemies.js', 'js/story/ui-story.js', 'js/story/outline.js', 'js/story/arc01.js',
   'js/story/arc02.js', 'js/story/arc03.js', 'js/story/arc04.js', 'js/story/arc05.js', 'js/story/arc06.js', 'js/story/arc07.js', 'js/story/arc08.js', 'js/story/arc09.js', 'js/story/arc10.js', 'js/story/arc11.js', 'js/story/arc12.js', 'js/story/arc13.js', 'js/story/arc14.js', 'js/story/arc15.js', 'js/story/arc16.js', 'js/story/arc17.js', 'js/story/arc18.js', 'js/story/arc19.js', 'js/story/arc20.js', 'js/story/arc21.js', 'js/story/arc22.js', 'js/story/arc23.js', 'js/story/arc24.js', 'js/story/arc25.js', 'js/story/arc26.js', 'js/story/arc27.js', 'js/story/arc28.js', 'js/story/arc29.js', 'js/story/arc30.js',   // все 30 арок в прекэше: офлайн работает на всех 300 главах
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-192.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
+  'assets/ui/banner.webp', 'assets/ui/tile_shop.webp', 'assets/ui/tile_forge.webp', 'assets/ui/tile_fire.webp', 'assets/ui/tile_altar.webp', 'assets/ui/hero_bg.webp', 'assets/ui/vn_cathedral.webp', 'assets/ui/vn_cathedral_night.webp', 'assets/ui/vn_ruins.webp',
   'assets/vn/manifest.json'
 ];
 

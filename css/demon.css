@@ -1,4 +1,4 @@
-/* ═══ Нимб Мира v2.6.0 — «Король Демонов»: тёмная аниме-тема поверх базовых стилей (подключается последней).
+/* ═══ Нимб Мира v2.7.0 — «Король Демонов»: тёмная аниме-тема поверх базовых стилей (подключается последней).
    Палитра: чернильно-фиолетовый фон, пурпурные и алые свечения, золото для акцентов; трещины-вены как у героя в форме Короля.
    Всё ведётся переменными ниже. Тяжёлого нет: два подмножества шрифта (woff2 ≈ 31 КБ), SVG-орнаменты встроены, анимации — только opacity/transform. ═══ */
 @font-face{font-family:"Ruslan Display";src:url(../fonts/ruslan.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
@@ -148,3 +148,70 @@ h4::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(205
 .sbs{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.sb span{width:58px;font-size:11.5px}.sb .bar{min-width:0}
 .card.ndet{position:sticky}
 .seg button{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.seg.small button{font-size:12.5px;padding:9px 3px}
+
+/* ═══ v2.7.0 — макет «Лагерь / Герой / VN»: рисованные плитки, золотая навигация, фоны ═══ */
+.gh .por.avring,.gh .svgpor.avring{width:40px;height:40px;border-radius:50%;object-fit:cover;object-position:50% 18%;box-shadow:0 0 0 1.5px var(--gold),0 0 10px rgba(240,195,90,.45)}
+.gh .xpb{flex-direction:column;align-items:stretch;gap:3px}.gh .xpb small{font-size:11px;color:var(--dim)}.gh .xpb .bar{height:4px;clip-path:none;border-radius:2px}
+.gh .xpb .bar i{clip-path:none;border-radius:2px}
+/* хаб-баннер */
+.hub{height:auto;min-height:200px;aspect-ratio:9/10;max-height:46dvh;border-radius:var(--cut);border:1px solid rgba(240,195,90,.55);position:relative;overflow:hidden}
+.hub .bg{position:absolute;inset:0;opacity:.01;pointer-events:none} /* hubcg+lira остаются для live-sprite, визуально перекрыты .hubart */
+.hub .hubart{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 35%;display:block}
+.hub .hubtxt{left:0;right:0;bottom:10px;text-align:center;padding:0 12px;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:2}
+.hub .hubtxt h2{font-family:var(--disp);font-size:clamp(18px,5.2vw,24px);letter-spacing:.06em;text-transform:uppercase;margin:0;color:var(--gold2);text-shadow:0 0 18px rgba(240,195,90,.55),0 2px 6px #000}
+.huborn{display:block;width:min(220px,70%);height:10px;margin:2px auto 0;background:linear-gradient(90deg,transparent,var(--gold) 18%,var(--gold) 45%,transparent 45%,transparent 55%,var(--gold) 55%,var(--gold) 82%,transparent);clip-path:polygon(0 45%,42% 45%,46% 10%,50% 90%,54% 10%,58% 45%,100% 45%,100% 55%,58% 55%,54% 90%,50% 10%,46% 90%,42% 55%,0 55%);opacity:.9}
+/* цель */
+.card.goal .goalh{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}.goali{font-size:28px;line-height:1;filter:drop-shadow(0 0 6px rgba(240,195,90,.4))}
+.card.goal .btn.big{font-size:17px;letter-spacing:.05em}
+.ptsrow{display:flex;align-items:center;gap:10px;padding:12px 14px}.ptsic{color:var(--gold2);font-size:18px;text-shadow:var(--glow-g)}
+/* плитки 2×2 с иллюстрациями */
+.bgrid.bcity{grid-template-columns:1fr 1fr;gap:10px}
+.bld{position:relative;padding:0;min-height:0;aspect-ratio:3/4;overflow:hidden;border-radius:var(--cut);border:1px solid rgba(240,195,90,.4);background:#12081c;display:block}
+.bld .bldimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.bld .bldtxt{position:absolute;left:0;right:0;bottom:0;padding:28px 10px 10px;background:linear-gradient(180deg,transparent,rgba(6,3,12,.92) 55%);display:flex;flex-direction:column;gap:1px;text-align:left;z-index:1}
+.bld .bldtxt b{font-family:var(--serif);color:var(--gold2);font-size:15px;text-shadow:0 1px 4px #000}
+.bld .bldtxt small{color:#cbb8e8;font-size:11px}
+.bld::before{content:"";position:absolute;inset:3px;pointer-events:none;z-index:2;opacity:.7;
+  background:linear-gradient(var(--gold),var(--gold)) 0 0/8px 1px no-repeat,linear-gradient(var(--gold),var(--gold)) 0 0/1px 8px no-repeat,linear-gradient(var(--gold),var(--gold)) 100% 0/8px 1px no-repeat,linear-gradient(var(--gold),var(--gold)) 100% 0/1px 8px no-repeat,
+  linear-gradient(var(--gold),var(--gold)) 0 100%/8px 1px no-repeat,linear-gradient(var(--gold),var(--gold)) 0 100%/1px 8px no-repeat,linear-gradient(var(--gold),var(--gold)) 100% 100%/8px 1px no-repeat,linear-gradient(var(--gold),var(--gold)) 100% 100%/1px 8px no-repeat}
+.tipday .tiph{display:flex;align-items:center;gap:8px;color:var(--gold2);font-family:var(--serif);letter-spacing:.08em;font-size:13px;margin-bottom:4px}
+.tipday .tiph b{font-weight:700}
+/* навигация: 5 вкладок + скрытые для e2e */
+#nav{display:flex;justify-content:space-around;gap:0;position:relative;overflow:visible}
+#nav button{flex:1 1 0;min-width:0;max-width:20%;color:rgba(200,180,230,.55)}
+#nav button .nic{display:grid;place-items:center;width:28px;height:24px;margin:0 auto}
+#nav button .nic svg{width:22px;height:22px;display:block}
+#nav button>span:not(.nb):not(.nic){display:none} /* старые эмодзи-обёртки */
+#nav button>span.nic{filter:none!important;font-size:0}
+#nav button>span.nic::before{display:none!important}
+#nav button.on{color:var(--gold2)}
+#nav button.on .nic{filter:drop-shadow(0 0 6px rgba(240,195,90,.7))}
+#nav button.on>span.nic::before{display:none!important}
+#nav button.navx{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:auto;left:0;bottom:0;padding:0;margin:0;border:0;z-index:-1}
+#nav button.nav-more{flex:1 1 0}
+.morelist .moreitem{display:flex;align-items:center;gap:10px;text-align:left;width:100%}
+.morelist .nic{width:28px;height:28px;color:var(--gold2)}.morelist .nic svg{width:22px;height:22px}
+/* герой */
+.herotitle{text-align:center;font-family:var(--disp);font-size:28px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold2);text-shadow:0 0 18px rgba(240,195,90,.45);margin:4px 0 10px}
+.herocard{flex-direction:column;align-items:center;text-align:center;padding:0;gap:0;border:1px solid rgba(240,195,90,.5);background:#12081c;min-height:280px}
+.herocard .herobg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.85;pointer-events:none}
+.herocard .heropor{position:relative;z-index:1;padding-top:18px}
+.herocard .heropor .por.xl{width:150px;height:170px;border-radius:12px;box-shadow:0 0 0 1.5px var(--gold),0 8px 24px rgba(0,0,0,.5)}
+.herocard .hinfo{position:relative;z-index:1;width:100%;padding:8px 14px 14px;background:linear-gradient(180deg,transparent,rgba(6,3,12,.92) 30%);align-items:center}
+.herocard .hinfo h2{font-family:var(--disp);font-size:26px;color:var(--gold2);letter-spacing:.06em;text-transform:uppercase}
+.stcard .sti{width:28px;height:28px;display:grid;place-items:center;flex:none}
+.stsvg{width:22px;height:22px;display:block}
+.c-str{color:#ff6a7a}.c-agi{color:#6ad88a}.c-vit{color:#6ab0ff}.c-int{color:#c88aff}.c-spi{color:#f0c35a}.c-wis{color:#e8e0ff}.c-luk{color:#74e8a2}.c-cha{color:#ff8aa8}
+.sbtn.splus{min-width:34px;width:34px;height:34px;font-size:18px;color:var(--gold2);border-color:rgba(182,107,255,.7);background:linear-gradient(180deg,rgba(70,30,110,.95),rgba(30,12,55,.95));box-shadow:0 0 0 1px rgba(182,107,255,.25)}
+.stline{border:1px solid rgba(224,176,100,.2);border-radius:var(--cut);padding:6px 8px;margin-bottom:4px;background:linear-gradient(160deg,rgba(40,19,64,.75),rgba(15,7,27,.85))}
+.hpmprow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 6px}
+.hpm{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--tx)}.hpm .bar{height:7px;clip-path:none;border-radius:3px}.hpm .bar i{clip-path:none;border-radius:3px}
+.hpmic{font-size:13px}.c-hp{color:#ff6a8a}.c-mp{color:#8a9cff}
+/* VN: рисованные фоны (id не меняем) */
+.bg-cathedral{background:linear-gradient(180deg,rgba(8,4,16,.15),rgba(6,3,12,.35)),url(../assets/ui/vn_cathedral.webp) 50% 40%/cover no-repeat,#1a0e18}
+.bg-ruins{background:linear-gradient(180deg,rgba(8,4,16,.2),rgba(6,3,12,.4)),url(../assets/ui/vn_ruins.webp) 50% 35%/cover no-repeat,#12081a}
+.bg-camp{background:linear-gradient(180deg,rgba(8,4,16,.25),rgba(6,3,12,.45)),url(../assets/ui/vn_cathedral_night.webp) 50% 40%/cover no-repeat,#0a0614}
+.bg-courtyard,.bg-hub{background:linear-gradient(180deg,rgba(8,4,16,.2),rgba(6,3,12,.4)),url(../assets/ui/vn_ruins.webp) 50% 30%/cover no-repeat,#0c0716}
+.bg-void_dusk{background:linear-gradient(180deg,rgba(8,4,16,.3),rgba(6,3,12,.5)),url(../assets/ui/vn_cathedral_night.webp) 50% 45%/cover no-repeat,#050307}
+/* на узких экранах плитки чуть ниже, чтобы 2×2 влезала без горизонтали */
+@media (max-width:380px){.bld{aspect-ratio:3/3.6}.hub{max-height:42dvh}.stbtns .sbtn:not(.splus){min-width:28px;padding:0 3px;font-size:10.5px}}
