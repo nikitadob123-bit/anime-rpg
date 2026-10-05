@@ -6,6 +6,7 @@
 → manifest.head[id] = [eyeDy, k]: линия глаз = fy + eyeDy·fw, «единица головы» = k·fw, где k = ½·(1 + (chin−eye)/EC_ref) — среднее ширины лица
 по каскаду и длины «глаза→подбородок» (EC_ref — медиана взрослых того же пола). Раскладка (RPG.artMetricsOf) масштабирует по k·fw и выравнивает по глазам.
   python3 tools/measure-heads.py          — записать manifest.head (+ сверка с каскадом lbpcascade_animeface)
+  python3 tools/measure-heads.py --avatars — пересобрать аватары <id>_av.webp (256×320) из нейтральных спрайтов с ОДИНАКОВЫМ кадром головы
   python3 tools/measure-heads.py --sheet  — сетки для разметки/проверки: shots/heads-grid-*.jpg (≤1200 px)"""
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE); V = os.path.join(ROOT, 'assets', 'vn')
@@ -48,4 +49,16 @@ def apply():
     except ImportError: pass
     json.dump(man, open(MP, 'w'), ensure_ascii=False, sort_keys=True, separators=(',', ':')); print('manifest.head:', len(head))
 
-sheet() if '--sheet' in sys.argv else apply()
+def avatars():
+    # кадр аватара от «единицы головы» hu = k·fw: ширина 1.75·hu, 4:5, линия глаз на 0.72·hu от верха — у всех одинаково (герой, каст, подчинённые)
+    from PIL import Image
+    head = man.get('head') or {}
+    for n in ids:
+        f = n + '_neutral.webp'; d = man['dim'][f]; im = Image.open(os.path.join(V, f)).convert('RGBA'); sc = im.size[0] / d[0]
+        e, k = head[n]; hu = k * d[5]; eye = d[4] + e * d[5]; w = 1.75 * hu; h = w * 1.25; x0 = d[3] - w / 2; y0 = eye - 0.72 * hu
+        box = tuple(int(round(v * sc)) for v in (x0, y0, x0 + w, y0 + h)); c = im.crop(box).resize((256, 320), Image.LANCZOS)   # вне холста — прозрачно
+        out = os.path.join(V, man['av'][n]); c.save(out, 'WEBP', quality=90, method=6); print(out, box)
+
+if '--sheet' in sys.argv: sheet()
+elif '--avatars' in sys.argv: avatars()
+else: apply()
