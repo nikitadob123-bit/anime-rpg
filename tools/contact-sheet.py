@@ -10,7 +10,7 @@ for name, bg in (('dark', (16, 19, 28)), ('light', (240, 240, 240))):
     rows = (len(files) + COLS - 1) // COLS
     sheet = Image.new('RGB', (COLS * TW, rows * TH), bg); d = ImageDraw.Draw(sheet)
     for i, f in enumerate(files):
-        im = Image.open(os.path.join(ROOT, 'assets', 'vn', f)).convert('RGBA'); im = im.crop((0, 0, im.width, min(im.height, 720)))
+        im = Image.open(os.path.join(ROOT, 'assets', 'vn', f)).convert('RGBA')
         k = min((TW - 6) / im.width, (TH - 14) / im.height); im = im.resize((max(1, round(im.width * k)), max(1, round(im.height * k))), Image.LANCZOS)
         x, y = (i % COLS) * TW + (TW - im.width) // 2, (i // COLS) * TH + 12
         sheet.paste(im, (x, y), im)
