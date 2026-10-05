@@ -45,8 +45,7 @@
   };
   const giveTxt = (g) => [g.gold ? g.gold + ' 🪙' : '', g.sp ? '+' + g.sp + ' искр Нимба' : '', g.item ? 'артефакт' : '', Object.keys(g.cons || {}).map((k) => D.CONS[k].ic + g.cons[k]).join(' '), Object.keys(g.mats || {}).map((k) => D.MATS[k].ic + g.mats[k]).join(' ')].filter(Boolean).join(' ');
   const SIL = { courtyard: 'cathedral', street_fest: 'village', void: '', void_dusk: '', camp: 'trees', ruins: 'arches', forest: 'trees', mines: 'peaks', swamp: 'trees', spire: 'spire', cathedral: 'cathedral' };
-  const RING_BG = new Set(['street_fest', 'void_dusk', 'lira_sky', 'echo_awaken']);
-  UI.silFor = (bg) => { const m = SIL[bg]; return (m ? `<div class="sil sil-${m}"></div>` : '') + (RING_BG.has(bg) ? '<div class="lira"></div>' : ''); };   // кольцо Нимба над небом (вернули: пропало в 701e6cf)
+  UI.silFor = (bg) => { const m = SIL[bg]; return m ? `<div class="sil sil-${m}"></div>` : ''; };   // v2.8.1: кольцо Нимба больше не рисуется само на фонах сцен — только ['fx','ring'] (слой #vring)
 
   // ───── Сцена: геометрия спрайтов (расчёты — RPG.vnLayout / RPG.vnPlaceRect в portrait.js) ─────
   // У каждого портрета в манифесте: dim = [w, h, keyed, fx, fy, fw] — центр лица и его ширина (px). Размер голов выравнивается по fw,
@@ -61,7 +60,7 @@
     return new Promise((resolve) => {
       const slot = UI.slot(), st = UI.p.settings, layer = $('#layer'); o = o || {};
       const result = {};
-      layer.innerHTML = `<div id="story" class="story vn"><div class="vbg" id="sbg"></div><div class="vbg b2" id="sbg2"></div><div class="vcg" id="vcg"></div><div class="vstage" id="vstage"></div><div class="vfog"></div>
+      layer.innerHTML = `<div id="story" class="story vn"><div class="vbg" id="sbg"></div><div class="vbg b2" id="sbg2"></div><div class="lira vring" id="vring" hidden></div><div class="vcg" id="vcg"></div><div class="vstage" id="vstage"></div><div class="vfog"></div>
         <div class="vtop"><button class="mini" data-act="vLog" data-quiet="1" title="Лог">📜</button><button class="mini" data-act="vAuto" id="vAuto" data-quiet="1">▶ Авто</button><button class="mini" data-act="sSkip" id="sSkip" data-quiet="1">⏭ Пропуск</button></div>
         <div class="dlg" id="dlg" data-act="sNext" data-quiet="1"><div class="spk" id="spk"></div><div class="txt" id="stxt"></div><i class="nx">▾</i></div><div class="schoice" id="schoice"></div><div class="tcard" id="tcard"></div><div class="flash" id="sflash"></div><div class="vlog" id="vlog"></div></div>`;
       layer.classList.add('on'); const root = $('#story');
@@ -88,7 +87,7 @@
         const keys = live(); if (!keys.length || finished) return;
         const W = stage.clientWidth || 390, dlg = $('#dlg'), Yb = (dlg ? dlg.offsetTop : stage.clientHeight - 140) + 16;
         const L = UI.vnLayout(keys.map((k) => actors[k].ref), W, Yb);
-        keys.forEach((k, i) => { const a = actors[k], g = L[i]; a.el.style.height = g.frH + 'px'; a.el.style.transform = `translate(${(Math.round(g.x * 2) / 2)}px,${(Math.round(g.y * 2) / 2)}px) scale(${g.s.toFixed(4)})`; a.el.style.setProperty('--sx', (i === 0 && keys.length > 1 ? -40 : i === keys.length - 1 && keys.length > 1 ? 40 : 0) + 'px'); });
+        keys.forEach((k, i) => { const a = actors[k], g = L[i]; a.el.style.height = g.frH + 'px'; a.el.style.transform = `translate(${(Math.round(g.x * 2) / 2)}px,${(Math.round(g.y * 2) / 2)}px) scale(${g.s.toFixed(4)})`; a.el.style.setProperty('--oy', g.oy.toFixed(1) + 'px'); a.el.style.setProperty('--sx', (i === 0 && keys.length > 1 ? -40 : i === keys.length - 1 && keys.length > 1 ? 40 : 0) + 'px'); });
       }
       let rz = 0, rzT = 0; const onResize = () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => { if (finished) return; stage.classList.add('nofx'); layout(); clearTimeout(rzT); rzT = setTimeout(() => stage.classList.remove('nofx'), 80); }); };   // resize на Android сыплется при движении адресной строки — без переходов и дребезга
       window.addEventListener('resize', onResize);
@@ -133,6 +132,8 @@
           case 'flash': { const f = $('#sflash'); f.className = 'flash'; void f.offsetWidth; f.classList.add('go'); UI.sfx('magic'); await w(450); break; }
           case 'entropy': { const f = $('#sflash'); f.className = 'flash ent'; void f.offsetWidth; f.classList.add('go'); root.classList.add('desat'); UI.sfx('boom'); await w(1400); later(() => root.classList.remove('desat'), 4000); break; }
           case 'halo': { root.classList.remove('halo'); void root.offsetWidth; root.classList.add('halo'); later(() => root.classList.remove('halo'), 1700); UI.sfx('magic'); await w(900); break; }
+          case 'ring': $('#vring').hidden = false; break;
+          case 'noring': $('#vring').hidden = true; break;
           case 'shake': root.classList.remove('shk'); void root.offsetWidth; root.classList.add('shk'); later(() => root.classList.remove('shk'), 600); UI.sfx('boom'); await w(500); break;
           default: break;
         }

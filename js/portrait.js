@@ -300,10 +300,13 @@ RPG.avatarOf = (manifest, art) => (manifest && manifest.av && manifest.av[art]) 
 /* Геометрия сцены новеллы (чистые функции — тестируются в node).
    Метрики портрета: {w,h,fx,fy,fw} — размер файла (h=720), центр лица и ширина лица (px). Низ бюста «погружён» на SINK px под окно диалога, затухание — CSS-маской (никакого синтетического продления пикселей).
    Кадр актёра: ширина 1800, центр лица эталона в x=900, сверху запас 220; позиция и размер кадра задаются одним transform (translate+scale). */
-RPG.VN = { FR_W: 1800, FR_CX: 900, FR_T: 220, BUST: 720, SINK: 140, SLOTS: { 1: [0.5], 2: [0.28, 0.72], 3: [0.17, 0.5, 0.83] }, FACE_K: { 1: 0.46, 2: 0.4, 3: 0.28 } };
+RPG.VN = { FR_W: 1800, FR_CX: 900, FR_T: 220, BUST: 720, SINK: 140, SLOTS: { 1: [0.5], 2: [0.27, 0.73], 3: [0.17, 0.5, 0.83] }, FACE_K: { 1: 0.46, 2: 0.36, 3: 0.27 } };   // FACE_K — «единица головы» в долях ширины сцены: при 2–3 актёрах головы с причёской не налезают на соседние лица
 RPG.artMetricsOf = (manifest, art, mood) => {
   const f = RPG.artFileOf(manifest, art, mood), d = f && manifest.dim && manifest.dim[f];
-  if (d && d.length >= 6) return { w: d[0], h: d[1], fx: d[3], fy: d[4], fw: d[5], vh: d[8] || d[1], img: true };   // vh — видимая высота кадра (герой в рост: ниже — под диалогом); у остальных = h
+  // manifest.head[id] = [eyeDy, k] (tools/measure-heads.py): fy — ЛИНИЯ ГЛАЗ (fy каскада + eyeDy·fw), fw — «единица головы» k·fw (ширина лица + длина глаза→подбородок).
+  // Так головы всех спрайтов (герой, генералы, свита) выходят одного размера и глаза — на одной линии, независимо от того, как каждый арт кадрирован.
+  const hd = d && manifest.head && manifest.head[f.replace(/_[a-z]+\.webp$/, '')];
+  if (d && d.length >= 6) return { w: d[0], h: d[1], fx: d[3], fy: d[4] + (hd ? hd[0] * d[5] : 0), fw: d[5] * (hd ? hd[1] : 1), vh: d[8] || d[1], img: true };   // vh — видимая высота кадра (герой в рост: ниже — под диалогом); у остальных = h
   if (d) return { w: d[0], h: d[1], fx: d[0] / 2, fy: d[1] * 0.18, fw: d[0] * 0.32, vh: d[1], img: true };
   return { w: 256, h: 320, fx: 128, fy: 100, fw: 130, vh: 320, img: false };
 };
@@ -316,7 +319,7 @@ RPG.vnLayout = (refs, W, Yb) => {
   const Yl = Yb + V.SINK * Ft / 240, Yf = Yl - qmin * Ft;
   return refs.map((r, i) => {
     const s = Ft / r.fw, slot = V.SLOTS[Math.min(3, n)][Math.min(2, i)], y = Yf - (V.FR_T + r.fy) * s, frH = Math.min(V.FR_T + (r.vh || r.h), (Yl - y) / s);
-    return { s, x: slot * W - V.FR_CX * s, y, frH, face: Ft, yf: Yf };
+    return { s, x: slot * W - V.FR_CX * s, y, frH, face: Ft, yf: Yf, oy: V.FR_T + r.fy };   // oy — линия глаз в кадре: вокруг неё масштабируется подсветка говорящего (глаза не прыгают)
   });
 };
 RPG.vnPlaceRect = (ref, m) => { const V = RPG.VN, r = ref.fw / m.fw; return { left: V.FR_CX - m.fx * r, top: V.FR_T + ref.fy - m.fy * r, width: m.w * r, height: m.h * r, r }; };

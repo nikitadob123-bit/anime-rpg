@@ -42,10 +42,10 @@
 .vact.talk::before{opacity:1}
 .vpp,.vbr,.vslide,.vimgs{position:absolute;inset:0}
 .vpp.pop{animation:vpop .38s ease-out}
-.vbr{transform-origin:50% 100%;animation:breathe 8s ease-in-out infinite;animation-play-state:paused}
+.vbr{transform-origin:50% var(--oy,100%);animation:breathe 8s ease-in-out infinite;animation-play-state:paused}
 .vact.talk .vbr{animation-play-state:running}
-.vslide{transform:translate(var(--sx,0),26px) scale(.985);transform-origin:50% 100%;transition:transform .55s cubic-bezier(.22,.8,.3,1)}
-.vact.in .vslide{transform:translate(0,10px) scale(.965)}
+.vslide{transform:translate(var(--sx,0),26px) scale(.985);transform-origin:50% var(--oy,100%);transition:transform .55s cubic-bezier(.22,.8,.3,1)}
+.vact.in .vslide{transform:scale(.965)}   /* неговорящие: −3.5% вокруг линии глаз (говорящий крупнее ≤4%, глаза у всех на одной линии) */
 .vact.in.talk .vslide{transform:none}
 /* затемнение неактивных — лёгкий color-matrix прямо на картинке (без blur и теней; у говорящего filter отсутствует вовсе) */
 .vimgs .vsp{filter:brightness(.7) saturate(.85);transition:filter .4s ease,opacity .35s ease}
@@ -54,7 +54,7 @@
 .vimgs .vsp{position:absolute;display:block;max-width:none;border-radius:0;background:transparent;object-fit:fill;user-select:none;-webkit-user-drag:none}
 .vimgs .vsp.xf{opacity:0}.vimgs .vsp.xf.on{opacity:1}
 .vimgs .svgpor{overflow:visible}
-@keyframes breathe{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(0,-7px,0) scale(1.006)}}
+@keyframes breathe{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(0,-3px,0) scale(1.006)}}
 @keyframes vpop{0%{transform:translateX(0)}30%{transform:translateX(-9px) scale(1.012)}60%{transform:translateX(7px)}100%{transform:none}}
 
 /* — UI новеллы — */
@@ -100,3 +100,5 @@
 body[data-view="title"] #view,body[data-view="slots"] #view{background:linear-gradient(180deg,rgba(6,3,11,.55),rgba(6,3,11,.9)),var(--title-cg,none) center/cover no-repeat}
 
 .spkbadge{display:inline-flex;align-items:center;justify-content:center;width:1.35em;height:1.35em;margin-right:.45em;border-radius:50%;font-style:normal;font-weight:700;font-size:.85em;color:#130b20;vertical-align:-.12em;box-shadow:0 0 0 1px rgba(255,255,255,.35)}
+/* кольцо Нимба в сцене — только по ['fx','ring']: чистое кольцо без внутреннего пунктирного эллипса */
+.story .vring{z-index:0}.story .vring[hidden]{display:none}.story .vring::after{content:none}

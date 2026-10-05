@@ -5,6 +5,7 @@ const fs = require('fs'), path = require('path');
 const url = process.argv[2] || 'http://127.0.0.1:8802/', tag = process.argv[3] || 'x', [VW, VH] = (process.argv[4] || '400x880').split('@')[0].split('x').map(Number), DPR = +((process.argv[4] || '').split('@')[1] || 2);
 const out = process.env.SHOTS || '/workspace/shots'; fs.mkdirSync(out, { recursive: true });
 const HEAD = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'head-metrics.json'), 'utf8'));   // разметка глаз/подбородка по спрайтам (tools/measure-heads.py)
+{ const med = (a) => { a = a.slice().sort((x, y) => x - y); const m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }; HEAD._ec = {}; for (const sx of ['m', 'f']) HEAD._ec[sx] = med(Object.keys(HEAD).filter((k) => !k.startsWith('_') && HEAD[k].kind === 'adult' && HEAD[k].sex === sx && !HEAD[k].same).map((k) => HEAD[k].chin - HEAD[k].eye)); }
 const LIM = { size: 0.15, eye: 6, overlap: 0.12 };   // допуски: разброс голов взрослых, линия глаз (css px), перекрытие лица чужой головой
 (async () => {
   const exe = ['/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'].find((p) => fs.existsSync(p));
@@ -50,7 +51,7 @@ const LIM = { size: 0.15, eye: 6, overlap: 0.12 };   // допуски: разб
       const im = Array.from(a.querySelectorAll('img.vsp')).pop(); if (!im) return null;
       const f = im.getAttribute('src').split('/').pop(), d = M.dim[f], art = f.replace(/_(neutral|angry|happy|shy|sad|smirk|surprised|av)\.webp$/, ''), H = HEAD[art] || { eye: -1.2, chin: 2.8, kind: 'adult' }, Hs = (H.same && HEAD[H.same]) || H;
       const r = im.getBoundingClientRect(), k = r.width / d[0], fw = d[5] * k, cx = r.left + d[3] * k, ey = r.top + (d[4] + H.eye * d[5] / 10) * k, chin = r.top + (d[4] + H.chin * d[5] / 10) * k;
-      const head = 0.5 * fw * (1 + (Hs.chin - Hs.eye) / 4.2);                     // «единица головы»: среднее ширины лица по каскаду и длины глаза→подбородок
+      const head = 0.5 * fw * (1 + (Hs.chin - Hs.eye) / HEAD._ec[Hs.sex || 'f']);   // «единица головы»: среднее ширины лица по каскаду и длины глаза→подбородок (к медиане своего пола)
       return { art, kind: H.kind, talk: a.classList.contains('talk'), z: (a.classList.contains('talk') ? 100 : 0) + i, head: +head.toFixed(1), ec: +(chin - ey).toFixed(1), eye: +ey.toFixed(1), cx: +cx.toFixed(1),
         face: [cx - 0.3 * fw, ey - 0.3 * fw, cx + 0.3 * fw, chin], hair: [cx - 0.55 * fw, ey - 0.9 * fw, cx + 0.55 * fw, chin + 0.1 * fw], vw: sr.width, dlgTop: dl.top, barB: top.bottom };
     }).filter(Boolean);
@@ -88,6 +89,6 @@ const LIM = { size: 0.15, eye: 6, overlap: 0.12 };   // допуски: разб
   console.log(`HEADS SUMMARY: макс. разброс голов взрослых ${(mx('sAd') * 100).toFixed(1)}% (лимит ${LIM.size * 100}%), всех ${(mx('sAll') * 100).toFixed(1)}%, линия глаз до ${mx('eyeD').toFixed(1)}px; комбинаций с ошибками: ${report.filter((r) => r.fails.length).length}/${report.length}`);
   await ev(() => { __RPG.UI.vnTest = __RPG.UI.playLines([['bg', 'void_dusk'], ['n', 'Над руинами тихо.']], { replay: true }); }); await page.waitForSelector('#story'); await page.waitForTimeout(1500);
   const bg = await ev(() => ({ bg: getComputedStyle(document.querySelector('#sbg')).backgroundImage.slice(0, 60), cls: document.querySelector('#sbg').className, ring: !!document.querySelector('#story .lira'), ringW: (document.querySelector('#story .lira') || { getBoundingClientRect: () => ({ width: 0 }) }).getBoundingClientRect().width }));
-  console.log('empty-bg', JSON.stringify(bg)); await page.screenshot({ path: path.join(out, `${tag}-empty.jpg`), type: 'jpeg', quality: 84, scale: 'css' });
+  console.log('empty-bg', JSON.stringify(bg)); if (bg.ring) bad.push('кольцо Нимба (.lira) нарисовано в сцене без [\'fx\',\'ring\']'); await page.screenshot({ path: path.join(out, `${tag}-empty.jpg`), type: 'jpeg', quality: 84, scale: 'css' });
   console.log('errs', JSON.stringify(errs)); console.log(bad.length ? 'FAIL ' + JSON.stringify(bad) : 'OK: соотношение сторон отрисовки == натуральному (±1%) во всех сценах'); await b.close(); if (bad.length || errs.length) process.exit(1);
 })().catch((e) => { console.error(e); process.exit(2); });

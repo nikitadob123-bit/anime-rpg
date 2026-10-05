@@ -9,7 +9,7 @@
   const RESERVED = ['bg', 'cg', 'fx', 'title', 'hide', 'set', 'give', 'rec', 'loy', 'aff', 'date', 'if', 'choice'];
 
   ST.MOODS = ['n', 'h', 'a', 's', 'd', 'm', 'u', 'ma', 'mh', 'ms', 'md', 'mu'];                               // нейтрально, радость/ухмылка, гнев, смущение, печаль, облик Короля; u — удивление; ma/mh/ms/md/mu — форма Короля: гнев/ухмылка/смущение/печаль/удивление (только у героя)
-  ST.FX = ['stars', 'embers', 'fireflies', 'snow', 'silence', 'flash', 'entropy', 'halo', 'shake'];
+  ST.FX = ['stars', 'embers', 'fireflies', 'snow', 'silence', 'flash', 'entropy', 'halo', 'shake', 'ring', 'noring'];   // ring/noring — кольцо Нимба в небе сцены (только по явной просьбе сцены)
   ST.CGS = ['halo_city', 'demon_king'];                                    // CG, которые лежат в assets/vn
   ST.DIRECTIVES = RESERVED;
 
