@@ -16,10 +16,10 @@
   }
   UI.tabs.skills = function (s) {
     const h = s.hero, k = UI.sub.skills, sp = E.sp(h), up = E.up(h), B = D.MAOU_BRANCHES;
-    const chips = B.map((b, i) => `<button class="${k === 'b' + i ? 'on' : ''}" style="--bc:${b.c}" data-act="sub" data-k="skills" data-v="b${i}" data-quiet="1">${b.ic} ${esc(b.n.replace('Фактор Короля Демонов', 'Фактор'))}</button>`).join('') + `<button class="${k === 'echo' ? 'on' : ''}" data-act="sub" data-k="skills" data-v="echo" data-quiet="1">🔆 Отголосок</button><button class="${k === 'list' ? 'on' : ''}" data-act="sub" data-k="skills" data-v="list" data-quiet="1">📜 Приёмы</button>`;
+    const chips = B.map((b, i) => `<button class="${k === 'b' + i ? 'on' : ''}" style="--bc:${b.c}" data-act="sub" data-k="skills" data-v="b${i}" data-quiet="1">${b.ic} ${esc(b.n.replace('Фактор Короля Демонов', 'Фактор'))}</button>`).join('') + `<button class="${k === 'list' ? 'on' : ''}" data-act="sub" data-k="skills" data-v="list" data-quiet="1">📜 Приёмы</button>`;
     const head = `<div class="row gap"><div class="pts"><b>${sp}</b><small>очков Силы</small></div><div class="pts echo"><b>${up}</b><small>искр Нимба</small></div></div><div class="seg small scrollx">${chips}</div>`;
-    if (k === 'list') return head + skillList(s);
-    const isU = k === 'echo', T = isU ? D.UNIQ[h.uniq] : D.TREES.maou, fz = isU ? {} : E.fused(h);
+    if (k === 'list' || k === 'echo') return head + skillList(s);
+    const isU = false /* Отголосок убран: древо в Приёмах */ && k === 'echo', T = isU ? D.UNIQ[h.uniq] : D.TREES.maou, fz = isU ? {} : E.fused(h);
     const bi = isU ? 0 : +k.slice(1), nodes = isU ? T.nodes : T.nodes.filter((n) => n.br === bi);
     const sel = UI.sub.node && T.nodes.find((n) => n.id === UI.sub.node) ? UI.sub.node : null;
     const tiers = {}; nodes.forEach((n) => { (tiers[n.t] = tiers[n.t] || []).push(n); });

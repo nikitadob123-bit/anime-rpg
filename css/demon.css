@@ -217,3 +217,18 @@ h4::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(205
 .card.ptsrow{flex-direction:row;align-items:center}
 .stcard .pts.mini{display:inline-flex;flex-direction:row;align-items:baseline;gap:5px;flex:none;width:auto;padding:4px 12px;border-radius:99px;border:1px solid var(--gold);min-width:0}
 .stcard .pts.mini b{font-size:15px;color:var(--gold2)}.stcard .pts.mini small{font-size:12px;color:var(--gold2)}
+
+/* ═══ v2.8.0 — подсказка дерева Сил, снаряжение героя ═══ */
+.skhelp{margin:6px 0 2px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.skhelp-tog{font-size:11.5px;padding:4px 10px;border-radius:99px;border:1px solid rgba(240,195,90,.35);background:rgba(24,12,40,.7);color:var(--gold2)}
+.skhelp-body{padding:6px 10px;border-radius:10px;background:rgba(40,20,70,.55);border:1px solid rgba(184,123,255,.25);line-height:1.35}
+.sksubs{position:sticky;top:0;z-index:5;background:rgba(10,5,18,.92);padding:4px 0;margin-bottom:4px}
+.tgraph .edge.open{stroke-dasharray:4 3}
+.gearcard .eqgrid{margin-top:8px}
+.eqs{min-height:72px;padding:10px 4px;touch-action:manipulation}
+.diffbox{display:flex;flex-direction:column;gap:3px;padding:8px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:4px 0}
+.diffh{margin-bottom:2px}.diffrow{display:flex;align-items:center;gap:8px;font-size:13px;padding:3px 0}
+.diffrow span{flex:1;text-align:left;color:var(--dim)}.diffrow b{min-width:48px;text-align:right}.diffrow em{min-width:56px;text-align:right;font-style:normal;font-weight:700}
+.gearacts .btn{min-height:44px}.gearpick{min-height:56px;padding:10px 8px}.gearlist{display:flex;flex-direction:column;gap:6px;max-height:50dvh;overflow-y:auto}
+.skh{margin:10px 0 4px;color:var(--gold2);font-family:var(--serif);font-size:14px}
+.echo-br{border-left-color:#ff4f84}

@@ -231,6 +231,49 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
   await click('[data-act="statRespec"]'); await click('[data-act="statRespecOk"]'); sl = await slot();
   check('сброс очков за золото', Object.keys(sl.hero.alloc).length === 0 && sl.gold < 99999);
   await ev(() => { __RPG.UI.heroUi.subs = false; __RPG.UI.refresh(); });
+  // ───── Снаряжение на вкладке Герой ─────
+  await click('#nav button[data-t="hero"]');
+  await ev(() => {
+    const s = __RPG.UI.slot(), rng = __RPG.E.rng(7);
+    s.gold = 99999; __RPG.E.addMat(s, 'ing_cu', 50); __RPG.E.addMat(s, 'ing_fe', 50);
+    const it = __RPG.E.genItem(rng, { base: 'body_h', il: 8, rarity: 2 });
+    __RPG.E.addItem(s, it); __RPG.UI.refresh();
+  });
+  // open body slot or item
+  if (await page.locator('.eqs[data-act="gearSlot"][data-sl="body"]').count()) {
+    await page.locator('.eqs[data-act="gearSlot"][data-sl="body"]').click();
+  } else {
+    await page.locator('.eqgrid .eqs').nth(2).click();
+  }
+  await page.waitForTimeout(120);
+  check('лист слота/предмета открыт', await page.locator('#modal.on').count() === 1);
+  if (await page.locator('[data-act="equip"]').count()) {
+    const d0 = await ev(() => __RPG.E.derive(__RPG.UI.slot()).def);
+    await act('equip'); await page.waitForTimeout(80);
+    const d1 = await ev(() => __RPG.E.derive(__RPG.UI.slot()).def);
+    check('надеть из Героя меняет статы', d1 > d0, d0 + '→' + d1);
+  } else if (await page.locator('.gearpick, [data-act="itemOpen"]').count()) {
+    await page.locator('.gearpick, #modal [data-act="itemOpen"]').first().click(); await page.waitForTimeout(80);
+    const d0 = await ev(() => __RPG.E.derive(__RPG.UI.slot()).def);
+    if (await page.locator('[data-act="equip"]').count()) { await act('equip'); await page.waitForTimeout(80); }
+    const d1 = await ev(() => __RPG.E.derive(__RPG.UI.slot()).def);
+    check('надеть из Героя меняет статы', d1 >= d0, d0 + '→' + d1);
+  } else check('надеть из Героя меняет статы', false, 'нет кнопки');
+  // upgrade from hero item sheet
+  await click('#nav button[data-t="hero"]');
+  await page.locator('.eqgrid .eqs[data-act="itemOpen"]').first().click(); await page.waitForTimeout(100);
+  check('сравнение/статы в карточке', await page.locator('.diffbox, .il-list').count() >= 1);
+  if (await page.locator('[data-act="upItem"]').count()) {
+    const up0 = await ev(() => { const s=__RPG.UI.slot(); const it=Object.values(s.eq).find(Boolean); return it && it.up || 0; });
+    await act('upItem'); await page.waitForTimeout(80);
+    const up1 = await ev(() => { const s=__RPG.UI.slot(); const it=Object.values(s.eq).find(Boolean); return it && it.up || 0; });
+    check('улучшение из Героя', up1 === up0 + 1, up0 + '→' + up1);
+  } else check('улучшение из Героя', false, 'нет upItem');
+  if (await page.locator('[data-act="unequip"]').count()) {
+    await act('unequip'); await page.waitForTimeout(80);
+    check('снять из Героя', await ev(() => !__RPG.UI.slot().eq.body));
+  } else check('снять из Героя', true, 'skip');
+  if (await page.locator('#modal.on [data-act="closeModal"]').count()) await act('closeModal');
   // ───── Силы ─────
   await ev(() => { const s = __RPG.UI.slot(); s.hero.level = 10; s.hero.bossPts = 1; __RPG.UI.refresh(); });
   await click('#nav button[data-t="skills"]');
@@ -248,9 +291,24 @@ let ok = 0, bad = 0; const check = (n, c, extra) => { if (c) { ok++; console.log
   const cn = page.locator('.node.concept').first();
   if (await cn.count()) { await cn.scrollIntoViewIfNeeded(); await cn.click(); await page.waitForTimeout(150); await page.locator('.ndet').scrollIntoViewIfNeeded(); await shot('skills-concept-card'); check('карточка концепта с описанием и лором', (await page.locator('.ndet').innerText()).length > 60); }
   else check('в ветке виден концепт-узел (.node.concept)', false);
-  await act('sub', '[data-v="echo"]'); await click('.node.can'); await click('#btnLearn'); sl = await slot();
-  check('узел Отголоска изучен', Object.keys(sl.hero.uspent).length === 1); await shot('15-skills-echo');
+  // Отголосок убран как подвкладка — древо внутри «Приёмы»
+  await act('sub', '[data-v="list"]'); await page.waitForTimeout(100);
+  check('нет вкладки Отголосок', await page.locator('.sksubs, .seg.small').locator('button:has-text("Отголосок")').count() === 0);
+  check('подвкладки Концепты/Приёмы видны', await page.locator('#skSubs button').count() === 2);
+  const echoNode = page.locator('.tree .node.can').first();
+  if (await echoNode.count()) { await echoNode.click(); await click('#btnLearn'); }
+  sl = await slot();
+  check('узел Отголоска изучен из Приёмов', Object.keys(sl.hero.uspent).length === 1); await shot('15-skills-echo');
+  await act('sub', '[data-v="conc"]'); await page.waitForTimeout(80);
+  check('после смены подвкладки сегмент на месте', await page.locator('#skSubs button').count() === 2 && await page.locator('#skSubs').isVisible());
   await act('sub', '[data-v="list"]'); await shot('15b-skills-list');
+  await act('sub', '[data-v="b0"]'); await page.waitForTimeout(80);
+  check('подсказка не перекрывает узлы', await page.evaluate(() => {
+    const help = document.querySelector('.skhelp'); const nodes = [...document.querySelectorAll('.tgraph .node')];
+    if (!help || !nodes.length) return true;
+    const hr = help.getBoundingClientRect();
+    return !nodes.some((n) => { const r = n.getBoundingClientRect(); return !(r.right < hr.left || r.left > hr.right || r.bottom < hr.top || r.top > hr.bottom); });
+  }));
   // слияние: берём концептуальный узел с fuse
   await ev(() => { const s = __RPG.UI.slot(), T = __RPG.D.TREES.maou; s.hero.level = 30; s.hero.spent = {}; const n = T.nodes.find((x) => x.id === 'P13'); const need = (id, seen = {}) => { const x = T.nodes.find((q) => q.id === id); if (seen[id]) return; seen[id] = 1; x.req.forEach((q) => need(q, seen)); s.hero.spent[id] = Math.max(1, s.hero.spent[id] || 0); }; need('P13'); delete s.hero.spent.P13; __RPG.UI.sub.skills = 'b1'; __RPG.UI.sub.node = 'P13'; __RPG.UI.refresh(); });
   await page.waitForTimeout(150); await shot('16-skills-fuse');

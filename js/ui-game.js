@@ -158,13 +158,13 @@
   UI.tabs.hero = function (s) {
     const h = s.hero, d = E.derive(s), cls = D.CLASSES[h.cls], race = D.RACES[h.race], c = E.collect(s);
     const mods = Object.keys(c.mods).filter((k) => c.mods[k] && D.MODN[k]).map((k) => `<span class="chip">${c.mods[k] > 0 && !/aken/.test(k) ? '+' : ''}${Math.round(c.mods[k] * 10) / 10} ${(D.MODN[k]).replace(/\s*%$/, '')}${/%$/.test(D.MODN[k]) ? '%' : ''}</span>`).join('');
-    const eq = Object.keys(D.SLOTS).map((sl) => { const it = s.eq[sl]; return `<button class="eqs" style="--rc:${it ? rar(it).c : '#444'}" data-act="${it ? 'itemOpen' : 'tab'}" data-id="${it ? it.id : ''}" data-t="inv"><span>${it ? D.BASES[it.k].ic : D.SLOT_IC[sl]}</span><small>${it ? esc(it.nm) + (it.up ? ' +' + it.up : '') : D.SLOTS[sl]}</small></button>`; }).join('');
+    const eq = Object.keys(D.SLOTS).map((sl) => { const it = s.eq[sl]; return `<button class="eqs" style="--rc:${it ? rar(it).c : '#444'}" data-act="${it ? 'itemOpen' : 'gearSlot'}" data-id="${it ? it.id : ''}" data-sl="${sl}" data-quiet="1"><span>${it ? D.BASES[it.k].ic : D.SLOT_IC[sl]}</span><small>${it ? esc(it.nm) + (it.up ? ' +' + it.up : '') : D.SLOTS[sl]}</small></button>`; }).join('');
     const st = s.stats, need = D.xpNeed(h.level);
     const xpTxt = h.level >= D.LEVEL_CAP ? 'МАКС' : fmt(h.xp) + ' / ' + fmt(need);
     return `<h2 class="herotitle">Герой</h2>
       <div class="herocard"><img class="herobg" src="assets/ui/hero_bg.webp" alt="" loading="lazy" decoding="async" width="640" height="702"><div class="heropor">${UI.por(h.portrait, 'xl', false)}</div><div class="hinfo"><h2 class="m0">${esc(h.name)}</h2><div class="dim">Король Демонов</div><div class="dim">Уровень ${h.level}${h.level >= D.LEVEL_CAP ? ' (макс.)' : ''}</div><div class="xpb">${bar(h.level >= D.LEVEL_CAP ? 1 : h.xp, h.level >= D.LEVEL_CAP ? 1 : need, 'xp')}<small>${xpTxt}</small></div></div></div>
       ${UI.statsCard(s, d)}
-      <div class="card"><b>Снаряжение</b><div class="eqgrid">${eq}</div></div>
+      <div class="card gearcard"><div class="row between center-v"><b>Снаряжение</b><button class="btn ghost small" data-act="forge" data-quiet="1">⚒️ Кузница</button></div><div class="eqgrid">${eq}</div><div class="small dim tl">Нажмите слот: надеть, сравнить, улучшить или снять.</div></div>
       <div class="card"><b>${race.ic} ${race.pn}</b> <span class="dim small">(прошлое: ${race.n})</span><div class="small tl dim">${race.pd}</div><b>${cls.ic} Перки класса</b><ul class="perks small">${cls.perks.map((p) => `<li><b>${p.n}</b> — ${p.d}</li>`).join('')}</ul><div class="small tl dim"><b>${cls.rc.n}:</b> копится в бою и усиливает навыки.</div></div>
       <div class="card"><b>Все бонусы</b><div class="chips">${mods || '<span class="dim">нет</span>'}</div></div>
       <div class="card small"><b>Путь</b><div class="dim">Вылазок: ${st.runs} · побед над боссами: ${st.wins} · поражений: ${st.deaths}<br>Врагов повержено: ${fmt(st.kills)} · создано: ${st.crafted} · добыто: ${st.gathered}<br>Заработано золота: ${fmt(st.goldEarned)} · время: ${Math.round((s.played || 0) / 60)} мин · мощь ${fmt(E.power(s))}</div></div>`;
@@ -224,22 +224,49 @@
     return head + `<div class="small dim">Сумка: ${s.inv.length} предм.</div><div class="fchips">${chips}</div><h4>Надето</h4>${eqs}<h4>В сумке</h4>${list.map((it) => itemRow(it, 'itemOpen', cmpTag(s, it))).join('') || '<div class="dim center pad">Ничего нет</div>'}`;
   };
   const cmpTag = (s, it) => { const cur = s.eq[it.sl]; if (!E.canUse(s.hero, it)) return '<span class="tag">не для класса</span>'; const dv = E.itemScore(it) - (cur ? E.itemScore(cur) : 0); return dv > 0.5 ? '<span class="tag up">▲</span>' : dv < -0.5 ? '<span class="tag dn">▼</span>' : ''; };
+  const labelOf = (k) => D.STAT_N[k] || D.FLAT[k] || (D.MODN[k] || k).replace(/\s*%$/, '');
+  const stVal = (it, k) => { const v = it.st[k] || 0; return Math.round(v * (D.STAT_N[k] || D.FLAT[k] ? 1 + 0.09 * (it.up || 0) : 1) * 10) / 10; };
+  UI.itemDiffHtml = function (it, cur) {
+    const keys = Array.from(new Set([].concat(Object.keys(it.st || {}), cur ? Object.keys(cur.st || {}) : [])));
+    if (!keys.length) return '';
+    const rows = keys.map((k) => {
+      const a = stVal(it, k), b = cur ? stVal(cur, k) : 0, d = Math.round((a - b) * 10) / 10;
+      const pct = !D.STAT_N[k] && !D.FLAT[k];
+      const cls = d > 0 ? 'ok' : d < 0 ? 'bad' : 'dim';
+      const sign = d > 0 ? '+' : '';
+      return `<div class="diffrow"><span>${esc(labelOf(k))}</span><b>${a}${pct ? '%' : ''}</b><em class="${cls}">${cur ? sign + d + (pct ? '%' : '') : (a > 0 ? '+' + a + (pct ? '%' : '') : '—')}</em></div>`;
+    }).join('');
+    return `<div class="diffbox"><div class="diffh small dim">${cur ? 'Сравнение с надетым' : 'Характеристики'}</div>${rows}</div>`;
+  };
   UI.act.filt = (el) => { UI.sub.filt = el.dataset.v; UI.refresh(false); };
   UI.act.useBuff = (el) => { const r = E.useConsOutside(UI.slot(), el.dataset.id); if (r) { UI.toast(r, 'bad'); UI.sfx('err'); } else { UI.toast('Эффект принят до конца вылазки', 'ok'); UI.sfx('heal'); UI.save(true); } UI.refresh(); };
   UI.act.itemOpen = (el) => UI.itemModal(+el.dataset.id);
   UI.itemModal = function (id) {
     const s = UI.slot(), it = E.findItem(s, id); if (!it) { UI.closeModal(); return; }
     const worn = s.eq[it.sl] === it, cur = !worn && s.eq[it.sl], cap = E.upCap(s), c = E.upCost(s, it);
-    const dv = cur ? E.itemScore(it) - E.itemScore(cur) : null;
-    UI.modal(`<div class="itemhead" style="--rc:${rar(it).c}"><span class="big-ic">${D.BASES[it.k].ic}</span><div class="grow tl"><h3 class="m0">${UI.itemName(it)}</h3><div class="dim small">${rar(it).n} · ${D.SLOTS[it.sl]} · ур. предмета ${it.il}${it.en ? ' · ✨ ' + D.ENCHANTS.find((e) => e.id === it.en).n : ''}</div></div></div>
-      <div class="il-list">${UI.itemStats(it)}</div>
-      ${cur ? `<div class="small dim tl">Сейчас надето: ${UI.itemName(cur)}. ${dv > 0 ? '<b class="ok">Лучше</b>' : dv < 0 ? '<b class="bad">Хуже</b>' : 'Равно'}</div>` : ''}
+    const matsOk = Object.keys(c.mats || {}).every((m) => (s.mats[m] || 0) >= c.mats[m]);
+    const matLine = Object.keys(c.mats || {}).map((m) => `${D.MATS[m].ic}${c.mats[m]}`).join(' ') || '';
+    UI.modal(`<div class="itemhead" style="--rc:${rar(it).c}"><span class="big-ic">${D.BASES[it.k].ic}</span><div class="grow tl"><h3 class="m0">${UI.itemName(it)}</h3><div class="dim small">${rar(it).n} · ${D.SLOTS[it.sl]} · ур. ${it.il}${it.en ? ' · ✨ ' + D.ENCHANTS.find((e) => e.id === it.en).n : ''}</div></div></div>
+      ${UI.itemDiffHtml(it, cur)}
+      ${cur ? `<div class="small tl">Сейчас: <b>${UI.itemName(cur)}</b></div>` : ''}
       ${!E.canUse(s.hero, it) ? '<div class="warnbox">Ваш класс не может использовать это оружие.</div>' : ''}
-      <div class="row gap wrap">${worn ? `<button class="btn ghost grow" data-act="unequip" data-id="${it.id}">Снять</button>` : `<button class="btn primary grow" data-act="equip" data-id="${it.id}" ${E.canUse(s.hero, it) ? '' : 'disabled'}>Надеть</button>`}
+      <div class="row gap wrap gearacts">${worn ? `<button class="btn ghost grow" data-act="unequip" data-id="${it.id}">Снять</button>` : `<button class="btn primary grow" data-act="equip" data-id="${it.id}" ${E.canUse(s.hero, it) ? '' : 'disabled'}>${cur ? 'Заменить' : 'Надеть'}</button>`}
       <button class="btn ghost" data-act="lockItem" data-id="${it.id}">${it.lock ? '🔒' : '🔓'}</button>
       ${worn ? '' : `<button class="btn ghost danger" data-act="sellOne" data-id="${it.id}">Продать 🪙${E.sellPrice(it)}</button>`}</div>
-      <div class="row gap wrap"><button class="btn ghost grow small" data-act="upItem" data-id="${it.id}" ${(it.up || 0) >= cap ? 'disabled' : ''}>⚒️ Улучшить +${(it.up || 0) + 1} (🪙${c.gold})</button>${(s.hero.prof1 === 'ench' || s.hero.prof2 === 'ench') ? `<button class="btn ghost grow small" data-act="enchOpen" data-id="${it.id}">✨ Зачаровать</button>` : ''}</div>
-      <button class="btn ghost wide" data-act="closeModal">Закрыть</button>`);
+      <button class="btn ghost wide" data-act="upItem" data-id="${it.id}" ${(it.up || 0) >= cap || s.gold < c.gold || !matsOk ? 'disabled' : ''}>⚒️ Улучшить до +${(it.up || 0) + 1} · 🪙${c.gold}${matLine ? ' · ' + matLine : ''}</button>
+      ${(s.hero.prof1 === 'ench' || s.hero.prof2 === 'ench') ? `<button class="btn ghost wide" data-act="enchOpen" data-id="${it.id}">✨ Зачаровать</button>` : ''}
+      <button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
+  };
+  UI.act.gearSlot = (el) => UI.gearSheet(el.dataset.sl);
+  UI.gearSheet = function (sl) {
+    const s = UI.slot(), cur = s.eq[sl], list = s.inv.filter((it) => it.sl === sl).sort((a, b) => E.itemScore(b) - E.itemScore(a) || b.r - a.r);
+    const curBlock = cur ? `<div class="card small tl"><div class="small dim">Надето</div><button class="item" style="--rc:${rar(cur).c}" data-act="itemOpen" data-id="${cur.id}" data-quiet="1"><span class="ico">${D.BASES[cur.k].ic}</span><span class="grow tl"><b>${UI.itemName(cur)}</b><small>${UI.itemStats(cur)}</small></span><span class="tag ok">надето</span></button></div>` : `<div class="small dim">Слот пуст</div>`;
+    const rows = list.map((it) => {
+      const dv = E.itemScore(it) - (cur ? E.itemScore(cur) : 0);
+      const tag = !E.canUse(s.hero, it) ? '<span class="tag">нельзя</span>' : dv > 0.5 ? '<span class="tag up">▲ лучше</span>' : dv < -0.5 ? '<span class="tag dn">▼ слабее</span>' : '<span class="tag">=</span>';
+      return `<button class="item gearpick" style="--rc:${rar(it).c}" data-act="itemOpen" data-id="${it.id}" data-quiet="1"><span class="ico">${D.BASES[it.k].ic}</span><span class="grow tl"><b>${UI.itemName(it)}</b><small>${rar(it).n} · ур.${it.il} ${UI.itemStats(it)}</small></span>${tag}</button>`;
+    }).join('') || '<div class="dim center pad">В сумке нет предметов для этого слота</div>';
+    UI.modal(`<h3>${D.SLOT_IC[sl]} ${D.SLOTS[sl]}</h3>${curBlock}<div class="small dim tl">В сумке</div><div class="mlist gearlist">${rows}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
   };
   UI.act.equip = (el) => { const r = E.equip(UI.slot(), +el.dataset.id); if (r) { UI.toast(r, 'bad'); UI.sfx('err'); } else UI.sfx('equip'); UI.save(true); UI.closeModal(); UI.refresh(); };
   UI.act.unequip = (el) => { const s = UI.slot(), it = E.findItem(s, +el.dataset.id); if (it) E.unequip(s, it.sl); UI.save(true); UI.closeModal(); UI.refresh(); };

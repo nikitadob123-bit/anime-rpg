@@ -280,5 +280,31 @@ t('нет бессмертия без цены: ни один навык/пас�
 t('имба-навыки доступны рано и сильны: ≥ 12 активных, множители ×2.8…×8.5, у каждого цена и КД', () => { const ks = Object.values(D.SKILLS).filter((k) => /^k_(wrath|rampage|titan|abyss|spear|unmake|edict|feast|chant|maw|flurry|bladestorm|oppress)$/.test(k.id)); assert.strictEqual(ks.length, 13); ks.forEach((k) => assert(k.mp && k.cd, k.id)); const mx = Math.max(...ks.map((k) => Math.max(...k.fx.filter((f) => f.k === 'dmg').map((f) => f.m * (f.hits && k.tgt !== 'rfoe' ? f.hits : 1), 0)))); assert(mx >= 8.5); const early = T.nodes.filter((n) => n.e.unlock && /^k_/.test(n.e.unlock) && n.lv <= 10 && D.SKILLS[n.e.unlock] && ks.includes(D.SKILLS[n.e.unlock])); assert(early.length >= 7, String(early.length)); });
 t('миграция сохранения со старыми узлами дерева: прогресс R*/P*/D*/E*/V*/C* жив', () => { const s = mk(); s.hero.level = 30; s.hero.spent = { R1: 5, P1: 2, P14: 1, D2: 1, E5: 2, V4: 1, C2: 1 }; const p = S.migrate(JSON.parse(JSON.stringify({ v: 4, active: 0, slots: [s] }))); const sp = p.slots[0].hero.spent; assert.deepStrictEqual(sp, s.hero.spent); assert(E.skillsOf(p.slots[0].hero).includes('k_bolt')); });
 
+console.log('v2.8.0: Силы без Отголоска, снаряжение героя');
+t('sw.js: cache arpg-v2.8.0', () => { const sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8'); assert(/VERSION = 'arpg-v2\.8\.0'/.test(sw)); });
+t('ui-skills: нет кнопки Отголосок, есть Концепты и Приёмы', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../js/ui-skills.js'), 'utf8');
+  assert(!src.includes('>🔆 Отголосок</button>'));
+  assert(src.includes('data-v="conc"') && src.includes('data-v="list"'));
+  assert(src.includes('skhelp'));
+  assert(src.includes('L${a.x.toFixed'));
+  assert(!src.includes('C${a.x.toFixed'));
+});
+t('экипировка/снятие/улучшение меняют статы (логика героя)', () => {
+  const s = mk('warrior', { prof1: 'smith', prof2: 'miner' }); s.gold = 99999; E.addMat(s, 'ing_cu', 40); E.addMat(s, 'ing_fe', 40);
+  const d0 = E.derive(s);
+  const it = E.genItem(E.rng(11), { base: 'body_h', il: 8, rarity: 2 });
+  E.addItem(s, it); assert.strictEqual(E.equip(s, it.id), '');
+  const d1 = E.derive(s); assert(d1.def > d0.def);
+  assert.strictEqual(E.upgrade(s, it), ''); assert(it.up === 1); assert(E.derive(s).def >= d1.def);
+  E.unequip(s, 'body'); assert(!s.eq.body); assert(E.derive(s).def < d1.def);
+});
+t('ui-game: gearSheet/itemDiffHtml для вкладки Герой', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../js/ui-game.js'), 'utf8');
+  assert(src.includes('gearSlot') && src.includes('gearSheet'));
+  assert(src.includes('itemDiffHtml'));
+});
+
+
 console.log(`\nТесты: ${pass} ✓, ${fail} ✗`);
 if (fail) { console.log(failed.join('\n')); process.exit(1); }
