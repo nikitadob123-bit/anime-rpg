@@ -281,7 +281,7 @@ t('имба-навыки доступны рано и сильны: ≥ 12 ак�
 t('миграция сохранения со старыми узлами дерева: прогресс R*/P*/D*/E*/V*/C* жив', () => { const s = mk(); s.hero.level = 30; s.hero.spent = { R1: 5, P1: 2, P14: 1, D2: 1, E5: 2, V4: 1, C2: 1 }; const p = S.migrate(JSON.parse(JSON.stringify({ v: 4, active: 0, slots: [s] }))); const sp = p.slots[0].hero.spent; assert.deepStrictEqual(sp, s.hero.spent); assert(E.skillsOf(p.slots[0].hero).includes('k_bolt')); });
 
 console.log('v2.8.0: Силы без Отголоска, снаряжение героя');
-t('sw.js: cache arpg-v2.9.0', () => { const sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8'); assert(/VERSION = 'arpg-v2\.9\.0'/.test(sw)); assert.strictEqual(require('../package.json').version, '2.9.0'); });
+t('sw.js: cache arpg-v2.10.0', () => { const sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8'); assert(/VERSION = 'arpg-v2\.10\.0'/.test(sw)); assert.strictEqual(require('../package.json').version, '2.9.0'); });
 t('ui-skills: нет кнопки Отголосок, есть Концепты и Приёмы', () => {
   const src = fs.readFileSync(path.join(__dirname, '../js/ui-skills.js'), 'utf8');
   assert(!src.includes('>🔆 Отголосок</button>'));
