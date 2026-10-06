@@ -111,7 +111,7 @@ t('переполнение ящика: старые закрытые письм
   M.deliver(s, f.slice(5, 40), NOW); M.ensure(s).list.forEach((x) => M.markRead(s, x.id)); M.deliver(s, f.slice(40), NOW);
   assert(s.mail.list.length <= M.MAX_LIST + 5); ['m0', 'm1', 'm2', 'm3', 'm4'].forEach((id) => assert(M.find(s, id), 'незабранный подарок пропал: ' + id));
 });
-t('sw.js: лента mail/* идёт мимо кэша (network-only)', () => { const sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8'); assert(/\/mail\//.test(sw)); assert(sw.includes('js/mail.js') && sw.includes('js/ui-mail.js')); assert(!/'mail\/inbox\.json'/.test(sw.split('const ASSETS')[1].split('];')[0]), 'лента не в прекэше'); });
+t('sw.js: лента mail/* идёт мимо кэша (network-only)', () => { const sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8'); assert(sw.includes('/\\/mail\\//.test(url.pathname)) return;')); assert(sw.includes('js/mail.js') && sw.includes('js/ui-mail.js')); assert(!/'mail\/inbox\.json'/.test(sw.split('const ASSETS')[1].split('];')[0]), 'лента не в прекэше'); });
 t('index.html подключает mail.js и ui-mail.js', () => { const h = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8'); assert(h.indexOf('js/mail.js') > h.indexOf('js/save.js')); assert(h.indexOf('js/ui-mail.js') > h.indexOf('js/ui-game.js') && h.indexOf('js/ui-mail.js') < h.indexOf('js/main.js')); });
 
 console.log(`\nПочта: ${pass} ✓, ${fail} ✗`);
