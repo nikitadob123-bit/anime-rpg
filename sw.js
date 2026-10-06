@@ -1,8 +1,8 @@
 /* Service worker: офлайн-режим. Ядро — в прекеше; CG и нейтральные портреты берутся из assets/vn/manifest.json, остальные настроения кэшируются при первом показе. */
-const VERSION = 'arpg-v2.8.2';
+const VERSION = 'arpg-v2.9.0';
 const CORE = `${VERSION}-core`, RUNTIME = `${VERSION}-rt`;
 const ASSETS = [
-  './', 'index.html', 'manifest.json', 'css/style.css', 'css/vn.css', 'css/demon.css', 'fonts/ruslan.woff2', 'fonts/philosopher.woff2',
+  './', 'index.html', 'manifest.json', 'css/style.css', 'css/vn.css', 'css/demon.css', 'css/mail.css', 'fonts/ruslan.woff2', 'fonts/philosopher.woff2',
   'js/data-core.js', 'js/data-stats.js', 'js/data-maou.js', 'js/data-maou2.js', 'js/data-prof.js', 'js/data-world.js', 'js/data-world2.js', 'js/data-crew.js', 'js/data-theme.js', 'js/data-story.js', 'js/data-story2.js', 'js/data-story3.js', 'js/data-romance.js',
   'js/portrait.js', 'js/engine.js', 'js/stats.js', 'js/combat.js', 'js/crew.js', 'js/save.js', 'js/mail.js', 'js/audio.js', 'js/fx.js', 'js/ui.js', 'js/ui-vn.js', 'js/ui-game.js', 'js/ui-hero.js', 'js/ui-crew.js', 'js/ui-skills.js', 'js/ui-play.js', 'js/ui-mail.js', 'js/main.js',
   'js/story/cast.js', 'js/story/core.js', 'js/story/enemies.js', 'js/story/ui-story.js', 'js/story/outline.js', 'js/story/arc01.js',
