@@ -113,6 +113,19 @@ t('переполнение ящика: старые закрытые письм
 });
 t('sw.js: лента mail/* идёт мимо кэша (network-only)', () => { const sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8'); assert(sw.includes('/\\/mail\\//.test(url.pathname)) return;')); assert(sw.includes('js/mail.js') && sw.includes('js/ui-mail.js')); assert(!/'mail\/inbox\.json'/.test(sw.split('const ASSETS')[1].split('];')[0]), 'лента не в прекэше'); });
 t('index.html подключает mail.js и ui-mail.js', () => { const h = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8'); assert(h.indexOf('js/mail.js') > h.indexOf('js/save.js')); assert(h.indexOf('js/ui-mail.js') > h.indexOf('js/ui-game.js') && h.indexOf('js/ui-mail.js') < h.indexOf('js/main.js')); });
+t('expires «только дата» действует весь день включительно', () => { const x = { expires: '2026-10-13' }; assert(!M.isExpired(x, Date.parse('2026-10-13T20:00:00Z'))); assert(M.isExpired(x, Date.parse('2026-10-14T00:30:00Z'))); assert(M.isExpired({ expires: '2026-10-13T10:00:00Z' }, Date.parse('2026-10-13T11:00:00Z'))); });
+t('tools/mail.js: add/list/remove/check работают с файлом и не пропускают ошибки', () => {
+  const { execFileSync } = require('child_process'), os = require('os'); const f = path.join(os.tmpdir(), 'inbox-test-' + process.pid + '.json');
+  fs.writeFileSync(f, JSON.stringify({ letters: [] })); const run = (args) => execFileSync('node', [path.join(__dirname, '../tools/mail.js')].concat(args), { env: Object.assign({}, process.env, { MAIL_FILE: f }), encoding: 'utf8', stdio: 'pipe' });
+  run(['add', '--title', 'Тест', '--body', 'А\\nБ', '--gold', '500', '--item', 'pot_hp2:2', '--item', 'flowers', '--item', 'ore_fe:3', '--gear', 'sword:epic', '--days', '7', '--date', '2026-10-06', '--min-level', '5']);
+  run(['add', '--title', 'Второе', '--sp', '1', '--id', 'second']);
+  const j = JSON.parse(fs.readFileSync(f, 'utf8')); assert.strictEqual(j.letters.length, 2); const a = j.letters[0];
+  assert(/^m-\d{8}-[a-z0-9]{4}$/.test(a.id), a.id); assert.notStrictEqual(a.id, j.letters[1].id); assert.strictEqual(a.body, 'А\nБ'); assert.strictEqual(a.expires, '2026-10-13'); assert.deepStrictEqual(a.conditions, { minLevel: 5 });
+  assert.deepStrictEqual(a.gifts, { gold: 500, cons: { pot_hp2: 2 }, presents: { flowers: 1 }, mats: { ore_fe: 3 }, gear: [{ base: 'sword', rarity: 'epic' }] });
+  assert.deepStrictEqual(M.parseFeed(j).errors, []); assert(run(['check']).includes('писем 2')); assert(run(['list']).includes('Второе'));
+  assert.throws(() => run(['add', '--title', 'x', '--item', 'nope'])); assert.throws(() => run(['add', '--title', 'x', '--gold', '-1'])); assert.throws(() => run(['add', '--title', 'x', '--id', 'second']));
+  run(['remove', 'second']); assert.strictEqual(JSON.parse(fs.readFileSync(f, 'utf8')).letters.length, 1); fs.unlinkSync(f);
+});
 
 console.log(`\nПочта: ${pass} ✓, ${fail} ✗`);
 if (fail) { console.log(failed.join('\n')); process.exit(1); }

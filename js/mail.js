@@ -150,7 +150,9 @@
     if (typeof m.arcBase !== 'number') m.arcBase = Math.floor(M.chapters(slot) / 10);
     return m;
   };
-  M.isExpired = (L, now) => { const t = parseT(L.expires); return Number.isFinite(t) && (now == null ? Date.now() : now) > t; };
+  // expires «2026-10-13» (только дата) — письмо действует весь этот день включительно
+  M.expiresAt = (L) => { let t = parseT(L && L.expires); if (Number.isFinite(t) && /^\d{4}-\d{2}-\d{2}$/.test(String(L.expires))) t += 864e5 - 1; return t; };
+  M.isExpired = (L, now) => { const t = M.expiresAt(L); return Number.isFinite(t) && (now == null ? Date.now() : now) > t; };
   M.canClaim = (slot, L, now) => !!L && M.hasGifts(L.gifts) && !M.ensure(slot).claimed[L.id] && !L.claimed && !M.isExpired(L, now);
   // подходит ли письмо этому герою сейчас
   M.eligible = function (slot, L, now) {
