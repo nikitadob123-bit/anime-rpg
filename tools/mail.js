@@ -97,6 +97,7 @@ if (cmd === 'add') {
 
   node tools/mail.js add --title "Заголовок" --body "Текст письма" [подарки] [срок] [условия]
       подарки:  --gold 500  --xp 200  --sp 1  --item pot_hp2:3 (можно несколько)  --gear sword:rare[:уровень] [--gear-name "Имя"]
+                редкость 0…7: common uncommon rare unique epic legend mythic divine (8+ ещё не открыты)
       срок:     --days 7  или  --expires 2026-12-31      дата письма: --date 2026-10-10 (письмо придёт в этот день)
       условия:  --min-level 10  --min-chapter 5  --new-players  --created-before 2026-10-01
       прочее:   --from "Ильвара"  --id my-letter-1  --dry-run (только показать)
