@@ -306,6 +306,14 @@ t('ui-game: gearSheet/itemDiffHtml для вкладки Герой', () => {
 });
 
 console.log('v2.10.0: 11 редкостей снаряжения');
+t('UI: файлы, где есть D.XXX, объявляют D (иначе ReferenceError в браузере)', () => {
+  for (const f of fs.readdirSync(path.join(__dirname, '../js')).filter((f) => /^ui|^main/.test(f))) {
+    const src = fs.readFileSync(path.join(__dirname, '../js', f), 'utf8');
+    if (/(^|[^.\w])D\.[A-Z_]/m.test(src)) assert(/\bD = RPG\.D|\{[^}]*\bD\b[^}]*\} = RPG/.test(src), f + ': D не объявлен');
+  }
+  const ui = fs.readFileSync(path.join(__dirname, '../js/ui-game.js'), 'utf8');
+  assert(/UI\.act\.rarInfo\s*=/.test(ui) && /UI\.rarBadge\s*=/.test(ui), 'справка «Редкости» и бейдж редкости в UI');
+});
 const RAR_N = ['Обычный', 'Необычный', 'Редкий', 'Уникальный', 'Эпический', 'Легендарный', 'Мифический', 'Божественный', 'Концептуальный', 'Исток', 'До существования'];
 t('лестница: 11 редкостей по порядку, свои цвета, 8+ заблокированы', () => {
   assert.deepStrictEqual(D.RARITY.map((r) => r.n), RAR_N);
