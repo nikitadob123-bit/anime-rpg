@@ -2,7 +2,7 @@
 (function () {
   const RPG = globalThis.RPG || (globalThis.RPG = {});
   const S = RPG.S = {};
-  S.VERSION = 5;
+  S.VERSION = 6;
   S.PREFIX = 'arpg.';
   S.SLOTS = 3;
   S.AVATARS = ['🦉', '🐺', '🦊', '🐉', '🦅', '🌙', '⭐', '🔥', '❄️', '🍀', '⚔️', '🛡️'];
@@ -16,7 +16,7 @@
     return { v: S.VERSION, id, nick: String(nick || 'Игрок').trim().slice(0, 14) || 'Игрок', avatar: avatar || S.AVATARS[0], created: now || Date.now(), last: now || Date.now(), settings: S.defaultSettings(), slots: new Array(S.SLOTS).fill(null), active: 0, seenIntro: {} };
   };
 
-  // ───── Миграции: v1 → v2 → v3 ─────
+  // ───── Миграции: v1 → … → v6 ─────
   S.migrations = {
     1: function (p) { // v1: слот хранил party/tut/bossPts не везде, настройки были плоскими
       p.slots = (p.slots || []).map(s => { if (!s) return s; s.party = s.party || []; s.tut = s.tut || {}; s.hero = s.hero || {}; s.hero.bossPts = s.hero.bossPts || 0; s.stats = Object.assign({ kills: 0, runs: 0, wins: 0, deaths: 0, crafted: 0, gathered: 0, goldEarned: 0 }, s.stats || {}); return s; });
@@ -44,6 +44,12 @@
     4: function (p) { // v4 → v5: 8 характеристик, ручные очки (hero.alloc), кап уровня 100, субстаты считаются из статов — прогресс не теряется
       p.slots = (p.slots || []).map((s) => { if (!s) return s; const h = s.hero = s.hero || {}; h.alloc = h.alloc || {}; h.statVer = 5; h.level = h.level || 1; s.rev = (s.rev || 0) + 1; return s; });
       p.v = 5; return p;
+    },
+    5: function (p) { // v5 → v6: 11 редкостей снаряжения. Старые 0…4 → по названию (Эпический 3→4, Легендарный 4→5), статы сохраняются, недостающие линии добавляются
+      const E = RPG.E, OLD = { 0: 0, 1: 1, 2: 2, 3: 4, 4: 5 };
+      const fix = (it) => { if (!it || typeof it !== 'object' || it.gv >= 2) return; if (E && E.migrateItem) E.migrateItem(it); else { it.r = OLD[it.r | 0] != null ? OLD[it.r | 0] : it.r; it.gv = 2; } };
+      p.slots = (p.slots || []).map((s) => { if (!s) return s; (E && E.slotItems ? E.slotItems(s) : (s.inv || []).concat(Object.values(s.eq || {}))).forEach(fix); s.rev = (s.rev || 0) + 1; return s; });
+      p.v = 6; return p;
     }
   };
   S.migrate = function (p) {

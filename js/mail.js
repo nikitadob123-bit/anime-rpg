@@ -7,7 +7,8 @@
   M.FEED = 'mail/inbox.json';
   M.MAX_LIST = 60;                          // в ящике держим не больше 60 писем (старые прочитанные и забранные — удаляются первыми)
   M.ID_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/;
-  M.RARITY_IDS = ['common', 'uncommon', 'rare', 'epic', 'legend'];
+  M.RARITY_IDS = D.RARITY.slice(0, D.RARITY_OPEN + 1).map((r) => r.id);   // common … divine (0…7); 8+ («Концептуальный» и выше) ещё не открыты
+  M.RARITY_ALIAS = { legendary: 'legend', myth: 'mythic', god: 'divine' };
   // типы подарков: ключ → описание (для валидации, CLI и документации)
   M.GIFT_TYPES = {
     gold: 'золото 🪙 (число)',
@@ -16,13 +17,14 @@
     cons: 'расходники: { id: количество } — зелья, склянки, еда',
     mats: 'материалы: { id: количество } — руда, травы, слитки, эссенции',
     presents: 'подарки для Свиты: { id: количество }',
-    gear: 'снаряжение: [{ base, rarity, il?, nm? }] — base из списка, rarity 0–4 или common/uncommon/rare/epic/legend, il — уровень (по умолчанию = уровень героя)'
+    gear: 'снаряжение: [{ base, rarity, il?, nm? }] — base из списка, rarity 0–7 или common/uncommon/rare/unique/epic/legend/mythic/divine, il — уровень (по умолчанию = уровень героя)'
   };
   const MAXN = 10000000;
   const isInt = (n) => typeof n === 'number' && Number.isInteger(n) && n > 0 && n <= MAXN;
   const parseT = (s) => { if (s == null || s === '') return NaN; const t = typeof s === 'number' ? s : Date.parse(s); return Number.isFinite(t) ? t : NaN; };
   M.parseT = parseT;
-  const rarIdx = (r) => (typeof r === 'number' ? r : M.RARITY_IDS.indexOf(String(r)));
+  const rarIdx = (r) => (typeof r === 'number' ? r : M.RARITY_IDS.indexOf(M.RARITY_ALIAS[String(r)] || String(r)));
+  M.rarIdx = rarIdx;
 
   // ───── Подарки ─────
   // Подарки письма: объект в формате ['give'] сюжета ({ gold, cons:{}, mats:{} … }) или массив таких объектов (сливаются).
@@ -55,7 +57,8 @@
         v.forEach((it, i) => {
           if (!it || typeof it !== 'object') { err.push(`gear[${i}]: нужен объект { base, rarity }`); return; }
           if (!D.BASES[it.base]) err.push(`gear[${i}]: неизвестный base «${it.base}»`);
-          const r = rarIdx(it.rarity == null ? 0 : it.rarity); if (!(r >= 0 && r <= 4)) err.push(`gear[${i}]: rarity — 0…4 или ${M.RARITY_IDS.join('/')}`);
+          const r = rarIdx(it.rarity == null ? 0 : it.rarity), lockd = typeof it.rarity === 'number' ? it.rarity >= D.RARITY_OPEN + 1 && it.rarity < D.RARITY.length : D.RARITY_IDS.indexOf(String(it.rarity)) > D.RARITY_OPEN;
+          if (!(Number.isInteger(r) && r >= 0 && r <= D.RARITY_OPEN)) err.push(`gear[${i}]: rarity — 0…${D.RARITY_OPEN} или ${M.RARITY_IDS.join('/')}` + (lockd ? ' («' + D.RARITY[typeof it.rarity === 'number' ? it.rarity : D.RARITY_IDS.indexOf(String(it.rarity))].n + '» и выше ещё не открыты)' : ''));
           if (it.il != null && !(isInt(it.il) && it.il <= D.LEVEL_CAP)) err.push(`gear[${i}]: il — уровень 1…${D.LEVEL_CAP}`);
           if (it.nm != null && (typeof it.nm !== 'string' || it.nm.length > 40)) err.push(`gear[${i}]: nm — строка до 40 символов`);
         });
@@ -75,8 +78,8 @@
     for (const id in (g.cons || {})) if (D.CONS[id]) out.push({ ic: D.CONS[id].ic, n: D.CONS[id].n, q: g.cons[id] });
     for (const id in (g.mats || {})) if (D.MATS[id]) out.push({ ic: D.MATS[id].ic, n: D.MATS[id].n, q: g.mats[id] });
     for (const id in (g.presents || {})) if (D.GIFTS[id]) out.push({ ic: D.GIFTS[id].ic, n: D.GIFTS[id].n, q: g.presents[id] });
-    (g.gear || []).forEach((it) => { const B = D.BASES[it.base]; if (B) { const r = D.RARITY[rarIdx(it.rarity || 0)] || D.RARITY[0]; out.push({ ic: B.ic, n: it.nm || B.n, q: 1, c: r.c, r: r.n }); } });
-    if (g.item === 'tear') out.push({ ic: '📿', n: 'Слеза Осколка', q: 1, c: D.RARITY[4].c });
+    (g.gear || []).forEach((it) => { const B = D.BASES[it.base]; if (B) { const ri = rarIdx(it.rarity || 0), r = D.RARITY[ri] || D.RARITY[0]; out.push({ ic: B.ic, n: it.nm || B.n, q: 1, c: r.c, r: r.n, ri: D.RARITY[ri] ? ri : 0 }); } });
+    if (g.item === 'tear') out.push({ ic: '📿', n: 'Слеза Осколка', q: 1, c: D.RARITY[5].c, r: D.RARITY[5].n, ri: 5 });
     return out;
   };
   // выдать подарки (seed — id письма: вещи одинаковы при любом устройстве)
@@ -90,7 +93,7 @@
     for (const id in (g.presents || {})) if (D.GIFTS[id]) { slot.gifts = slot.gifts || {}; slot.gifts[id] = (slot.gifts[id] || 0) + g.presents[id]; }
     (g.gear || []).forEach((x, i) => {
       if (!D.BASES[x.base]) return;
-      const it = E.genItem(E.rng(E.hash(String(seed) + ':' + i)), { base: x.base, rarity: Math.max(0, Math.min(4, rarIdx(x.rarity || 0))), il: x.il || slot.hero.level || 1 });
+      const it = E.genItem(E.rng(E.hash(String(seed) + ':' + i)), { base: x.base, rarity: Math.max(0, Math.min(D.RARITY_OPEN, rarIdx(x.rarity || 0) | 0)), il: x.il || slot.hero.level || 1 });
       if (x.nm) it.nm = String(x.nm).slice(0, 40);
       got.items.push(E.addItem(slot, it));
     });

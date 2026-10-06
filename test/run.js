@@ -2,7 +2,7 @@
 const fs = require('fs'), path = require('path'), assert = require('assert');
 const RPG = require('../js/data-core.js');
 require('../js/data-stats.js');
-['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'combat', 'crew', 'save'].forEach((f) => require('../js/' + f + '.js'));
+['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save'].forEach((f) => require('../js/' + f + '.js'));
 const { D, E, C, S } = RPG;
 let pass = 0, fail = 0; const failed = [];
 const t = (name, fn) => { try { fn(); pass++; } catch (e) { fail++; failed.push(name + ': ' + e.message); console.log('  ✗', name, '\n     ', e.message); } };
@@ -61,7 +61,7 @@ t('предметы в бою: зелье лечит, расходуется', (
 t('сложность повышает силу врагов', () => { const a = C.unitFromEnemy('wolf', 5, 0, false, 'e'), b = C.unitFromEnemy('wolf', 5, 3, false, 'e'); assert(b.maxHp > a.maxHp * 1.5 && b.atk > a.atk); });
 
 console.log('Лут, магазин, вылазки');
-t('редкости растут с удачей; легендарки получают имя', () => { const cnt = (luck) => { const r = E.rng(3); let n = 0; for (let i = 0; i < 4000; i++) if (E.rollRarity(r, luck, 0) >= 3) n++; return n; }; assert(cnt(2.2) > cnt(1)); const it = E.genItem(E.rng(4), { base: 'sword', il: 20, rarity: 4 }); assert(it.nm.includes('«')); });
+t('редкости растут с удачей; легендарки получают имя', () => { const cnt = (luck) => { const r = E.rng(3); let n = 0; for (let i = 0; i < 4000; i++) if (E.rollRarity(r, luck, 0, 40) >= 3) n++; return n; }; assert(cnt(2.2) > cnt(1)); const it = E.genItem(E.rng(4), { base: 'sword', il: 20, rarity: 5 }); assert(it.nm.includes('«')); });
 t('характеристики предмета растут с редкостью и уровнем', () => { const v = (r, il) => E.itemScore(E.genItem(E.rng(1), { base: 'sword', il, rarity: r })); assert(v(4, 10) > v(2, 10) && v(2, 10) > v(0, 10) && v(0, 20) > v(0, 5)); });
 t('цены: продажа < покупка; лучше предмет — дороже', () => { const a = E.genItem(E.rng(1), { base: 'sword', il: 5, rarity: 0 }), b = E.genItem(E.rng(1), { base: 'sword', il: 5, rarity: 3 }); assert(E.sellPrice(a) < E.buyPrice(a) && E.itemValue(b) > E.itemValue(a)); });
 t('лавка: покупка списывает золото и добавляет предмет; нехватка золота — отказ', () => { const s = mk('warrior'); s.gold = 0; assert(E.buyShopItem(s, 0)); s.gold = 99999; const n = s.inv.length; assert.strictEqual(E.buyShopItem(s, 0), ''); assert.strictEqual(s.inv.length, n + 1); assert(s.gold < 99999); });
@@ -239,7 +239,7 @@ t('очки характеристик: уровень 1 → 0, ур. 10 → 45;
 t('сброс очков за золото: цена растёт с уровнем, золото списывается', () => { const s = mk(); s.hero.level = 20; E.statCommit(s, { agi: 10 }); const c = E.statRespecCost(s.hero); assert(c > 0); s.gold = c - 1; assert.strictEqual(E.statRespec(s), false); s.gold = c + 5; assert.strictEqual(E.statRespec(s), true); assert.strictEqual(s.gold, 5); assert.strictEqual(E.statSpent(s.hero), 0); assert.strictEqual(E.statFree(s.hero), 95); });
 t('субстаты: все 20+ на месте, значения в пределах cap, крит растёт с Удачей, разбивка источников сходится', () => { assert(D.SUBS.length >= 21); const s = mk(); s.hero.level = 40; const a = E.derive(s); D.SUBS.forEach((def) => { const v = a.sub[def.id]; assert(Number.isFinite(v) && v >= def.cap[0] && v <= def.cap[1], def.id + '=' + v); }); E.statCommit(s, { luk: 150 }); const b = E.derive(s); assert(b.sub.crit > a.sub.crit && b.sub.drop >= a.sub.drop); const rows = E.subRows(s); assert.strictEqual(rows.length, D.SUBS.length); rows.forEach((r) => { assert(r.formula && r.parts); if (r.raw < r.cap[1] && r.raw > r.cap[0]) assert(Math.abs(r.raw - r.v) < 0.5, r.id + ' ' + r.raw + ' vs ' + r.v); }); });
 t('стихии: 9 стихий + физика, сопротивление ≤ 75%, Пустота зовётся Энтропией', () => { const s = mk(); const rows = E.elemRows(s); assert.strictEqual(rows.length, 10); ['fire', 'ice', 'bolt', 'earth', 'wind', 'water', 'light', 'dark', 'arcane', 'phys'].forEach((e) => assert(rows.find((r) => r.id === e), e)); assert(/Пустота|Энтроп/.test(D.ELEMS.arcane.n)); s.hero.level = 100; E.statCommit(s, { spi: 495 }); E.elemRows(s).forEach((r) => assert(r.res <= 75 && r.res >= -50)); });
-t('миграция v4 → v5: прогресс цел, alloc создан', () => { const p = S.migrate(JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/v3.json'), 'utf8'))); p.v = 4; const sl = p.slots[0]; delete sl.hero.alloc; sl.hero.level = 7; sl.gold = 123; const q = S.migrate(JSON.parse(JSON.stringify(p))); assert.strictEqual(q.v, 5); assert.deepStrictEqual(q.slots[0].hero.alloc, {}); assert.strictEqual(q.slots[0].hero.level, 7); assert.strictEqual(q.slots[0].gold, 123); assert(S.validate(q)); });
+t('миграция v4 → v5: прогресс цел, alloc создан', () => { const p = S.migrate(JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/v3.json'), 'utf8'))); p.v = 4; const sl = p.slots[0]; delete sl.hero.alloc; sl.hero.level = 7; sl.gold = 123; const q = S.migrate(JSON.parse(JSON.stringify(p))); assert.strictEqual(q.v, S.VERSION); assert.deepStrictEqual(q.slots[0].hero.alloc, {}); assert.strictEqual(q.slots[0].hero.level, 7); assert.strictEqual(q.slots[0].gold, 123); assert(S.validate(q)); });
 t('кап уровня 100, кривая опыта конечна и монотонна, мягкий рост', () => { assert.strictEqual(D.LEVEL_CAP, 100); let prev = 0; for (let l = 1; l < 100; l++) { const x = D.xpNeed(l); assert(Number.isFinite(x) && x > prev, 'xp ' + l); prev = x; } assert(D.xpNeed(99) / D.xpNeed(98) < 1.12); const s = mk(); E.addXp(s, 1e12); assert.strictEqual(s.hero.level, 100); });
 t('враги: стихии (Церковь — свет, нежить — тьма), все навыки существуют, враги до ур. 100+', () => { let holy = 0, dark = 0; Object.keys(D.ENEMIES).forEach((id) => { const e = D.ENEMIES[id]; e.sk.forEach((k) => assert(D.ESK[k] || D.SKILLS[k], id + ' ' + k)); if (e.el === 'light') holy++; if (e.el === 'dark') dark++; }); assert(holy >= 5 && dark >= 8); const u = C.unitFromEnemy('gatekeeper', 130, 5, false, 'e0'); assert(u.maxHp > 0 && Number.isFinite(u.maxHp) && u.lv <= D.ENEMY_LV_CAP); });
 t('бой: блок режет физический урон, двойной удар бьёт вдвое, точность съедает уклонение', () => { const hit = (mod) => { const s = mk('warrior'); s.hero.level = 10; const P = C.unitFromSlot(s), Tg = C.unitFromEnemy('rat', 10, 0, false, 'e0'); Tg.def = 0; Tg.eva = 0; Tg.hp = Tg.maxHp = 1e6; mod(P, Tg); const B = C.create([P], [Tg], E.rng(5), {}); P.spd = 999; const u = np(B, P); const hp0 = Tg.hp; C.act(B, u, { t: 'basic', tid: Tg.id }); return { B, d: hp0 - Tg.hp }; }; const base = hit(() => {}); const blk = hit((P, T) => { T.sub = Object.assign({}, T.sub, { blockCh: 100, blockPow: 50 }); }); assert(blk.B.ev.some((e) => e.s === 'Блок!')); assert(blk.d < base.d * 0.75, blk.d + ' vs ' + base.d); const dbl = hit((P) => { P.sub = Object.assign({}, P.sub, { dbl: 100 }); }); assert(dbl.B.ev.some((e) => e.s === 'Двойной удар!')); assert(dbl.d > base.d * 1.3); const ev1 = hit((P, T) => { T.eva = 70; P.sub = Object.assign({}, P.sub, { acc: 80 }); }); assert(!ev1.B.ev.some((e) => e.t === 'miss')); });
@@ -303,6 +303,117 @@ t('ui-game: gearSheet/itemDiffHtml для вкладки Герой', () => {
   const src = fs.readFileSync(path.join(__dirname, '../js/ui-game.js'), 'utf8');
   assert(src.includes('gearSlot') && src.includes('gearSheet'));
   assert(src.includes('itemDiffHtml'));
+});
+
+console.log('v2.10.0: 11 редкостей снаряжения');
+const RAR_N = ['Обычный', 'Необычный', 'Редкий', 'Уникальный', 'Эпический', 'Легендарный', 'Мифический', 'Божественный', 'Концептуальный', 'Исток', 'До существования'];
+t('лестница: 11 редкостей по порядку, свои цвета, 8+ заблокированы', () => {
+  assert.deepStrictEqual(D.RARITY.map((r) => r.n), RAR_N);
+  assert.strictEqual(new Set(D.RARITY.map((r) => r.c)).size, 11); assert.strictEqual(new Set(D.RARITY.map((r) => r.id)).size, 11);
+  D.RARITY.forEach((r, i) => { assert.strictEqual(!!r.lock, i >= 8, r.n); assert(r.g && r.mul > 0 && r.am > 0 && r.pm > 0, r.n); });
+  assert.strictEqual(D.RARITY_OPEN, 7);
+  for (let i = 1; i < 11; i++) { const a = D.RARITY[i - 1], b = D.RARITY[i]; assert(b.mul > a.mul && b.am > a.am && b.pm > a.pm && b.val > a.val && b.up >= a.up, b.n); assert(b.attr[0] >= a.attr[0] && b.aff[0] >= a.aff[0] && b.fx.length >= a.fx.length, b.n); }
+});
+t('заблокированные (8+) не выпадают: тысячи бросков дропа, лавка, ремесло, сундуки, письма', () => {
+  const rng = E.rng(99); let mx = 0; const seen = new Set();
+  for (let i = 0; i < 30000; i++) { const lv = 1 + (i % 130), luck = 1 + (i % 40) / 2, r = E.rollRarity(rng, luck, i % 3, lv, { boss: i % 2 === 0 }); mx = Math.max(mx, r); seen.add(r); }
+  assert(mx <= 7, 'дроп ' + mx); assert(seen.has(7) && seen.has(6), 'мифические и божественные встречаются при огромной удаче');
+  for (let lv = 1; lv <= 130; lv += 7) E.rarityWeights(lv, 50, { boss: true }).forEach((w, i) => { if (i >= 8) assert.strictEqual(w, 0); });
+  const s = mk(); s.prog.cleared = {}; for (let t2 = 0; t2 < 6; t2++) { D.DUNGEONS.slice(0, t2).forEach((d) => { s.prog.cleared[d.id] = 1; }); for (let k = 0; k < 20; k++) { s.shopSeed = k; E.shopStock(s).forEach((it) => assert(it.r <= 4, 'лавка ' + it.r)); } }
+  assert(E.craftWeights(20, 1).length <= 6);
+  for (let i = 0; i < 200; i++) { const it = E.genItem(E.rng(i), { il: 50, rarity: 8 + (i % 3) }); assert(it.r <= 7); }
+  const sl = mk(); sl.hero.level = 20; for (let i = 0; i < 300; i++) { const en = { eid: 'rat', lv: 1 + (i % 130), role: i % 2 ? 'boss' : 'mini', elite: true }; E.rollLoot(E.rng(i), sl, en, { mods: { drop: 400 }, tier: D.TIERS[5] }).items.forEach((it) => assert(it.r <= 7)); }
+});
+t('ранний контент: высокие редкости не выпадают; Божественное — только боссы поздней игры', () => {
+  const w5 = E.rarityWeights(5, 3, { boss: true }), w30 = E.rarityWeights(30, 3, {}), w90 = E.rarityWeights(90, 3, {}), w90b = E.rarityWeights(90, 3, { boss: true });
+  assert(w5.slice(3).every((x) => x === 0)); assert(w30[5] > 0 && w30[6] === 0 && w30[7] === 0); assert(w90[7] === 0 && w90b[7] > 0);
+  const tot = w90b.reduce((a, b) => a + b, 0); assert(w90b[7] / tot < 0.01, 'Божественное — меньше 1%'); assert(w90b[0] > w90b[2] && w90b[2] > w90b[4] && w90b[4] > w90b[6]);
+});
+const avgOf = (fn, n) => { let s = 0; for (let i = 0; i < n; i++) s += fn(i); return s / n; };
+t('статы монотонно растут с редкостью на одном уровне предмета (основа, характеристики, аффиксы, оценка, цена)', () => {
+  ['sword', 'body_h', 'ring', 'staff'].forEach((b) => {
+    let prev = null;
+    for (let r = 0; r <= 10; r++) {
+      const items = []; for (let i = 0; i < 40; i++) items.push(E.genItem(E.rng(1000 + i), { base: b, il: 40, rarity: r, dev: 1 }));
+      const base = avgOf((i) => { const it = items[i]; return Object.keys(D.BASES[b].p).reduce((a, k) => a + it.st[k], 0); }, 40);
+      const attr = avgOf((i) => E.gearLines(items[i]).filter((l) => l.kind === 'attr').reduce((a, l) => a + l.v, 0), 40);
+      const score = avgOf((i) => E.itemScore(items[i]), 40), price = avgOf((i) => E.sellPrice(items[i]), 40);
+      const cur = { base, attr, score, price };
+      if (prev) for (const k in cur) assert(cur[k] > prev[k], `${b} ${k}: ${D.RARITY[r].n} ${cur[k]} ≤ ${prev[k]}`);
+      prev = cur;
+    }
+  });
+  const v = (r, il) => E.itemScore(E.genItem(E.rng(1), { base: 'sword', il, rarity: r })); assert(v(0, 20) > v(0, 5) && v(5, 60) > v(5, 30));
+});
+t('число линий по редкостям: характеристики, аффиксы, особые свойства (уник./миф./божеств.)', () => {
+  for (let r = 0; r <= 10; r++) {
+    const R0 = D.RARITY[r];
+    for (let i = 0; i < 60; i++) {
+      const it = E.genItem(E.rng(7 * i + r), { il: 1 + (i * 3) % 120, rarity: r, dev: 1 }), L = E.gearLines(it);
+      const nA = L.filter((l) => l.kind === 'attr').length, nF = L.filter((l) => l.kind === 'aff').length, fx = it.fx.map((id) => D.GEAR_FX_BY[id].t).sort().join('');
+      assert(nA >= R0.attr[0] && nA <= R0.attr[1], `${R0.n}: характеристик ${nA}`); assert(nF >= R0.aff[0] && nF <= R0.aff[1], `${R0.n}: аффиксов ${nF}`);
+      assert.strictEqual(fx, R0.fx.slice().sort().join(''), R0.n + ' свойства');
+      assert.strictEqual(L.filter((l) => l.kind === 'fx').length, it.fx.length);
+    }
+  }
+  assert.strictEqual(D.RARITY[0].aff[1], 0); assert.strictEqual(D.RARITY[1].aff[0], 1); assert(D.RARITY[3].fx.includes('u') && D.RARITY[6].fx.includes('m') && D.RARITY[7].fx.includes('d'));
+  assert(E.genItem(E.rng(4), { base: 'sword', il: 30, rarity: 6 }).nm.includes('«') && E.genItem(E.rng(4), { base: 'sword', il: 30, rarity: 7 }).nm.includes('«'));
+});
+// куда смотреть в юните боя для каждого ключа
+const UNIT_PATH = (k) => {
+  if (D.STATS.includes(k)) return (u) => [u.atk, u.mag, u.maxHp, u.maxMp, u.def, u.res, u.spd, u.crit, u.eva, u.hpow].join();
+  const flat = { atk: 'atk', mag: 'mag', def: 'def', res: 'res', hp: 'maxHp', mp: 'maxMp', crit: 'crit', critDmg: 'critDmg', eva: 'eva', spd: 'spd', heal: 'hpow' };
+  if (flat[k]) return (u) => u[flat[k]];
+  if (k.startsWith('res_')) return (u) => u.sub.resEl[k.slice(4)];
+  if (k === 'allStat') return (u) => [u.atk, u.mag, u.maxHp].join();
+  if (D.SUB_BY[k] && !['lifesteal', 'counter', 'thorns', 'hpRegen', 'mpRegen'].includes(k)) return (u) => u.sub[k];
+  return (u) => u.mods[k];
+};
+const COMBAT_SRC = fs.readFileSync(path.join(__dirname, '../js/combat.js'), 'utf8') + fs.readFileSync(path.join(__dirname, '../js/stats.js'), 'utf8');
+t('каждый аффикс и особое свойство меняет боевые параметры героя и читается боем', () => {
+  const keys = D.GEAR_AFF.map((a) => a.k).concat(D.GEAR_FX.map((f) => f.k)); assert(keys.length >= 40); assert.strictEqual(new Set(keys).size, keys.length, 'ключи не пересекаются');
+  keys.forEach((k) => {
+    const s = mk('warrior'); s.hero.level = 30; const get = UNIT_PATH(k); const u0 = C.unitFromSlot(s);
+    const a = D.GEAR_AFF_BY[k], f = D.GEAR_FX.find((x) => x.k === k);
+    const it = E.genItem(E.rng(3), { base: 'ring', il: 30, rarity: 0 }); it.st = { [k]: a && a.frac ? 0.2 : f && f.sign ? -10 : f && f.fixed ? f.fixed : 10 }; if (f) it.fx = [f.id];
+    E.addItem(s, it); assert.strictEqual(E.equip(s, it.id), ''); const u1 = C.unitFromSlot(s);
+    assert.notStrictEqual(String(get(u1)), String(get(u0)), 'не влияет: ' + k);
+    if (!D.STATS.includes(k) && !D.FLAT[k] && k !== 'allStat' && !k.startsWith('dmg_') && !k.startsWith('res_') && !['crit', 'critDmg', 'eva', 'spd', 'heal'].includes(k)) assert(new RegExp('\\.' + k + '\\b').test(COMBAT_SRC), 'бой не читает ' + k);
+  });
+  assert(/'dmg_' \+ el/.test(COMBAT_SRC) && /resEl\[el\]/.test(COMBAT_SRC));
+});
+t('бой: «Весь урон», «Урон физ.», бронепробитие и сопротивление огню реально меняют урон', () => {
+  const hit = (st) => { const s = mk('warrior'); s.hero.level = 20; if (st) { const it = E.genItem(E.rng(3), { base: 'ring', il: 20, rarity: 0 }); it.st = st; E.addItem(s, it); E.equip(s, it.id); } const P = C.unitFromSlot(s); const en = C.unitFromEnemy('rat', 20, 0, false, 'e0'); en.weak = []; en.resist = []; en.el = null; en.eva = 0; en.def = 400; en.hp = en.maxHp = 1e7; const B = C.create([P], [en], E.rng(5), {}); P.crit = 0; P.sub.dbl = 0; const u = np(B, P); C.act(B, u, { t: 'basic', tid: 'e0' }); return 1e7 - en.hp; };
+  const h0 = hit(null); assert(hit({ dmg: 30 }) > h0 * 1.2); assert(hit({ dmg_phys: 30 }) > h0 * 1.2); assert(hit({ pen: 25 }) > h0);
+  const burn = (st) => { const s = mk('warrior'); s.hero.level = 20; if (st) { const it = E.genItem(E.rng(3), { base: 'ring', il: 20, rarity: 0 }); it.st = st; E.addItem(s, it); E.equip(s, it.id); } const P = C.unitFromSlot(s); P.eva = 0; P.sub.blockCh = 0; P.hp = P.maxHp = 1e7; const en = C.unitFromEnemy('imp', 20, 0, false, 'e0'); en.sk = ['e_fire']; const B = C.create([P], [en], E.rng(9), {}); for (let i = 0; i < 60 && !B.over; i++) { const u = C.next(B); if (u === P) C.act(B, u, { t: 'wait' }); } return B.ev.filter((e) => e.t === 'dmg' && e.u === 'p' && e.el === 'fire').reduce((a2, e) => a2 + e.v, 0); };
+  const b0 = burn(null), b1 = burn({ res_fire: 30 }); assert(b0 > 0 && b1 < b0 * 0.85, `огонь ${b0} → ${b1}`);
+  const sh = (st) => { const s = mk('warrior'); const it = E.genItem(E.rng(3), { base: 'ring', il: 20, rarity: 0 }); it.st = st; it.fx = ['aegis']; E.addItem(s, it); E.equip(s, it.id); const P = C.unitFromSlot(s); C.create([P], [C.unitFromEnemy('rat', 1, 0, false, 'e0')], E.rng(1), {}); return C.has(P, 'shield'); };
+  assert(sh({ startShield: 10 }));
+});
+const legacyItem = (k, r, st, id) => ({ id, k, r, il: 12, nm: 'Старая вещь', st: Object.assign({}, st), up: 1, en: null, sl: D.BASES[k].slot });
+t('миграция v5 → v6: старые 0…4 → по названию (3→Эпический, 4→Легендарный), статы целы, недостающее добавлено, повтор ничего не меняет', () => {
+  const s = mk(); s.hero.level = 15; const old = [legacyItem('sword', 0, { atk: 40, str: 3 }, 50), legacyItem('ring', 1, { atk: 10, mag: 10, hp: 20, crit: 3 }, 51), legacyItem('body_h', 2, { def: 30, hp: 70, dmg: 4, gold: 6 }, 52), legacyItem('amulet', 3, { def: 9, res: 9, mp: 30, hp: 25, str: 6, eva: 4, dmg_fire: 7 }, 53), legacyItem('axe', 4, { atk: 70, crit: 6, lifesteal: 2, int: 8, hp: 60 }, 54)];
+  s.inv = old.slice(0, 3); s.eq.amulet = old[3]; E.recruit(s, 'grak'); s.crew.grak.eq.weapon = old[4];
+  s.run = { bag: { items: [legacyItem('dagger', 3, { atk: 20, agi: 4 }, 55)] } };
+  const before = JSON.parse(JSON.stringify([old, s.run.bag.items]));
+  const p = S.migrate({ v: 5, id: 'x', nick: 'a', settings: S.defaultSettings(), slots: [s, null, null] }); assert.strictEqual(p.v, S.VERSION); assert(S.validate(p));
+  const sl = p.slots[0], all = [sl.inv[0], sl.inv[1], sl.inv[2], sl.eq.amulet, sl.crew.grak.eq.weapon, sl.run.bag.items[0]], flat = before[0].concat(before[1]);
+  assert.deepStrictEqual(all.map((x) => x.r), [0, 1, 2, 4, 5, 4]); assert.deepStrictEqual(all.map((x) => D.RARITY[x.r].n), ['Обычный', 'Необычный', 'Редкий', 'Эпический', 'Легендарный', 'Эпический']);
+  all.forEach((it, i) => { for (const k in flat[i].st) assert.strictEqual(it.st[k], flat[i].st[k], 'стат потерян ' + k); assert.strictEqual(it.up, 1); assert.strictEqual(it.gv, 2); assert.strictEqual(it.nm, 'Старая вещь'); });
+  all.forEach((it) => { const R0 = D.RARITY[it.r], L = E.gearLines(it); assert(L.filter((l) => l.kind === 'aff').length >= R0.aff[0] || it.r === 2); assert.strictEqual(it.fx.length, R0.fx.length); });
+  const snap = JSON.stringify(all); S.migrations[5]({ v: 5, slots: [sl, null, null] }); assert.strictEqual(JSON.stringify(all), snap, 'повторная миграция ничего не меняет');
+  assert(E.derive(sl).def > 0 && C.unitFromSlot(sl).maxHp > 0);
+});
+t('старые сохранения v1/v2/v3 доходят до v6; вещи — по новой лестнице', () => { ['v1', 'v2', 'v3'].forEach((v) => { const p = S.migrate(JSON.parse(fs.readFileSync(path.join(__dirname, `fixtures/${v}.json`), 'utf8'))); assert.strictEqual(p.v, 6); p.slots.filter(Boolean).forEach((sl) => E.slotItems(sl).forEach((it) => { assert.strictEqual(it.gv, 2); assert(D.RARITY[it.r] && it.r <= 7); })); }); });
+t('цена, предел и стоимость улучшения растут с редкостью', () => {
+  const s = mk('warrior', { prof1: 'smith', prof2: 'miner' }), s2 = mk('warrior', { prof1: 'cook', prof2: 'miner' }); const its = D.RARITY.map((r, i) => E.genItem(E.rng(5), { base: 'sword', il: 30, rarity: i, dev: 1 }));
+  for (let i = 1; i < its.length; i++) { assert(E.sellPrice(its[i]) > E.sellPrice(its[i - 1])); assert(E.upCap(s, its[i]) >= E.upCap(s, its[i - 1])); assert(E.upCost(s, its[i]).gold > E.upCost(s, its[i - 1]).gold); }
+  assert.strictEqual(E.upCap(s2, its[0]), 3); assert.strictEqual(E.upCap(s, its[0]), 6); assert(E.upCap(s, its[7]) === 10 && E.upCap(s2, its[7]) === 7);
+  s.gold = 1e9; E.addMat(s, 'ing_ms', 999); E.addItem(s, its[7]); for (let i = 0; i < 10; i++) assert.strictEqual(E.upgrade(s, its[7]), ''); assert.strictEqual(E.upgrade(s, its[7]), 'Максимальное улучшение');
+});
+t('подписи предмета: % у процентных, урон крита в %, «−» у снижения урона', () => {
+  assert.strictEqual(E.fmtGear('str', 10), '+10'); assert.strictEqual(E.fmtGear('crit', 12), '+12%'); assert.strictEqual(E.fmtGear('critDmg', 0.25), '+25%'); assert.strictEqual(E.fmtGear('taken', -8), '−8%'); assert.strictEqual(E.fmtGear('res_bolt', 11), '+11%');
+  D.GEAR_AFF.concat(D.GEAR_FX).forEach((a) => assert(E.gearLabel(a.k) && !/^[a-z_]+$/.test(E.gearLabel(a.k)), 'нет подписи ' + a.k));
 });
 
 

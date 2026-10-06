@@ -4,7 +4,7 @@ const root = path.join(__dirname, '..');
 function load(hook) {
   const RPG = require(path.join(root, 'js/data-core.js'));
   require(path.join(root, 'js/data-stats.js'));
-  ['data-maou', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'combat', 'crew', 'save',
+  ['data-maou', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save',
     'story/cast', 'story/core', 'story/enemies', 'story/outline'].forEach((f) => require(path.join(root, 'js', f + '.js')));
   const ST = RPG.story;
   if (hook) hook(RPG);

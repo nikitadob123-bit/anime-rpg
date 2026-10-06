@@ -1,7 +1,7 @@
 /* Тесты почты (node, без зависимостей): разбор ленты, валидация подарков, выдача один раз, миграция, срок, условия. Запуск: npm test */
 const fs = require('fs'), path = require('path'), assert = require('assert');
 const RPG = require('../js/data-core.js');
-['data-stats', 'data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'combat', 'crew', 'save', 'mail'].forEach((f) => require('../js/' + f + '.js'));
+['data-stats', 'data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'mail'].forEach((f) => require('../js/' + f + '.js'));
 const { D, E, S, M } = RPG;
 let pass = 0, fail = 0; const failed = [];
 const t = (name, fn) => { try { fn(); pass++; } catch (e) { fail++; failed.push(name + ': ' + e.message); console.log('  ✗', name, '\n     ', e.message); } };
@@ -22,6 +22,14 @@ t('parseFeed: битый JSON и битые письма не роняют иг�
   assert.deepStrictEqual(r.letters.map((x) => x.id), ['test-1', 'ok2']); assert.strictEqual(r.errors.length, 4);
   assert.strictEqual(r.letters[1].gifts.gold, 3); assert.strictEqual(r.letters[1].gifts.cons.pot_hp1, 1);
   assert(M.parseFeed([L()]).letters.length === 1, 'голый массив тоже можно');
+});
+t('gear: редкости 0…7 (Обычный … Божественный) по номеру и id; 8+ («Концептуальный» и выше) — отказ', () => {
+  assert.deepStrictEqual(M.RARITY_IDS, ['common', 'uncommon', 'rare', 'unique', 'epic', 'legend', 'mythic', 'divine']);
+  [0, 1, 2, 3, 4, 5, 6, 7, 'common', 'unique', 'epic', 'legend', 'legendary', 'mythic', 'divine'].forEach((r) => assert.deepStrictEqual(M.giftErrors({ gear: [{ base: 'sword', rarity: r }] }), [], String(r)));
+  [8, 9, 10, 11, -1, 2.5, 'concept', 'origin', 'prexist', 'mega'].forEach((r) => { const e = M.giftErrors({ gear: [{ base: 'sword', rarity: r }] }); assert.strictEqual(e.length, 1, String(r)); });
+  assert(M.giftErrors({ gear: [{ base: 'sword', rarity: 8 }] })[0].includes('Концептуальный'));
+  const gl = M.giftList({ gear: [{ base: 'ring', rarity: 'divine' }, { base: 'sword', rarity: 3 }] }); assert.deepStrictEqual(gl.map((x) => x.r), ['Божественный', 'Уникальный']); assert.deepStrictEqual(gl.map((x) => x.ri), [7, 3]);
+  const s = mk(); s.hero.level = 40; const got = M.apply(s, { gear: [{ base: 'ring', rarity: 'divine' }, { base: 'sword', rarity: 99 }] }, 'seed'); assert.deepStrictEqual(got.items.map((x) => x.r), [7, 7]);
 });
 t('giftErrors: все типы подарков проверяются по данным игры', () => {
   assert.deepStrictEqual(M.giftErrors({ gold: 10, xp: 50, sp: 1, cons: { pot_hp2: 2 }, mats: { ore_fe: 3 }, presents: { flowers: 1 }, gear: [{ base: 'sword', rarity: 'rare', il: 10 }, { base: 'ring', rarity: 4, nm: 'Кольцо Короля' }] }), []);
@@ -64,7 +72,7 @@ t('снаряжение из письма: одинаковое при повт�
   const a = mk(), b = mk(); a.hero.level = b.hero.level = 12; const f = M.parseFeed({ letters: [L({ id: 'gear-1', gifts: { gear: [{ base: 'sword', rarity: 'epic' }, { base: 'ring', rarity: 2, il: 5, nm: 'Перстень вестника' }] } })] }).letters;
   [a, b].forEach((s) => { M.deliver(s, f, NOW); assert(M.claim(s, 'gear-1', NOW).ok); });
   const ia = a.inv.slice(-2), ib = b.inv.slice(-2); assert.strictEqual(ia.length, 2); assert.deepStrictEqual(ia.map((x) => x.st), ib.map((x) => x.st));
-  assert.strictEqual(ia[0].r, 3); assert.strictEqual(ia[0].il, 12); assert.strictEqual(ia[1].nm, 'Перстень вестника'); assert.strictEqual(ia[1].il, 5);
+  assert.strictEqual(ia[0].r, 4); assert.strictEqual(ia[0].il, 12); assert.strictEqual(ia[1].nm, 'Перстень вестника'); assert.strictEqual(ia[1].il, 5);
 });
 
 console.log('Почта: срок и условия');

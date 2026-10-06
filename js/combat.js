@@ -549,7 +549,7 @@
     const addBag = (g, m, its) => { run.bag.gold += g || 0; for (const k in (m || {})) run.bag.mats[k] = (run.bag.mats[k] || 0) + m[k]; (its || []).forEach(i => run.bag.items.push(i)); };
     const L = E.dungeonLv(D.DUN[run.did], run.tier, node.f);
     if (node.ev === 'chest') {
-      const g = Math.round((12 + 6 * L) * (1 + (d.mods.gold || 0) / 100)); const it = E.genItem(rng, { il: L, rarity: E.rollRarity(rng, D.TIERS[run.tier].loot * 1.5 * (1 + (d.mods.drop || 0) / 100), 0), base: rng.pick(D.CLASSES[slot.hero.cls].weapons.concat(D.BASE_IDS.filter(k => !D.BASES[k].wt))) });
+      const g = Math.round((12 + 6 * L) * (1 + (d.mods.gold || 0) / 100)); const it = E.genItem(rng, { il: L, rarity: E.rollRarity(rng, D.TIERS[run.tier].loot * 1.5 * (1 + (d.mods.drop || 0) / 100), 0, L), base: rng.pick(D.CLASSES[slot.hero.cls].weapons.concat(D.BASE_IDS.filter(k => !D.BASES[k].wt))) });
       const m = {}; const mk = rng.pick(['dust', 'herb_g', 'ore_cu', 'cloth']); m[mk] = rng.int(1, 3); res.text = 'В сундуке — золото, добыча и ' + it.nm + '.'; res.gold = g; res.mats = m; res.items = [it]; addBag(g, m, [it]);
     } else if (node.ev === 'rest') {
       run.hp = Math.min(d.maxHp, Math.round(run.hp + d.maxHp * 0.45)); run.mp = Math.min(d.maxMp, Math.round(run.mp + d.maxMp * 0.5)); Object.keys(run.comp).forEach(k => run.comp[k] = Math.min(1, (run.comp[k] || 0) + 0.45)); res.text = 'Вы переводите дух у костра. Здоровье +45%, энергия +50%.';

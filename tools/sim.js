@@ -2,7 +2,7 @@
    node tools/sim.js [runs] [--log]   Сводка → docs/sim-report.json */
 const RPG = require('../js/data-core.js');
 require('../js/data-stats.js');
-['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'engine', 'stats', 'combat', 'crew'].forEach((f) => require('../js/' + f + '.js'));
+['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'engine', 'stats', 'gear', 'combat', 'crew'].forEach((f) => require('../js/' + f + '.js'));
 const D = RPG.D, E = RPG.E, C = RPG.C;
 const N = +process.argv[2] || 12;
 const T = D.TREES.maou;

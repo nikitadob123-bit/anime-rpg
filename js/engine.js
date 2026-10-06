@@ -215,7 +215,7 @@
     else if (r.out.kind === 'cons') { const bonus = r.prof === 'alch' && rng() < 0.12 + lv * 0.01 ? 1 : 0; E.addCons(slot, r.out.id, r.out.q + bonus); out.cons = r.out.id; out.q = r.out.q + bonus; }
     else {
       const m = E.collect(slot).mods; const bonus = (m.craft || 0) / 100;
-      const w = [60 - lv * 1.6, 30 + lv * 0.4, 8 + lv * 1.0 + bonus * 50, 1.8 + lv * 0.35, 0.2 + lv * 0.08].map(x => Math.max(0.05, x));
+      const w = E.craftWeights(lv, bonus);  // js/gear.js
       let ri = Math.max(r.out.rmin || 0, rng.weighted(w)); if (ri === 0 && r.lv > 1) ri = 1;
       const it = E.genItem(rng, { base: r.out.base, il: r.out.il, rarity: ri, nm: r.n.charAt(0).toUpperCase() + r.n.slice(1) });
       E.addItem(slot, it); out.item = it;
@@ -327,7 +327,7 @@
     if (g.cons) for (const k in g.cons) E.addCons(slot, k, g.cons[k]);
     if (g.mats) for (const k in g.mats) E.addMat(slot, k, g.mats[k]);
     if (g.sp) slot.hero.bossPts = (slot.hero.bossPts || 0) + g.sp;
-    if (g.item === 'tear') { const it = E.genItem(E.rng(777), { base: 'amulet', il: 14, rarity: 4 }); it.nm = 'Слеза Осколка'; it.st.hp = (it.st.hp || 0) + 60; it.st.res = (it.st.res || 0) + 20; E.addItem(slot, it); }
+    if (g.item === 'tear') { const it = E.genItem(E.rng(777), { base: 'amulet', il: 14, rarity: 5 }); it.nm = 'Слеза Осколка'; it.st.hp = (it.st.hp || 0) + 60; it.st.res = (it.st.res || 0) + 20; E.addItem(slot, it); }
   };
   E.fmtText = (s, slot) => String(s).replace(/\{name\}/g, slot.hero.name).replace(/\{echo\}/g, slot.hero.uniq ? D.UNIQ[slot.hero.uniq].n : 'Отголосок');
 })();
