@@ -6,14 +6,19 @@
   const TABS = [['city', '🏰', 'Лагерь'], ['story', '📖', 'Сюжет'], ['dun', '🗝️', 'Вылазки'], ['hero', '👑', 'Герой'], ['skills', '🌟', 'Силы'], ['crew', '🛡️', 'Свита'], ['hearts', '💞', 'Сердца'], ['prof', '⚒️', 'Ремесло'], ['inv', '🎒', 'Сумка'], ['set', '⚙️', 'Меню']];
   UI.TABS = TABS;
   UI.sub = { skills: 'root', crew: null, hearts: null, prof: null, inv: 'gear', filt: 'all', shop: 'gear' };
-  const rar = (it) => D.RARITY[it.r];
+  const rar = (it) => E.rar(it);
   const bar = (v, max, cl) => `<span class="bar ${cl || ''}"><i style="width:${Math.max(0, Math.min(100, v / max * 100))}%"></i></span>`;
   const matTxt = (m, slot) => Object.keys(m || {}).map((k) => { const have = (slot.mats[k] || 0), ok = have >= m[k]; return `<span class="mat ${ok ? 'ok' : 'no'}">${D.MATS[k].ic} ${D.MATS[k].n} ${have}/${m[k]}</span>`; }).join('');
-  const label = (k) => D.STAT_N[k] || D.FLAT[k] || (D.MODN[k] || k).replace(/\s*%$/, '');
-  const statLine = (k, v) => { const pct = !D.STAT_N[k] && !D.FLAT[k]; v = Math.round(v * 10) / 10; return `<span class="il"><b>+${v}${pct ? '%' : ''}</b> ${label(k)}</span>`; };
-  UI.itemStats = (it) => Object.keys(it.st).map((k) => statLine(k, it.st[k] * (D.STAT_N[k] || D.FLAT[k] ? 1 + 0.09 * (it.up || 0) : 1))).join('');
-  UI.itemName = (it) => `<span style="color:${rar(it).c}">${esc(it.nm)}${it.up ? ' +' + it.up : ''}</span>`;
-  const itemRow = (it, act, extra) => `<button class="item" style="--rc:${rar(it).c}" data-act="${act}" data-id="${it.id}" data-quiet="1"><span class="ico">${D.BASES[it.k].ic}</span><span class="grow tl"><b>${UI.itemName(it)}</b>${it.lock ? ' 🔒' : ''}${it.en ? ' ✨' : ''}<small>${rar(it).n} · ${D.SLOTS[it.sl]} · ур.${it.il}</small></span>${extra || ''}</button>`;
+  // редкость: цвет (--rc), свечение (--rg), класс r0…r10 (особые эффекты для старших)
+  UI.rarVars = (it) => { const R = rar(it); return `--rc:${R.c};--rg:${R.g}`; };
+  UI.rarCls = (it) => 'rar r' + ((it && it.r) | 0);
+  UI.rarBadge = (it) => { const R = rar(it); return `<span class="rbadge ${UI.rarCls(it)}" style="${UI.rarVars(it)}">${R.n}</span>`; };
+  // строки предмета: основа · характеристики · аффиксы · особые свойства (✦ уникальное, ✸ мифическое, ☀ божественное)
+  const FXI = { u: '✦', m: '✸', d: '☀' };
+  const statLine = (l) => l.kind === 'fx' ? `<span class="il fxl fx-${l.fx.t}"><b>${FXI[l.fx.t]} ${esc(l.fx.n)}</b> ${l.txt}</span>` : `<span class="il ${l.kind}"><b>${l.txt}</b> ${esc(l.label)}</span>`;
+  UI.itemStats = (it) => E.gearLines(it).map(statLine).join('');
+  UI.itemName = (it) => `<span class="rn ${UI.rarCls(it)}" style="${UI.rarVars(it)}">${esc(it.nm)}${it.up ? ' +' + it.up : ''}</span>`;
+  const itemRow = (it, act, extra) => `<button class="item ${UI.rarCls(it)}" style="${UI.rarVars(it)}" data-act="${act}" data-id="${it.id}" data-quiet="1"><span class="ico">${D.BASES[it.k].ic}</span><span class="grow tl"><b>${UI.itemName(it)}</b>${it.lock ? ' 🔒' : ''}${it.en ? ' ✨' : ''}<small>${UI.rarBadge(it)} ${D.SLOTS[it.sl]} · ур.${it.il}${it.fx && it.fx.length ? ' · ' + it.fx.map((id) => FXI[(D.GEAR_FX_BY[id] || {}).t] || '').join('') : ''}</small></span>${extra || ''}</button>`;
   UI.itemRow = itemRow;
 
   // ───── Вход в игру ─────
@@ -73,7 +78,7 @@
     const rp = UI.romPending ? UI.romPending(s) : 0;
     const tiles = [
       ['shop', 'Лавка', 'Снаряжение, зелья, подарки', 'shop'],
-      ['forge', 'Кузница', 'Улучшение до +' + E.upCap(s), 'forge'],
+      ['forge', 'Кузница', 'Улучшение до +' + E.upCap(s) + '…+' + E.upCap(s, { r: D.RARITY_OPEN }), 'forge'],
       ['tavern', 'Костёр', 'Отдых и разговоры', 'fire'],
       ['altar', 'Алтарь троп', 'Сброс Сил', 'altar']
     ].map(([act, n, d, img]) => `<button class="bld" data-act="${act}" data-quiet="1"><img class="bldimg" src="assets/ui/tile_${img}.webp" alt="" loading="lazy" decoding="async" width="360" height="480"><span class="bldtxt"><b>${n}</b><small>${d}</small></span></button>`).join('');
@@ -96,7 +101,7 @@
     let body = '';
     if (t === 'gear') {
       const disc = Math.min(30, E.collect(s).mods.discount || 0);
-      body = E.shopStock(s).map((it, i) => { const p = Math.round(E.buyPrice(it) * (1 - disc / 100)); const usable = E.canUse(s.hero, it); return `<div class="item" style="--rc:${rar(it).c}"><span class="ico">${D.BASES[it.k].ic}</span><span class="grow tl"><b>${UI.itemName(it)}</b><small>${D.SLOTS[it.sl]} · ур.${it.il} ${UI.itemStats(it)}</small></span><button class="btn small ${s.gold >= p && usable ? 'primary' : 'ghost'}" data-act="buyGear" data-i="${i}" data-quiet="1">🪙 ${fmt(p)}</button></div>`; }).join('') + (disc ? `<div class="small dim">Скидка торговца: ${disc}%</div>` : '') + `<div class="small dim">Ассортимент растёт с каждым пройденным подземельем.</div>`;
+      body = E.shopStock(s).map((it, i) => { const p = Math.round(E.buyPrice(it) * (1 - disc / 100)); const usable = E.canUse(s.hero, it); return `<div class="item ${UI.rarCls(it)}" style="${UI.rarVars(it)}"><span class="ico">${D.BASES[it.k].ic}</span><span class="grow tl"><b>${UI.itemName(it)}</b><small>${UI.rarBadge(it)} ${D.SLOTS[it.sl]} · ур.${it.il}</small><small class="ils">${UI.itemStats(it)}</small></span><button class="btn small ${s.gold >= p && usable ? 'primary' : 'ghost'}" data-act="buyGear" data-i="${i}" data-quiet="1">🪙 ${fmt(p)}</button></div>`; }).join('') + (disc ? `<div class="small dim">Скидка торговца: ${disc}%</div>` : '') + `<div class="small dim">Ассортимент растёт с каждым пройденным подземельем.</div>`;
     } else if (t === 'cons') {
       body = E.SHOP_CONS.map((id) => { const c = D.CONS[id], p = E.consBuy(id); return `<div class="item"><span class="ico">${c.ic}</span><span class="grow tl"><b>${c.n}</b> <small>есть: ${s.cons[id] || 0} · ${c.d}</small></span><button class="btn small ${s.gold >= p ? 'primary' : 'ghost'}" data-act="buyCons" data-id="${id}" data-quiet="1">🪙 ${p}</button></div>`; }).join('');
     } else if (t === 'gifts') {
@@ -123,9 +128,9 @@
   // ═════ КУЗНИЦА ═════
   UI.act.forge = () => UI.forgeModal();
   UI.forgeModal = function () {
-    const s = UI.slot(), cap = E.upCap(s), items = Object.values(s.eq).filter(Boolean).concat(s.inv.filter((x) => x.r >= 1)).slice(0, 40);
-    const rows = items.map((it) => { const maxed = (it.up || 0) >= cap, c = E.upCost(s, it), ok = E.canAfford(s, c); return `<div class="item" style="--rc:${rar(it).c}"><span class="ico">${D.BASES[it.k].ic}</span><span class="grow tl"><b>${UI.itemName(it)}</b>${s.eq[it.sl] === it ? ' <small>(надето)</small>' : ''}<small>${maxed ? 'максимум +' + cap : '🪙 ' + c.gold + ' ' + matTxt(c.mats, s)}</small></span>${maxed ? '' : `<button class="btn small ${ok ? 'primary' : 'ghost'}" data-act="upgrade" data-id="${it.id}" data-quiet="1">+${(it.up || 0) + 1}</button>`}</div>`; }).join('');
-    UI.modal(`<h3>⚒️ Кузница Брума</h3><div class="small dim tl">Каждый уровень даёт +9% к характеристикам предмета. Предел: +${cap}${cap === 3 ? ' (кузнец-мастер улучшает до +6 и со скидкой 25%)' : ' — вы кузнец!'}.</div><div class="mlist">${rows || '<div class="dim center pad">Нет предметов для улучшения</div>'}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
+    const s = UI.slot(), cap = E.upCap(s), items = Object.values(s.eq).filter(Boolean).concat(s.inv.filter((x) => x.r >= 1).sort((a, b) => b.r - a.r || b.il - a.il)).slice(0, 40);
+    const rows = items.map((it) => { const ic = E.upCap(s, it), maxed = (it.up || 0) >= ic, c = E.upCost(s, it), ok = E.canAfford(s, c); return `<div class="item ${UI.rarCls(it)}" style="${UI.rarVars(it)}"><span class="ico">${D.BASES[it.k].ic}</span><span class="grow tl"><b>${UI.itemName(it)}</b>${s.eq[it.sl] === it ? ' <small class="inl">(надето)</small>' : ''}<small>${UI.rarBadge(it)} +${it.up || 0}/${ic}</small><small>${maxed ? 'максимум +' + ic : '🪙 ' + fmt(c.gold) + ' ' + matTxt(c.mats, s)}</small></span>${maxed ? '' : `<button class="btn small ${ok ? 'primary' : 'ghost'}" data-act="upgrade" data-id="${it.id}" data-quiet="1">+${(it.up || 0) + 1}</button>`}</div>`; }).join('');
+    UI.modal(`<div class="row between center-v"><h3 class="m0">⚒️ Кузница Брума</h3><button class="btn ghost small qbtn" data-act="rarInfo" data-quiet="1" aria-label="Редкости">? Редкости</button></div><div class="small dim tl">Каждый уровень даёт +9% к характеристикам предмета. Предел: +${cap}${cap === 3 ? ' (кузнец-мастер улучшает до +6 и со скидкой 25%)' : ' — вы кузнец!'} и ещё до +${D.RARITY[D.RARITY_OPEN].up} за редкость (Редкий +1 … Божественный +${D.RARITY[D.RARITY_OPEN].up}). Чем реже вещь, тем дороже улучшение.</div><div class="mlist">${rows || '<div class="dim center pad">Нет предметов для улучшения</div>'}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
   };
   UI.act.upgrade = (el) => { const s = UI.slot(), it = E.findItem(s, +el.dataset.id); const r = E.upgrade(s, it); if (r) { UI.toast(r, 'bad'); UI.sfx('err'); } else { UI.sfx('forge'); UI.toast(`${esc(it.nm)} +${it.up}`, 'ok'); UI.save(true); } keepScroll(UI.forgeModal); UI.refresh(); };
 
@@ -157,14 +162,14 @@
   // ═════ ГЕРОЙ ═════
   UI.tabs.hero = function (s) {
     const h = s.hero, d = E.derive(s), cls = D.CLASSES[h.cls], race = D.RACES[h.race], c = E.collect(s);
-    const mods = Object.keys(c.mods).filter((k) => c.mods[k] && D.MODN[k]).map((k) => `<span class="chip">${c.mods[k] > 0 && !/aken/.test(k) ? '+' : ''}${Math.round(c.mods[k] * 10) / 10} ${(D.MODN[k]).replace(/\s*%$/, '')}${/%$/.test(D.MODN[k]) ? '%' : ''}</span>`).join('');
-    const eq = Object.keys(D.SLOTS).map((sl) => { const it = s.eq[sl]; return `<button class="eqs" style="--rc:${it ? rar(it).c : '#444'}" data-act="${it ? 'itemOpen' : 'gearSlot'}" data-id="${it ? it.id : ''}" data-sl="${sl}" data-quiet="1"><span>${it ? D.BASES[it.k].ic : D.SLOT_IC[sl]}</span><small>${it ? esc(it.nm) + (it.up ? ' +' + it.up : '') : D.SLOTS[sl]}</small></button>`; }).join('');
+    const mods = Object.keys(c.mods).filter((k) => c.mods[k] && D.MODN[k]).map((k) => { const v = k === 'critDmg' ? c.mods[k] * 100 : c.mods[k], pct = /%$/.test(D.MODN[k]) || k === 'critDmg'; return `<span class="chip">${v > 0 && !/aken/.test(k) ? '+' : ''}${Math.round(v * 10) / 10}${pct ? '%' : ''} ${(D.MODN[k]).replace(/\s*%$/, '')}</span>`; }).join('');
+    const eq = Object.keys(D.SLOTS).map((sl) => { const it = s.eq[sl]; return `<button class="eqs ${it ? UI.rarCls(it) : 'empty'}" style="${it ? UI.rarVars(it) : '--rc:#444'}" data-act="${it ? 'itemOpen' : 'gearSlot'}" data-id="${it ? it.id : ''}" data-sl="${sl}" data-quiet="1"><span>${it ? D.BASES[it.k].ic : D.SLOT_IC[sl]}</span><small>${it ? UI.itemName(it) : D.SLOTS[sl]}</small>${it ? `<i class="eqr">${rar(it).n}</i>` : ''}</button>`; }).join('');
     const st = s.stats, need = D.xpNeed(h.level);
     const xpTxt = h.level >= D.LEVEL_CAP ? 'МАКС' : fmt(h.xp) + ' / ' + fmt(need);
     return `<h2 class="herotitle">Герой</h2>
       <div class="herocard"><img class="herobg" src="assets/ui/hero_bg.webp" alt="" loading="lazy" decoding="async" width="640" height="702"><div class="heropor">${UI.por(h.portrait, 'xl', false)}</div><div class="hinfo"><h2 class="m0">${esc(h.name)}</h2><div class="dim">Король Демонов</div><div class="dim">Уровень ${h.level}${h.level >= D.LEVEL_CAP ? ' (макс.)' : ''}</div><div class="xpb">${bar(h.level >= D.LEVEL_CAP ? 1 : h.xp, h.level >= D.LEVEL_CAP ? 1 : need, 'xp')}<small>${xpTxt}</small></div></div></div>
       ${UI.statsCard(s, d)}
-      <div class="card gearcard"><div class="row between center-v"><b>Снаряжение</b><button class="btn ghost small" data-act="forge" data-quiet="1">⚒️ Кузница</button></div><div class="eqgrid">${eq}</div><div class="small dim tl">Нажмите слот: надеть, сравнить, улучшить или снять.</div></div>
+      <div class="card gearcard"><div class="row between center-v"><b>Снаряжение</b><span class="row gap"><button class="btn ghost small qbtn" data-act="rarInfo" data-quiet="1" aria-label="Редкости">?</button><button class="btn ghost small" data-act="forge" data-quiet="1">⚒️ Кузница</button></span></div><div class="eqgrid">${eq}</div><div class="small dim tl">Нажмите слот: надеть, сравнить, улучшить или снять.</div></div>
       <div class="card"><b>${race.ic} ${race.pn}</b> <span class="dim small">(прошлое: ${race.n})</span><div class="small tl dim">${race.pd}</div><b>${cls.ic} Перки класса</b><ul class="perks small">${cls.perks.map((p) => `<li><b>${p.n}</b> — ${p.d}</li>`).join('')}</ul><div class="small tl dim"><b>${cls.rc.n}:</b> копится в бою и усиливает навыки.</div></div>
       <div class="card"><b>Все бонусы</b><div class="chips">${mods || '<span class="dim">нет</span>'}</div></div>
       <div class="card small"><b>Путь</b><div class="dim">Вылазок: ${st.runs} · побед над боссами: ${st.wins} · поражений: ${st.deaths}<br>Врагов повержено: ${fmt(st.kills)} · создано: ${st.crafted} · добыто: ${st.gathered}<br>Заработано золота: ${fmt(st.goldEarned)} · время: ${Math.round((s.played || 0) / 60)} мин · мощь ${fmt(E.power(s))}</div></div>`;
@@ -221,52 +226,65 @@
     const chips = ['all'].concat(Object.keys(D.SLOTS)).map((x) => `<button class="fchip ${f === x ? 'on' : ''}" data-act="filt" data-v="${x}" data-quiet="1">${x === 'all' ? 'Все' : D.SLOT_IC[x]}</button>`).join('');
     const list = s.inv.filter((it) => f === 'all' || it.sl === f).sort((a, b) => b.r - a.r || b.il - a.il);
     const eqs = Object.keys(D.SLOTS).map((sl) => s.eq[sl]).filter(Boolean).map((it) => itemRow(it, 'itemOpen', '<span class="tag ok">надето</span>')).join('');
-    return head + `<div class="small dim">Сумка: ${s.inv.length} предм.</div><div class="fchips">${chips}</div><h4>Надето</h4>${eqs}<h4>В сумке</h4>${list.map((it) => itemRow(it, 'itemOpen', cmpTag(s, it))).join('') || '<div class="dim center pad">Ничего нет</div>'}`;
+    return head + `<div class="row between center-v"><span class="small dim">Сумка: ${s.inv.length} предм.</span><button class="btn ghost small qbtn" data-act="rarInfo" data-quiet="1">? Редкости</button></div><div class="fchips">${chips}</div><h4>Надето</h4>${eqs}<h4>В сумке</h4>${list.map((it) => itemRow(it, 'itemOpen', cmpTag(s, it))).join('') || '<div class="dim center pad">Ничего нет</div>'}`;
   };
   const cmpTag = (s, it) => { const cur = s.eq[it.sl]; if (!E.canUse(s.hero, it)) return '<span class="tag">не для класса</span>'; const dv = E.itemScore(it) - (cur ? E.itemScore(cur) : 0); return dv > 0.5 ? '<span class="tag up">▲</span>' : dv < -0.5 ? '<span class="tag dn">▼</span>' : ''; };
-  const labelOf = (k) => D.STAT_N[k] || D.FLAT[k] || (D.MODN[k] || k).replace(/\s*%$/, '');
-  const stVal = (it, k) => { const v = it.st[k] || 0; return Math.round(v * (D.STAT_N[k] || D.FLAT[k] ? 1 + 0.09 * (it.up || 0) : 1) * 10) / 10; };
+  // сравнение: строки обоих предметов по группам; разница со знаком и единицами; для «получаемого урона» меньше = лучше
+  const GRP = [['base', 'Основные'], ['attr', 'Характеристики'], ['aff', 'Аффиксы'], ['fx', 'Особые свойства']];
   UI.itemDiffHtml = function (it, cur) {
-    const keys = Array.from(new Set([].concat(Object.keys(it.st || {}), cur ? Object.keys(cur.st || {}) : [])));
-    if (!keys.length) return '';
-    const rows = keys.map((k) => {
-      const a = stVal(it, k), b = cur ? stVal(cur, k) : 0, d = Math.round((a - b) * 10) / 10;
-      const pct = !D.STAT_N[k] && !D.FLAT[k];
-      const cls = d > 0 ? 'ok' : d < 0 ? 'bad' : 'dim';
-      const sign = d > 0 ? '+' : '';
-      return `<div class="diffrow"><span>${esc(labelOf(k))}</span><b>${a}${pct ? '%' : ''}</b><em class="${cls}">${cur ? sign + d + (pct ? '%' : '') : (a > 0 ? '+' + a + (pct ? '%' : '') : '—')}</em></div>`;
-    }).join('');
-    return `<div class="diffbox"><div class="diffh small dim">${cur ? 'Сравнение с надетым' : 'Характеристики'}</div>${rows}</div>`;
+    const la = E.gearLines(it), lb = cur ? E.gearLines(cur) : [], byA = {}, byB = {}; la.forEach((l) => { byA[l.k] = l; }); lb.forEach((l) => { byB[l.k] = l; });
+    const keys = Array.from(new Set(la.map((l) => l.k).concat(lb.map((l) => l.k)))); if (!keys.length) return '';
+    const kindOf = (k) => (byA[k] || byB[k]).kind;
+    const row = (k) => {
+      const A0 = byA[k], B0 = byB[k], a = A0 ? A0.v : 0, b = B0 ? B0.v : 0, dv = a - b, f = (A0 || B0).fx, u = E.gearUnit(k);
+      const cls = Math.abs(dv) < 1e-9 ? 'dim' : E.gearGood(k, dv) ? 'ok' : 'bad';
+      const diff = !cur ? '' : u === 'flag' ? (a && !b ? 'новое' : !a && b ? 'пропадёт' : '=') : Math.abs(dv) < 1e-9 ? '=' : E.fmtGear(k, dv);
+      const name = f ? `<span class="fxn fx-${f.t}">${FXI[f.t]} ${esc(f.n)}<small>${esc(E.gearLabel(k))}${A0 ? '' : ' (у надетого)'}</small></span>` : `<span>${esc(E.gearLabel(k))}</span>`;
+      return `<div class="diffrow ${f ? 'fxrow' : ''}">${name}<b>${A0 ? A0.txt : '—'}</b>${cur ? `<em class="${cls}">${diff}</em>` : ''}</div>`;
+    };
+    const body = GRP.map(([g, n]) => { const ks = keys.filter((k) => kindOf(k) === g); return ks.length ? `<div class="diffg small dim">${n}</div>` + ks.map(row).join('') : ''; }).join('');
+    const fxd = (it.fx || []).map((id) => D.GEAR_FX_BY[id]).filter(Boolean).map((f) => `<div class="fxdesc fx-${f.t}"><b>${FXI[f.t]} ${esc(f.n)}</b> — ${esc(f.d)} <span class="dim">(${D.GEAR_FX_T[f.t].toLowerCase()})</span></div>`).join('');
+    return `<div class="diffbox"><div class="diffh small dim">${cur ? 'Сравнение с надетым: ' + UI.itemName(cur) : 'Характеристики'}</div>${body}</div>${fxd ? `<div class="fxbox">${fxd}</div>` : ''}`;
   };
   UI.act.filt = (el) => { UI.sub.filt = el.dataset.v; UI.refresh(false); };
   UI.act.useBuff = (el) => { const r = E.useConsOutside(UI.slot(), el.dataset.id); if (r) { UI.toast(r, 'bad'); UI.sfx('err'); } else { UI.toast('Эффект принят до конца вылазки', 'ok'); UI.sfx('heal'); UI.save(true); } UI.refresh(); };
   UI.act.itemOpen = (el) => UI.itemModal(+el.dataset.id);
   UI.itemModal = function (id) {
     const s = UI.slot(), it = E.findItem(s, id); if (!it) { UI.closeModal(); return; }
-    const worn = s.eq[it.sl] === it, cur = !worn && s.eq[it.sl], cap = E.upCap(s), c = E.upCost(s, it);
+    const worn = s.eq[it.sl] === it, cur = !worn && s.eq[it.sl], cap = E.upCap(s, it), c = E.upCost(s, it);
     const matsOk = Object.keys(c.mats || {}).every((m) => (s.mats[m] || 0) >= c.mats[m]);
     const matLine = Object.keys(c.mats || {}).map((m) => `${D.MATS[m].ic}${c.mats[m]}`).join(' ') || '';
-    UI.modal(`<div class="itemhead" style="--rc:${rar(it).c}"><span class="big-ic">${D.BASES[it.k].ic}</span><div class="grow tl"><h3 class="m0">${UI.itemName(it)}</h3><div class="dim small">${rar(it).n} · ${D.SLOTS[it.sl]} · ур. ${it.il}${it.en ? ' · ✨ ' + D.ENCHANTS.find((e) => e.id === it.en).n : ''}</div></div></div>
+    UI.modal(`<div class="itemhead ${UI.rarCls(it)}" style="${UI.rarVars(it)}"><span class="big-ic">${D.BASES[it.k].ic}</span><div class="grow tl"><h3 class="m0">${UI.itemName(it)}</h3><div class="dim small">${UI.rarBadge(it)} ${D.SLOTS[it.sl]} · ур. ${it.il} · улучш. +${it.up || 0}/${cap}${it.en ? ' · ✨ ' + D.ENCHANTS.find((e) => e.id === it.en).n : ''}</div></div><button class="btn ghost small qbtn" data-act="rarInfo" data-quiet="1" aria-label="Редкости">?</button></div>
       ${UI.itemDiffHtml(it, cur)}
-      ${cur ? `<div class="small tl">Сейчас: <b>${UI.itemName(cur)}</b></div>` : ''}
       ${!E.canUse(s.hero, it) ? '<div class="warnbox">Ваш класс не может использовать это оружие.</div>' : ''}
       <div class="row gap wrap gearacts">${worn ? `<button class="btn ghost grow" data-act="unequip" data-id="${it.id}">Снять</button>` : `<button class="btn primary grow" data-act="equip" data-id="${it.id}" ${E.canUse(s.hero, it) ? '' : 'disabled'}>${cur ? 'Заменить' : 'Надеть'}</button>`}
       <button class="btn ghost" data-act="lockItem" data-id="${it.id}">${it.lock ? '🔒' : '🔓'}</button>
       ${worn ? '' : `<button class="btn ghost danger" data-act="sellOne" data-id="${it.id}">Продать 🪙${E.sellPrice(it)}</button>`}</div>
-      <button class="btn ghost wide" data-act="upItem" data-id="${it.id}" ${(it.up || 0) >= cap || s.gold < c.gold || !matsOk ? 'disabled' : ''}>⚒️ Улучшить до +${(it.up || 0) + 1} · 🪙${c.gold}${matLine ? ' · ' + matLine : ''}</button>
+      <button class="btn ghost wide" data-act="upItem" data-id="${it.id}" ${(it.up || 0) >= cap || s.gold < c.gold || !matsOk ? 'disabled' : ''}>${(it.up || 0) >= cap ? `⚒️ Улучшено до предела +${cap}` : `⚒️ Улучшить до +${(it.up || 0) + 1} · 🪙${fmt(c.gold)}${matLine ? ' · ' + matLine : ''}`}</button>
       ${(s.hero.prof1 === 'ench' || s.hero.prof2 === 'ench') ? `<button class="btn ghost wide" data-act="enchOpen" data-id="${it.id}">✨ Зачаровать</button>` : ''}
       <button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
   };
+  // ═════ РЕДКОСТИ: справка ═════
+  UI.rarInfoHtml = function () {
+    const rows = D.RARITY.map((R, i) => {
+      const it = { r: i }, lockd = R.lock;
+      const what = lockd ? '<span class="dim">??? — ещё не открыто</span>' : `${R.attr[0] === R.attr[1] ? R.attr[0] : R.attr[0] + '–' + R.attr[1]} хар. · ${R.aff[0] === R.aff[1] ? R.aff[0] : R.aff[0] + '–' + R.aff[1]} аффикс.${R.fx.length ? ' · ' + R.fx.map((t) => FXI[t]).join('') : ''} · ×${R.mul} к основе${R.up ? ' · +' + R.up + ' улучш.' : ''}`;
+      const where = lockd ? '' : i === 0 || i === 1 ? 'везде' : i === 2 ? 'с первых подземелий, боссы' : i === 3 ? 'с ур. ' + R.lv + ', лавка после 3 подземелий' : i === 4 ? 'с ур. ' + R.lv + ', ремесло' : i === 7 ? 'только боссы, с ур. ' + R.lv + ' — крайне редко' : 'с ур. ' + R.lv;
+      return `<div class="rinfo ${UI.rarCls(it)} ${lockd ? 'lockd' : ''}" style="${UI.rarVars(it)}"><i class="rsw"></i><div class="grow tl"><b class="rn ${UI.rarCls(it)}" style="${UI.rarVars(it)}">${i + 1}. ${lockd ? '🔒 ' : ''}${R.n}</b><small>${what}</small>${where ? `<small class="dim">${where}</small>` : ''}</div></div>`;
+    }).join('');
+    return `<h3>💎 Редкости снаряжения</h3><div class="small dim tl">Чем реже вещь, тем больше у неё основных статов, линий характеристик и аффиксов, и тем они крупнее. ✦ уникальное, ✸ мифическое и ☀ божественное свойства работают в бою. Высокие редкости выпадают в поздних подземельях и с боссов; удача добычи и сложность повышают шанс.</div><div class="mlist rlistx">${rows}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`;
+  };
+  UI.act.rarInfo = () => UI.modal(UI.rarInfoHtml(), { cls: 'tall' });
   UI.act.gearSlot = (el) => UI.gearSheet(el.dataset.sl);
   UI.gearSheet = function (sl) {
     const s = UI.slot(), cur = s.eq[sl], list = s.inv.filter((it) => it.sl === sl).sort((a, b) => E.itemScore(b) - E.itemScore(a) || b.r - a.r);
-    const curBlock = cur ? `<div class="card small tl"><div class="small dim">Надето</div><button class="item" style="--rc:${rar(cur).c}" data-act="itemOpen" data-id="${cur.id}" data-quiet="1"><span class="ico">${D.BASES[cur.k].ic}</span><span class="grow tl"><b>${UI.itemName(cur)}</b><small>${UI.itemStats(cur)}</small></span><span class="tag ok">надето</span></button></div>` : `<div class="small dim">Слот пуст</div>`;
+    const curBlock = cur ? `<div class="card small tl"><div class="small dim">Надето</div><button class="item ${UI.rarCls(cur)}" style="${UI.rarVars(cur)}" data-act="itemOpen" data-id="${cur.id}" data-quiet="1"><span class="ico">${D.BASES[cur.k].ic}</span><span class="grow tl"><b>${UI.itemName(cur)}</b><small>${UI.rarBadge(cur)} ур.${cur.il}</small><small class="ils">${UI.itemStats(cur)}</small></span><span class="tag ok">надето</span></button></div>` : `<div class="small dim">Слот пуст</div>`;
     const rows = list.map((it) => {
       const dv = E.itemScore(it) - (cur ? E.itemScore(cur) : 0);
       const tag = !E.canUse(s.hero, it) ? '<span class="tag">нельзя</span>' : dv > 0.5 ? '<span class="tag up">▲ лучше</span>' : dv < -0.5 ? '<span class="tag dn">▼ слабее</span>' : '<span class="tag">=</span>';
-      return `<button class="item gearpick" style="--rc:${rar(it).c}" data-act="itemOpen" data-id="${it.id}" data-quiet="1"><span class="ico">${D.BASES[it.k].ic}</span><span class="grow tl"><b>${UI.itemName(it)}</b><small>${rar(it).n} · ур.${it.il} ${UI.itemStats(it)}</small></span>${tag}</button>`;
+      return `<button class="item gearpick ${UI.rarCls(it)}" style="${UI.rarVars(it)}" data-act="itemOpen" data-id="${it.id}" data-quiet="1"><span class="ico">${D.BASES[it.k].ic}</span><span class="grow tl"><b>${UI.itemName(it)}</b><small>${UI.rarBadge(it)} ур.${it.il}</small><small class="ils">${UI.itemStats(it)}</small></span>${tag}</button>`;
     }).join('') || '<div class="dim center pad">В сумке нет предметов для этого слота</div>';
-    UI.modal(`<h3>${D.SLOT_IC[sl]} ${D.SLOTS[sl]}</h3>${curBlock}<div class="small dim tl">В сумке</div><div class="mlist gearlist">${rows}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
+    UI.modal(`<div class="row between center-v"><h3 class="m0">${D.SLOT_IC[sl]} ${D.SLOTS[sl]}</h3><button class="btn ghost small qbtn" data-act="rarInfo" data-quiet="1" aria-label="Редкости">?</button></div>${curBlock}<div class="small dim tl">В сумке</div><div class="mlist gearlist">${rows}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
   };
   UI.act.equip = (el) => { const r = E.equip(UI.slot(), +el.dataset.id); if (r) { UI.toast(r, 'bad'); UI.sfx('err'); } else UI.sfx('equip'); UI.save(true); UI.closeModal(); UI.refresh(); };
   UI.act.unequip = (el) => { const s = UI.slot(), it = E.findItem(s, +el.dataset.id); if (it) E.unequip(s, it.sl); UI.save(true); UI.closeModal(); UI.refresh(); };

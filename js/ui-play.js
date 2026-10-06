@@ -5,7 +5,7 @@
   const bar = (v, max, cl) => `<span class="bar ${cl || ''}"><i style="width:${Math.max(0, Math.min(100, v / max * 100))}%"></i></span>`;
   const EVIC = { chest: '🎁', rest: '🔥', shrine: '⛩️', gather_ore: '⛏️', gather_herb: '🌿', gather_hunt: '🐾', gather_fish: '🎣' };
   const evIcon = (ev) => EVIC[ev] || (D.GATHER_EV[ev] ? D.GATHER_EV[ev].ic : '❓');
-  const rarSpan = (it) => `<span style="color:${D.RARITY[it.r].c}">${D.BASES[it.k].ic} ${esc(it.nm)}${it.up ? ' +' + it.up : ''}</span>`;
+  const rarSpan = (it) => `<span class="lootl">${D.BASES[it.k].ic} ${UI.itemName(it)} ${UI.rarBadge(it)}</span>`;
 
   // ═════ ПОДЗЕМЕЛЬЯ ═════
   UI.tabs.dun = function (s) {

@@ -1,0 +1,69 @@
+/* Редкости снаряжения (11 ступеней): цвет --rc, свечение --rg, классы .r0….r10. Старшие — с особыми эффектами. */
+.rn{color:var(--rc,#b8bcc8)}
+.rn.r3,.rn.r4{text-shadow:0 0 6px var(--rg)}
+.rn.r5{text-shadow:0 0 7px var(--rg),0 0 1px #000}
+.rn.r6{text-shadow:0 0 8px var(--rg),0 0 2px #2a0008;animation:rnPulse 2.4s ease-in-out infinite}
+.rn.r7{color:#fff6dc;text-shadow:0 0 4px #ffe08a,0 0 10px rgba(255,210,100,.85),0 0 18px rgba(255,236,170,.5)}
+.rn.r8{background:linear-gradient(90deg,#9ff0ff,#c9a2ff,#ffb3e6,#fff1a8,#9ff0ff);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:rnIris 4s linear infinite;filter:drop-shadow(0 0 4px rgba(170,140,255,.6))}
+.rn.r9{background:radial-gradient(circle at 20% 40%,#fff 0 1px,transparent 1.5px),radial-gradient(circle at 70% 60%,#fff 0 1px,transparent 1.5px),linear-gradient(90deg,#6a5cff,#b9a8ff,#3b2aa8);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 5px rgba(80,60,230,.9))}
+.rn.r10{color:#050507;text-shadow:0 0 1px #fff,0 0 3px #fff,0 0 8px rgba(255,255,255,.85)}
+@keyframes rnPulse{50%{text-shadow:0 0 14px var(--rg),0 0 2px #2a0008}}
+@keyframes rnIris{to{background-position:200% 0}}
+
+.rbadge{display:inline-block;font-size:10px;line-height:15px;padding:0 6px;margin-right:2px;border-radius:8px;border:1px solid var(--rc);color:var(--rc);background:rgba(0,0,0,.38);font-weight:700;letter-spacing:.2px;vertical-align:1px;white-space:nowrap}
+.rbadge.r3,.rbadge.r4,.rbadge.r5{box-shadow:0 0 6px -1px var(--rg)}
+.rbadge.r6{background:linear-gradient(90deg,#4a0010,#8a0f2a);color:#ffd0d8;box-shadow:0 0 8px -1px var(--rg)}
+.rbadge.r7{background:linear-gradient(90deg,#fff3c8,#ffd36a,#fff3c8);color:#3a2400;border-color:#fff1c4;box-shadow:0 0 10px rgba(255,214,110,.8)}
+.rbadge.r8{background:linear-gradient(90deg,#9ff0ff,#c9a2ff,#ffb3e6,#fff1a8);color:#1a0f2e;border-color:#e6dcff}
+.rbadge.r9{background:radial-gradient(circle at 25% 35%,#fff 0 .7px,transparent 1.2px),radial-gradient(circle at 75% 65%,#fff 0 .7px,transparent 1.2px),#140c3a;color:#cfc6ff;border-color:#6a5cff}
+.rbadge.r10{background:#f4f4f4;color:#050507;border-color:#fff}
+
+.item.rar{border-left-color:var(--rc)}
+.item.r3,.item.r4{box-shadow:inset 4px 0 14px -8px var(--rg)}
+.item.r5,.item.r6{background:linear-gradient(90deg,var(--rg) -70%,var(--panel) 45%);box-shadow:inset 4px 0 16px -8px var(--rg),0 0 10px -6px var(--rg)}
+.item.r7{background:linear-gradient(90deg,rgba(255,214,110,.35) -40%,var(--panel) 50%);border-color:rgba(255,236,170,.45);border-left-color:#fff1c4;box-shadow:0 0 14px -4px rgba(255,214,110,.8),inset 4px 0 18px -8px #ffe08a}
+.item.r8,.item.r9{border-left-color:var(--rc);box-shadow:0 0 14px -4px var(--rg)}
+.item.r10{background:linear-gradient(90deg,#000 0,var(--panel) 60%);border-left-color:#fff;box-shadow:0 0 12px -4px #fff}
+.item .ils{margin-top:2px}.item .ils .il{margin-right:8px}
+.il.attr b{color:#9fd7ff}.il.aff b{color:var(--ok)}
+.fx-u{color:#5ff0dc}.fx-m{color:#ff7a8e}.fx-d{color:#ffe7a0}
+.il.fxl b{color:inherit}.il.fxl{font-weight:600}
+.inl{display:inline!important}
+
+.eqs.rar{border-color:var(--rc);position:relative}
+.eqs.r3,.eqs.r4,.eqs.r5{box-shadow:0 0 10px -3px var(--rg),inset 0 0 12px -6px var(--rg)}
+.eqs.r6{box-shadow:0 0 12px -2px var(--rg),inset 0 0 14px -6px var(--rg)}
+.eqs.r7{border-color:#fff1c4;box-shadow:0 0 14px -1px rgba(255,214,110,.85),inset 0 0 16px -6px #ffe08a;background:radial-gradient(circle at 50% 30%,rgba(255,220,130,.22),rgba(0,0,0,.3) 70%)}
+.eqs.r8,.eqs.r9,.eqs.r10{box-shadow:0 0 14px -2px var(--rg)}
+.eqs small .rn{font-size:10px}
+.eqs .eqr{font-style:normal;font-size:9px;line-height:1.1;color:var(--rc);opacity:.95}
+.eqs.r7 .eqr{color:#ffe08a}
+
+.itemhead.rar{border-bottom-color:var(--rc);background:radial-gradient(120% 140% at 0% 50%,var(--rg),transparent 55%);border-radius:10px 10px 0 0;padding:6px}
+.itemhead.r7{background:radial-gradient(120% 160% at 0% 50%,rgba(255,214,110,.55),transparent 60%)}
+
+.diffg{margin-top:5px;text-transform:uppercase;letter-spacing:.6px;font-size:10.5px;text-align:left}
+.diffrow.fxrow span{color:inherit}
+.fxn{display:flex;flex-direction:column;font-weight:700}.fxn small{font-weight:400;color:var(--dim);font-size:11px}
+.fxbox{display:flex;flex-direction:column;gap:4px;padding:6px 0 4px;text-align:left;font-size:12.5px;line-height:1.3}
+.fxdesc{padding:5px 8px;border-radius:8px;background:rgba(0,0,0,.28);border-left:2px solid currentColor}.fxdesc .dim{font-size:11px}
+.fxdesc b{white-space:nowrap;color:inherit}
+.diffrow .fxn.fx-u,.fxdesc.fx-u{color:#5ff0dc}.diffrow .fxn.fx-m,.fxdesc.fx-m{color:#ff7a8e}.diffrow .fxn.fx-d,.fxdesc.fx-d{color:#ffe7a0}
+
+.qbtn{min-width:36px;font-weight:700}
+.rlistx{gap:6px}
+.rinfo{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--rc)}
+.rinfo small{display:block;font-size:11.5px;line-height:1.25;color:var(--tx);opacity:.9}.rinfo small.dim{color:var(--dim)}
+.rinfo .rsw{flex:none;width:22px;height:22px;border-radius:50%;background:var(--rc);box-shadow:0 0 10px var(--rg),inset 0 0 0 2px rgba(0,0,0,.35)}
+.rinfo.r7 .rsw{background:radial-gradient(circle,#fff 0 30%,#ffd36a 70%);box-shadow:0 0 14px rgba(255,214,110,.9)}
+.rinfo.r8 .rsw{background:conic-gradient(#9ff0ff,#c9a2ff,#ffb3e6,#fff1a8,#9ff0ff)}
+.rinfo.r9 .rsw{background:radial-gradient(circle at 30% 30%,#fff 0 1px,transparent 1.6px),radial-gradient(circle at 65% 60%,#fff 0 1px,transparent 1.6px),radial-gradient(circle,#2a1a8a,#06021a)}
+.rinfo.r10 .rsw{background:#000;box-shadow:0 0 0 2px #fff,0 0 10px #fff}
+.rinfo.lockd{opacity:.72}
+
+.mgift.rar{box-shadow:0 0 12px -3px var(--rg),inset 0 0 12px rgba(0,0,0,.4)}
+.mgift .mgr{font-style:normal;font-size:9.5px;line-height:1.1;color:var(--rc)}
+.mgift.r7 .mgr{color:#ffe08a}
+.lootl .rbadge{font-size:9px}
+
+@media (prefers-reduced-motion:reduce){.rn.r6,.rn.r8{animation:none}}

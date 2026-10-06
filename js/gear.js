@@ -47,7 +47,7 @@
   E.gearShow = (k, v) => (k === 'critDmg' ? v * 100 : v);   // число для показа
   E.gearLabel = (k) => D.GEAR_LBL[k] || D.STAT_N[k] || D.FLAT[k] || ((D.MODN && D.MODN[k]) || k).replace(/\s*%$/, '');
   E.fmtGear = function (k, v, signed) {
-    const u = E.gearUnit(k), x = Math.round(E.gearShow(k, v) * 10) / 10;
+    const u = E.gearUnit(k), x = u === '' && (D.STATS.includes(k) || D.FLAT[k]) ? Math.round(v) : Math.round(E.gearShow(k, v) * 10) / 10;
     if (u === 'flag') return v ? '✔' : '—';
     const s = x > 0 ? '+' : x < 0 ? '−' : (signed ? '±' : '');
     return s + Math.abs(x) + (u === '%' ? '%' : u);
