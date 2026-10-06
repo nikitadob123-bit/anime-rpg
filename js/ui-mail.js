@@ -81,7 +81,7 @@
   const dt = (iso) => { const t = M.parseT(iso); if (!Number.isFinite(t)) return ''; const d = new Date(t), y = d.getFullYear() !== new Date().getFullYear(); return d.toLocaleDateString('ru-RU', y ? { day: 'numeric', month: 'short', year: 'numeric' } : { day: 'numeric', month: 'short' }); };
   const body = (s, txt) => esc(E.fmtText(txt || '', s)).replace(/\n/g, '<br>');
   const sealIc = (L) => (L.src === 'local' ? '🪶' : L.from === 'Администрация' ? '👑' : '✉️');
-  const giftTiles = (g, cls) => M.giftList(g).map((x, i) => `<div class="mgift ${cls || ''} ${x.r ? 'rar r' + (x.ri || 0) : ''}" style="${x.c ? '--rc:' + x.c + ';--rg:' + D.RARITY[x.ri || 0].g + ';' : ''}--i:${i}"><span class="gi">${x.ic}</span><b>${x.q > 1 || !x.r ? '×' + fmt(x.q) : ''}</b><small>${esc(x.n)}</small>${x.r ? `<i class="mgr">${esc(x.r)}</i>` : ''}</div>`).join('');
+  const giftTiles = (g, cls) => M.giftList(g).map((x, i) => `<div class="mgift ${cls || ''} ${x.r ? 'rar r' + (x.ri || 0) : ''}" style="${x.c ? '--rc:' + x.c + ';--rg:' + RPG.D.RARITY[x.ri || 0].g + ';' : ''}--i:${i}"><span class="gi">${x.ic}</span><b>${x.q > 1 || !x.r ? '×' + fmt(x.q) : ''}</b><small>${esc(x.n)}</small>${x.r ? `<i class="mgr">${esc(x.r)}</i>` : ''}</div>`).join('');
   const status = (s, L) => {
     if (!M.hasGifts(L.gifts)) return '';
     if (L.claimed || M.ensure(s).claimed[L.id]) return '<span class="mst ok">✔ Получено</span>';

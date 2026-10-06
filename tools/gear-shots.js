@@ -14,7 +14,7 @@ let ok = 0, bad = 0; const check = (n, c, x) => { c ? ok++ : bad++; console.log(
   const ctx = await b.newContext({ viewport: { width: VW, height: VH }, deviceScaleFactor: DPR, isMobile: true, hasTouch: true, serviceWorkers: 'block', locale: 'ru-RU' });
   const page = await ctx.newPage(); const errs = [];
   page.on('console', (m) => m.type() === 'error' && errs.push(m.text())); page.on('pageerror', (e) => errs.push(e.message));
-  await page.route('**/mail/inbox.json*', (r) => r.fulfill({ contentType: 'application/json', body: '{"letters":[]}' }));
+  await page.route('**/mail/inbox.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ letters: [{ id: 'gear-demo', title: 'Дары редкостей', body: 'Проверка подарков снаряжения.', date: '2026-01-01', gifts: { gold: 500, gear: [{ base: 'sword', rarity: 'divine', il: 60 }, { base: 'ring', rarity: 'mythic' }, { base: 'amulet', rarity: 'legend' }, { base: 'boots_l', rarity: 'unique' }, { base: 'body_h', rarity: 2 }] } }] }) }));
   const ev = (f, a) => page.evaluate(f, a);
   // снимок в полном разрешении устройства, затем уменьшение до ≤1200 px по высоте (python3 + Pillow; без него — в CSS-пикселях)
   const { execFileSync } = require('child_process');
@@ -64,6 +64,11 @@ let ok = 0, bad = 0; const check = (n, c, x) => { c ? ok++ : bad++; console.log(
   // кузница, лавка, почтовый подарок, крафт-тост
   await ev(() => __RPG.UI.forgeModal()); check('кузница: предел по редкости', await ev(() => /\+4\/10/.test(document.querySelector('#modal').textContent))); await shot('forge'); await over('кузница');
   await ev(() => { __RPG.UI.sub.shop = 'gear'; __RPG.UI.shopModal(); }); await shot('shop'); await over('лавка');
+  await ev(() => __RPG.UI.closeModal()); await ev(() => __RPG.UI.mailFetch(true)); await page.waitForTimeout(800);
+  await ev(() => { __RPG.UI.tab = 'mail'; __RPG.UI.renderGame(); }); await page.waitForTimeout(300);
+  await page.locator('.mrow', { hasText: 'Дары редкостей' }).first().click(); await page.waitForTimeout(400);
+  check('почта: подарки с редкостями', await ev(() => { const t = document.querySelectorAll('#modal .mgift.rar'); return t.length === 5 && /Божественный/.test(document.querySelector('#modal').textContent); }));
+  await shot('mail-gifts'); await over('почта: подарки');
   await ev(() => __RPG.UI.closeModal());
   console.log('errs', JSON.stringify(errs.slice(0, 5))); check('нет ошибок консоли', errs.length === 0, JSON.stringify(errs.slice(0, 3)));
   console.log(`gear-shots ${spec}: ${ok} ✓, ${bad} ✗`); await b.close(); if (srv) srv.close(); process.exit(bad ? 1 : 0);
