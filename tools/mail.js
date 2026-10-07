@@ -90,18 +90,19 @@ if (cmd === 'add') {
   if (r.errors.length) { console.log('✗ Ошибки:\n  ' + r.errors.join('\n  ')); process.exit(1); }
   console.log(`✓ mail/inbox.json в порядке: писем ${r.letters.length}`);
 } else if (cmd === 'ids') {
-  const t = (title, obj) => console.log(`\n${title}\n` + Object.keys(obj).map((k) => `  ${k.padEnd(11)} ${obj[k].ic} ${obj[k].n}`).join('\n'));
+  const t = (title, obj) => console.log(`\n${title}\n` + Object.keys(obj).map((k) => `  ${k.padEnd(17)} ${obj[k].ic} ${obj[k].n}`).join('\n'));
   console.log('Типы подарков:\n' + Object.keys(M.GIFT_TYPES).map((k) => `  ${k.padEnd(9)} ${M.GIFT_TYPES[k]}`).join('\n'));
   t('Расходники (--item id:кол-во → cons):', D.CONS); t('Материалы (--item id:кол-во → mats):', D.MATS); t('Подарки Свите (--item id:кол-во → presents):', D.GIFTS);
   t('Снаряжение (--gear base:редкость[:уровень]):', D.BASES);
-  console.log('\nУникальные предметы (--unique id) — единственный способ выдать «Концептуальный»:\n' + D.UNIQUE_IDS.map((k) => `  ${k.padEnd(11)} ${D.UNIQUE_ITEMS[k].nm} (${D.RARITY[D.UNIQUE_ITEMS[k].r].n})`).join('\n')); console.log('  редкость: ' + M.RARITY_IDS.map((r, i) => `${i}=${r} (${D.RARITY[i].n})`).join(', '));
+  console.log('\nУникальные предметы (--unique id) — единственный способ выдать «Концептуальный»:\n' + D.UNIQUE_IDS.map((k) => `  ${k.padEnd(17)} ${D.UNIQUE_ITEMS[k].nm} (${D.RARITY[D.UNIQUE_ITEMS[k].r].n})`).join('\n')); console.log('  редкость: ' + M.RARITY_IDS.map((r, i) => `${i}=${r} (${D.RARITY[i].n})`).join(', '));
 } else {
   console.log(`Почта «Нимба Мира» — mail/inbox.json
 
   node tools/mail.js add --title "Заголовок" --body "Текст письма" [подарки] [срок] [условия]
       подарки:  --gold 500  --xp 200  --sp 1  --item pot_hp2:3 (можно несколько)  --gear sword:rare[:уровень] [--gear-name "Имя"]
                 редкость 0…7: common uncommon rare unique epic legend mythic divine (8+ через --gear запрещены)
-                --unique eden_light — уникальный предмет (только так выдаётся «Концептуальный»)
+                --unique eden_light — уникальный предмет (только так выдаётся «Концептуальный»):
+                  eden_light abyss_dark hell_heart first_flame boundless_source chronos end_of_all
       кому:     --to NM-XXXXXX (код игрока из вкладки «Почта»; можно несколько через запятую) — без --to письмо всем
       срок:     --days 7  или  --expires 2026-12-31      дата письма: --date 2026-10-10 (письмо придёт в этот день)
       условия:  --min-level 10  --min-chapter 5  --new-players  --created-before 2026-10-01
