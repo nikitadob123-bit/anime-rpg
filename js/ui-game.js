@@ -18,11 +18,14 @@
   const statLine = (l) => l.kind === 'fx' ? `<span class="il fxl fx-${l.fx.t}"><b>${FXI[l.fx.t]} ${esc(l.fx.n)}</b> ${l.txt}</span>` : `<span class="il ${l.kind}"><b>${l.txt}</b> ${esc(l.label)}</span>`;
   UI.itemStats = (it) => E.gearLines(it).map(statLine).join('');
   // иконка предмета: у уникальных — картинка, у остальных — эмодзи основы
-  UI.itemIc = (it, big) => { const U = E.uniqOf(it); return U ? `<img class="uqi${big ? ' big' : ''}" src="${big ? U.img : U.img128 || U.img}" alt="" draggable="false">` : D.BASES[it.k].ic; };
+  UI.itemIc = (it, big) => { const U = E.uniqOf(it); return U ? `<img class="uqi${big ? ' big' : ''}${U.r >= 9 ? ' o9' : ''}" src="${big ? U.img : U.img128 || U.img}" alt="" draggable="false">` : D.BASES[it.k].ic; };
   // концептуальные свойства уникальной вещи (✧) + навык
   UI.cxHtml = function (it) {
     const U = E.uniqOf(it); if (!U) return '';
     const sk = U.skill && D.SKILLS[U.skill];
+    const o9 = U.r >= (D.ORIGIN_R || 9);
+    const ocH = o9 ? `<div class="cxbox oc"><div class="cxh">✶ Общие свойства редкости Исток</div>${D.ORIGIN_COMMON.map((x) => `<div class="cxrow"><b>✶ ${esc(x.n)}</b><span>${esc(x.d)}</span></div>`).join('')}</div>` : '';
+    if (o9) return ((U.sp || []).length ? `<div class="cxbox sp"><div class="cxh">◆ Особые свойства</div>${U.sp.map((x) => `<div class="cxrow"><b>◆ ${esc(x.n)}</b><span>${esc(x.d)}</span></div>`).join('')}</div>` : '') + `<div class="cxbox ox"><div class="cxh">${D.OX_IC} Свойства Истока</div>${U.cx.map((x) => `<div class="cxrow"><b>${D.OX_IC} ${esc(x.n)}</b><span>${esc(x.d)}</span></div>`).join('')}${sk ? `<div class="cxsk"><img src="${sk.img}" alt=""><div class="grow tl"><b>${esc(sk.n)}</b> <small class="dim">💧${sk.mp} · перезарядка ${sk.cd}</small><div class="small">${esc(sk.d)}</div></div></div>` : ''}</div>` + ocH;
     const spH = (U.sp || []).length ? `<div class="cxbox sp"><div class="cxh">◆ Особые свойства</div>${U.sp.map((x) => `<div class="cxrow"><b>◆ ${esc(x.n)}</b><span>${esc(x.d)}</span></div>`).join('')}</div>` : '';
     return spH + `<div class="cxbox"><div class="cxh">${D.CX_IC} Концептуальные свойства</div>${U.cx.map((x) => `<div class="cxrow"><b>${D.CX_IC} ${esc(x.n)}</b><span>${esc(x.d)}</span></div>`).join('')}${sk ? `<div class="cxsk"><img src="${sk.img}" alt=""><div class="grow tl"><b>${esc(sk.n)}</b> <small class="dim">💧${sk.mp} · перезарядка ${sk.cd}</small><div class="small">${esc(sk.d)}</div></div></div>` : ''}</div>`;
   };
@@ -278,7 +281,7 @@
   UI.rarInfoHtml = function () {
     const rows = D.RARITY.map((R, i) => {
       const it = { r: i }, opened = R.lock && UI.slot() && E.slotItems(UI.slot()).some((x) => (x.r | 0) === i), lockd = R.lock && !opened;
-      const what = opened ? `открыто: ${E.slotItems(UI.slot()).filter((x) => (x.r | 0) === i).map((x) => esc(x.nm)).filter((v, j, a) => a.indexOf(v) === j).join(', ')} · ${D.CX_IC} концептуальные свойства` : lockd ? '<span class="dim">??? — ещё не открыто</span>' : `${R.attr[0] === R.attr[1] ? R.attr[0] : R.attr[0] + '–' + R.attr[1]} хар. · ${R.aff[0] === R.aff[1] ? R.aff[0] : R.aff[0] + '–' + R.aff[1]} аффикс.${R.fx.length ? ' · ' + R.fx.map((t) => FXI[t]).join('') : ''} · ×${R.mul} к основе${R.up ? ' · +' + R.up + ' улучш.' : ''}`;
+      const what = opened ? `открыто: ${E.slotItems(UI.slot()).filter((x) => (x.r | 0) === i).map((x) => esc(x.nm)).filter((v, j, a) => a.indexOf(v) === j).join(', ')} · ${i >= 9 ? D.OX_IC + ' свойства Истока и пять общих свойств редкости (Отрицание бессмертия, Иммунитет к концепциям, Приоритет Истока, Стирание Истоком, Общий приоритет)' : D.CX_IC + ' концептуальные свойства'}` : lockd ? '<span class="dim">??? — ещё не открыто</span>' : `${R.attr[0] === R.attr[1] ? R.attr[0] : R.attr[0] + '–' + R.attr[1]} хар. · ${R.aff[0] === R.aff[1] ? R.aff[0] : R.aff[0] + '–' + R.aff[1]} аффикс.${R.fx.length ? ' · ' + R.fx.map((t) => FXI[t]).join('') : ''} · ×${R.mul} к основе${R.up ? ' · +' + R.up + ' улучш.' : ''}`;
       const where = opened ? 'только уникальные предметы — особым даром' : lockd ? '' : i === 0 || i === 1 ? 'везде' : i === 2 ? 'с первых подземелий, боссы' : i === 3 ? 'с ур. ' + R.lv + ', лавка после 3 подземелий' : i === 4 ? 'с ур. ' + R.lv + ', ремесло' : i === 7 ? 'только боссы, с ур. ' + R.lv + ' — крайне редко' : 'с ур. ' + R.lv;
       return `<div class="rinfo ${UI.rarCls(it)} ${lockd ? 'lockd' : ''}" style="${UI.rarVars(it)}"><i class="rsw"></i><div class="grow tl"><b class="rn ${UI.rarCls(it)}" style="${UI.rarVars(it)}">${i + 1}. ${lockd ? '🔒 ' : ''}${R.n}</b><small>${what}</small>${where ? `<small class="dim">${where}</small>` : ''}</div></div>`;
     }).join('');

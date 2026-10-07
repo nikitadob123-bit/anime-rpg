@@ -7,6 +7,10 @@
   const evIcon = (ev) => EVIC[ev] || (D.GATHER_EV[ev] ? D.GATHER_EV[ev].ic : '❓');
   const rarSpan = (it) => `<span class="lootl">${UI.itemIc(it)} ${UI.itemName(it)} ${UI.rarBadge(it)}</span>`;
 
+  // ✶ стёртые экземпляры врагов: «Стёрт из существования · MM:SS» (data-until обновляется раз в секунду)
+  const eraseBadge = (s, did) => { const L = C.erasedList(s).filter((x) => x.k.split('|')[0] === did); if (!L.length) return ''; const mx = L.reduce((a, x) => Math.max(a, x.until), 0);
+    return `<div class="erz" data-until="${mx}" title="Стёртые Истоком враги этого подземелья не появятся до конца таймера">🌌 Стёрт из существования · <b>${C.fmtLeft(C.eraseLeft({ until: mx }))}</b>${L.length > 1 ? ' · ×' + L.length : ''}</div>`; };
+  if (typeof setInterval !== 'undefined' && typeof document !== 'undefined') setInterval(() => { document.querySelectorAll('[data-until]').forEach((el) => { const b = el.querySelector('b'); const ms = +el.dataset.until - E.now(); if (ms <= 0) el.remove(); else if (b) b.textContent = C.fmtLeft(ms); }); }, 1000);
   // ═════ ПОДЗЕМЕЛЬЯ ═════
   UI.tabs.dun = function (s) {
     if (s.run) return runView(s);
@@ -15,7 +19,7 @@
       const open = E.dungeonUnlocked(s, d.id), cl = s.prog.cleared[d.id] || 0;
       const tiers = D.TIERS.map((t, i) => `<i class="td ${cl > i ? 'on' : ''}" title="${t.n}">${t.ic}</i>`).join('');
       const reason = !open ? (d.lockHint ? d.lockHint : d.id === 'cathedral' && s.prog.cleared.spire ? 'Сначала прочтите главу «У врат собора».' : d.need === 'ch1' ? 'Завершите пролог.' : 'Сначала пройдите «' + D.DUN[d.need].n + '».') : '';
-      return `<button class="card dcard ${open ? '' : 'lockd'}" style="--dc:${d.col}" data-act="dunOpen" data-id="${d.id}" ${open ? '' : 'data-quiet="1"'}><div class="dic">${d.ic}</div><div class="grow tl"><b>${d.n}</b><div class="dim small">ур. ${d.lv}–${d.lv + d.floors + 1} · этажей: ${d.floors}</div><div class="small tl dim">${open ? d.d : reason}</div></div><div class="tiers">${open ? tiers : '🔒'}</div></button>`;
+      return `<button class="card dcard ${open ? '' : 'lockd'}" style="--dc:${d.col}" data-act="dunOpen" data-id="${d.id}" ${open ? '' : 'data-quiet="1"'}><div class="dic">${d.ic}</div><div class="grow tl"><b>${d.n}</b><div class="dim small">ур. ${d.lv}–${d.lv + d.floors + 1} · этажей: ${d.floors}</div><div class="small tl dim">${open ? d.d : reason}</div>${eraseBadge(s, d.id)}</div><div class="tiers">${open ? tiers : '🔒'}</div></button>`;
     }).join('');
     return `<h2>Подземелья</h2><div class="small dim tl">Выберите место для вылазки. Сложность растёт после первой победы. Рекомендуемый уровень указан для «Обычного».</div>${cards}`;
   };
@@ -56,13 +60,14 @@
   const nodeIc = (n) => (n.t === 'ev' ? evIcon(n.ev) : n.t === 'boss' ? '👹' : n.t === 'mini' ? '💀' : n.elite ? '⚔️' : '🗡️');
   function runView(s) {
     const run = s.run, d = D.DUN[run.did], T = D.TIERS[run.tier], dd = E.derive(s), node = run.nodes[run.node], fl = node ? node.f : d.floors - 1;
-    const track = run.nodes.map((n, i) => `<span class="nd ${i < run.node ? 'past' : i === run.node ? 'cur' : ''} ${n.t === 'boss' ? 'bossn' : ''}">${i < run.node ? '✔' : nodeIc(n)}</span>`).join('');
+    const track = run.nodes.map((n, i) => { const gone = i >= run.node && C.nodeErased(s, run, i); return `<span class="nd ${i < run.node ? 'past' : i === run.node ? 'cur' : ''} ${n.t === 'boss' ? 'bossn' : ''} ${gone ? 'gone' : ''}" ${gone ? 'title="Стёрт из существования"' : ''}>${i < run.node ? '✔' : gone ? '🌌' : nodeIc(n)}</span>`; }).join('');
+    const ers = C.erasedList(s).filter((x) => x.k.startsWith(run.did + '|' + run.tier + '|') && +x.k.split('|')[2] >= run.node);
     const party = [`<div class="pm">${UI.por(s.hero.portrait, 'xs', false)}<div class="grow"><b>${esc(s.hero.name)}</b>${bar(run.hp, dd.maxHp, 'hp')}${bar(run.mp, dd.maxMp, 'mp')}<small>${fmt(run.hp)}/${fmt(dd.maxHp)} · ${fmt(run.mp)}/${fmt(dd.maxMp)}</small></div></div>`]
       .concat(s.party.map((id) => `<div class="pm">${UI.por(D.CREW[id].art, 'xs', false)}<div class="grow"><b>${D.CREW[id].n}</b>${bar((run.comp[id] == null ? 1 : run.comp[id]), 1, 'hp')}</div></div>`)).join('');
     const b = run.bag, mats = Object.keys(b.mats).map((k) => `${D.MATS[k].ic}${b.mats[k]}`).join(' ');
     let label = 'Дальше'; if (node) label = node.t === 'boss' ? '👹 Сразиться с боссом' : node.t === 'mini' ? '💀 К мини-боссу' : node.t === 'ev' ? 'Исследовать ' + evIcon(node.ev) : node.elite ? '⚔️ Закалённый отряд' : '🗡️ В бой';
     return `<div class="runhead" style="--dc:${d.col}"><span class="big-ic">${d.ic}</span><div class="grow tl"><h3 class="m0">${d.n}</h3><div class="dim small">${T.ic} ${T.n} · этаж ${fl + 1}/${d.floors}</div></div></div>
-      <div class="track">${track}</div>
+      <div class="track">${track}</div>${ers.length ? `<div class="erz" data-until="${ers.reduce((a, x) => Math.max(a, x.until), 0)}">🌌 Стёрто впереди: ${ers.length} · <b>${C.fmtLeft(C.eraseLeft({ until: ers.reduce((a, x) => Math.max(a, x.until), 0) }))}</b></div>` : ''}
       <div class="card">${party}</div>
       <div class="card small"><b>Добыча вылазки</b><div class="dim">🪙 ${fmt(b.gold)} · ✨ ${fmt(b.xp)} опыта · ${b.items.length} предм.${mats ? ' · ' + mats : ''}</div>${b.items.length ? `<div class="loots">${b.items.slice(-6).map(rarSpan).join('<br>')}</div>` : ''}</div>
       <button class="btn primary big wide" data-act="runNext" id="btnRunNext">${label}</button>
@@ -81,6 +86,8 @@
       if (node.t === 'ev') { await doEvent(node); }
       else {
         const pre = D.PRE_BOSS[run.did]; if (node.t === 'boss' && pre && !s.story.done.includes(pre)) { await UI.playScene(pre); UI.save(true); }
+        const ac = C.autoClear(s);   // ✶ все враги этапа стёрты Истоком — этап очищается сам, без наград
+        if (ac) { UI.save(true); UI.toast('🌌 Этап очищен: враги стёрты из существования (без награды)', 'ok'); if (ac.bossDown) await finishRun('win'); else { UI.busy = false; UI.refresh(false); } return; }
         const rep = await UI.battle();
         UI.save(true);
         if (rep.result === 'win' && node.e && node.e.length === 1 && D.ENEMIES[node.e[0]].duel) { const ds = D.DUEL_SCENE[node.e[0]]; if (ds) { await UI.playScene(ds, !!s.story.done.includes(ds)); UI.save(true); } }
@@ -127,7 +134,8 @@
   UI.act.runDone = () => { if (UI.runDone) { const f = UI.runDone; UI.runDone = null; f(); } };
 
   // ═════ БОЙ ═════
-  const stIcons = (u) => u.st.map((s) => `<i class="si ${D.ST[s.id].k}${D.ST[s.id].fixed ? ' fx8' : ''}" title="${D.ST[s.id].n}${s.id === 'decay' ? ' ' + s.pow : ''}${D.ST[s.id].d ? ': ' + D.ST[s.id].d : ''}">${D.ST[s.id].ic}${s.id === 'decay' ? '<b>' + s.pow + '</b>' : s.id === 'mantra' ? '<b>×' + Math.pow(2, s.pow) + '</b>' : s.dur > 1 && s.dur < 90 ? '<b>' + s.dur + '</b>' : ''}</i>`).join('');
+  const LV = { decay: 1, causeMark: 1 };
+  const stIcons = (u) => u.st.map((s) => `<i class="si ${D.ST[s.id].k}${D.ST[s.id].item >= 9 ? ' ox9' : D.ST[s.id].fixed ? ' fx8' : ''}" title="${D.ST[s.id].n}${LV[s.id] ? ' ' + s.pow : ''}${D.ST[s.id].d ? ': ' + D.ST[s.id].d : ''}">${D.ST[s.id].ic}${LV[s.id] ? '<b>' + s.pow + '</b>' : s.id === 'mantra' ? '<b>×' + Math.pow(2, s.pow) + '</b>' : s.dur > 1 && s.dur < 90 ? '<b>' + s.dur + '</b>' : ''}</i>`).join('');
   UI.battle = async function () {
     const slot = UI.slot(), st = UI.p.settings;
     const B = C.startNodeBattle(slot, { auto: !!st.auto, cmd: !!slot.cmd }); UI.B = B; B.sel = null; B.speed = st.battleSpeed || 1;
@@ -204,7 +212,7 @@
       const basic = D.BASIC[u.cls] || D.BASIC.warrior;
       const sk = skills.map((id) => {
         const k = C.skillOf(u, id), why = C.canUse(B, u, id), cost = (k.mp ? `💧${k.mp}` : '') + (k.rc ? ` ${D.CLASSES[u.cls].rc.n}${k.rc}` : '') + (k.rcAll ? ' всё' : '');
-        return `<button class="sk ${why ? 'off' : ''} ${id.startsWith('u_') ? 'echo' : id.startsWith('c_') ? 'echo conc' : k.gear ? 'cxs' : ''}" data-act="bSkill" data-id="${id}" data-quiet="1" ${why ? 'data-why="' + why + '"' : ''}><span>${k.img ? `<img class="uqi" src="${k.img}" alt="">` : k.ic}</span><b>${esc(k.n)}</b><small>${why ? why : cost || '—'}</small></button>`;
+        return `<button class="sk ${why ? 'off' : ''} ${id.startsWith('u_') ? 'echo' : id.startsWith('c_') ? 'echo conc' : k.origin ? 'oxs' : k.gear ? 'cxs' : ''}" data-act="bSkill" data-id="${id}" data-quiet="1" ${why ? 'data-why="' + why + '"' : ''}><span>${k.img ? `<img class="uqi" src="${k.img}" alt="">` : k.ic}</span><b>${esc(k.n)}</b><small>${why ? why : cost || '—'}</small></button>`;
       }).join('');
       const rc = u.rcMax > 0 ? `<div class="rcl">${D.CLASSES[u.cls].rc.n}: <b>${Math.round(u.rc)}/${u.rcMax}</b></div>` : '';
       $('#bact').innerHTML = `<div class="actrow"><div class="turnof">Ход: <b>${esc(u.name)}</b></div>${rc}</div><div class="mainbtns"><button class="abtn" data-act="bBasic" data-quiet="1"><span>${basic.ic}</span>${basic.n}</button><button class="abtn" data-act="bGuard" data-quiet="1"><span>🛡️</span>Защита</button><button class="abtn" data-act="bItems" data-quiet="1"><span>🧪</span>Предметы</button><button class="abtn" data-act="bFlee" data-quiet="1" ${B.opts.noFlee ? 'disabled' : ''}><span>🏃</span>Бегство</button></div><div class="skgrid">${sk}</div>`;

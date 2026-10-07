@@ -103,3 +103,22 @@ img.uqi.big{width:100%;height:100%;max-width:56px;max-height:56px}
 @keyframes cxRot{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.eqs.r8,.uqart::before{animation:none}}
 .uqart,.cxbox,.cxsk{flex:none}
+/* ✶ Исток (r9): глубокая пустота + звёздный свет. Арт клинков Истока — на чёрном фоне (без альфы): mix-blend-mode:screen растворяет чёрное в тёмном UI */
+img.o9{mix-blend-mode:screen;filter:drop-shadow(0 0 4px rgba(143,123,255,.7))}
+.item.r9{background:radial-gradient(circle at 12% 30%,rgba(255,255,255,.9) 0 .8px,transparent 1.4px),radial-gradient(circle at 38% 70%,rgba(255,255,255,.7) 0 .7px,transparent 1.3px),radial-gradient(circle at 64% 22%,rgba(200,190,255,.8) 0 .7px,transparent 1.3px),linear-gradient(90deg,#07031c -10%,rgba(40,24,140,.45) 25%,var(--panel) 70%);border-color:rgba(120,100,255,.55);border-left-color:#8f7bff;box-shadow:0 0 18px -4px rgba(80,60,230,.95),inset 4px 0 22px -8px #b9a8ff}
+.eqs.r9{position:relative;border:2px solid transparent;background:radial-gradient(circle at 20% 25%,#fff 0 .8px,transparent 1.4px) padding-box,radial-gradient(circle at 78% 70%,#d9d2ff 0 .8px,transparent 1.4px) padding-box,radial-gradient(circle at 55% 40%,#1c1060,#05020f) padding-box,conic-gradient(from var(--ca,0deg),#3b2aa8,#b9a8ff,#ffffff,#6a5cff,#120a40,#3b2aa8) border-box;box-shadow:0 0 20px -2px rgba(80,60,230,.95),inset 0 0 18px -6px rgba(185,168,255,.6);animation:cxSpin 9s linear infinite}
+.eqs.r9 .eqr{color:#cfc6ff;text-shadow:0 0 6px #6a5cff}
+.itemhead.r9{background:radial-gradient(circle at 70% 30%,#fff 0 .8px,transparent 1.5px),radial-gradient(circle at 85% 70%,#d9d2ff 0 .7px,transparent 1.4px),radial-gradient(120% 160% at 0% 50%,rgba(60,40,200,.65),transparent 60%),radial-gradient(80% 120% at 100% 0%,rgba(10,4,40,.9),transparent 70%)}
+.uqart.r9{background:radial-gradient(circle at 15% 20%,#fff 0 1px,transparent 1.8px),radial-gradient(circle at 82% 30%,#e8e2ff 0 1px,transparent 1.8px),radial-gradient(circle at 25% 78%,#cfc6ff 0 .8px,transparent 1.5px),radial-gradient(circle at 70% 85%,#fff 0 .8px,transparent 1.5px),radial-gradient(circle at 92% 60%,#fff 0 .7px,transparent 1.3px),radial-gradient(60% 55% at 50% 45%,#1a0f55,#05020f 75%);border-color:rgba(143,123,255,.7);box-shadow:0 0 26px -6px rgba(80,60,230,1),inset 0 0 40px -10px rgba(143,123,255,.7)}
+.uqart.r9::before{background:conic-gradient(from 0deg,transparent,rgba(143,123,255,.25),transparent 25%,rgba(255,255,255,.12),transparent 55%,rgba(60,40,200,.3),transparent)}
+.uqart.r9 img{mix-blend-mode:screen;filter:none}
+.uqart.r9 .uqsub{color:#b9a8ff}.uqart.r9 .uqtag{color:#8f7bff}
+.cxbox.ox{border-color:rgba(143,123,255,.7);background:radial-gradient(circle at 90% 15%,rgba(255,255,255,.6) 0 .7px,transparent 1.3px),linear-gradient(135deg,rgba(20,10,60,.7),rgba(60,40,200,.18))}
+.cxbox.ox .cxh,.cxbox.oc .cxh{background:linear-gradient(90deg,#fff,#b9a8ff,#6a5cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cxbox.oc{border-color:rgba(185,168,255,.55);border-style:dashed;background:linear-gradient(135deg,rgba(5,2,15,.75),rgba(40,24,140,.2))}
+.cxbox.ox .cxsk img,.sk.oxs img.uqi{mix-blend-mode:screen;filter:none}
+.sk.oxs{border-color:#8f7bff;box-shadow:0 0 12px -3px rgba(80,60,230,.95),inset 0 0 10px -4px rgba(185,168,255,.7);background:radial-gradient(circle at 80% 20%,#fff 0 .7px,transparent 1.3px),linear-gradient(160deg,#0a0526,rgba(60,40,200,.35))}
+.si.ox9{box-shadow:0 0 0 1px #8f7bff inset,0 0 6px -1px #6a5cff}
+.erz{display:inline-block;margin-top:3px;padding:1px 6px;border-radius:8px;font-size:11px;color:#d9d2ff;background:linear-gradient(90deg,#07031c,rgba(60,40,200,.5));border:1px solid rgba(143,123,255,.6)}
+.nd.gone{background:radial-gradient(circle,#2a1a8a,#05020f);border-color:#8f7bff;color:#d9d2ff}
+@media (prefers-reduced-motion:reduce){.eqs.r9{animation:none}}
