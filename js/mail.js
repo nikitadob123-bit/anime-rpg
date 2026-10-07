@@ -17,6 +17,7 @@
     cons: 'расходники: { id: количество } — зелья, склянки, еда',
     mats: 'материалы: { id: количество } — руда, травы, слитки, эссенции',
     presents: 'подарки для Свиты: { id: количество }',
+    unique: 'уникальный предмет по id (например eden_light — «Свет Эдема», Концептуальный); строка или массив id. Единственный способ получить такие вещи',
     gear: 'снаряжение: [{ base, rarity, il?, nm? }] — base из списка, rarity 0–7 или common/uncommon/rare/unique/epic/legend/mythic/divine, il — уровень (по умолчанию = уровень героя)'
   };
   const MAXN = 10000000;
@@ -25,6 +26,23 @@
   M.parseT = parseT;
   const rarIdx = (r) => (typeof r === 'number' ? r : M.RARITY_IDS.indexOf(M.RARITY_ALIAS[String(r)] || String(r)));
   M.rarIdx = rarIdx;
+
+  // ───── Код игрока: NM-XXXXXX, создаётся один раз и хранится в слоте (slot.pcode) ─────
+  M.CODE_ABC = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';   // без 0/O/1/I — не путаются
+  M.CODE_RE = /^NM-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/;
+  M.normCode = (x) => { const s = String(x == null ? '' : x).trim().toUpperCase().replace(/\s+/g, ''); return /^NM-?/.test(s) ? 'NM-' + s.replace(/^NM-?/, '') : 'NM-' + s; };
+  M.genCode = function (seed) {
+    let h1 = E.hash('pc1:' + seed) >>> 0, h2 = E.hash('pc2:' + seed) >>> 0, out = '';
+    for (let i = 0; i < 6; i++) { const h = i < 3 ? h1 : h2; out += M.CODE_ABC[(h >>> ((i % 3) * 5)) & 31]; }
+    return 'NM-' + out;
+  };
+  // стабильно: старый сейв без кода получает код из (дата создания + имя + класс) — тот же на любом устройстве; потом он хранится и не меняется
+  M.code = function (slot) {
+    if (!slot) return '';
+    if (typeof slot.pcode === 'string' && M.CODE_RE.test(slot.pcode)) return slot.pcode;
+    const h = slot.hero || {}; slot.pcode = M.genCode([slot.created || 0, h.name || '', h.cls || '', h.race || ''].join('|'));
+    return slot.pcode;
+  };
 
   // ───── Подарки ─────
   // Подарки письма: объект в формате ['give'] сюжета ({ gold, cons:{}, mats:{} … }) или массив таких объектов (сливаются).
@@ -38,6 +56,7 @@
         if (k === 'gold' || k === 'xp' || k === 'sp') out[k] = (out[k] || 0) + v;
         else if (k === 'gear') out.gear = (out.gear || []).concat(Array.isArray(v) ? v : [v]);
         else if (k === 'item' && v === 'tear') out.item = 'tear';
+        else if (k === 'unique') { (Array.isArray(v) ? v : [v]).forEach((id) => { out.unique = out.unique || []; if (!out.unique.includes(id)) out.unique.push(id); }); }
         else if (v && typeof v === 'object') { out[k] = out[k] || {}; for (const id in v) out[k][id] = (out[k][id] || 0) + v[id]; }
         else out[k] = v;   // неизвестное — пусть валидатор скажет
       }
@@ -64,6 +83,7 @@
         });
       }
       else if (k === 'item' && v === 'tear') { /* сюжетный артефакт */ }
+      else if (k === 'unique') { if (v.length > 5) err.push('unique: не больше 5 предметов'); v.forEach((id) => { if (typeof id !== 'string' || !D.UNIQUE_ITEMS || !D.UNIQUE_ITEMS[id]) err.push(`unique: неизвестный уникальный предмет «${id}» (есть: ${(D.UNIQUE_IDS || []).join(', ')})`); }); }
       else err.push(`неизвестный тип подарка «${k}» (можно: ${Object.keys(M.GIFT_TYPES).join(', ')})`);
     }
     return err;
@@ -79,6 +99,7 @@
     for (const id in (g.mats || {})) if (D.MATS[id]) out.push({ ic: D.MATS[id].ic, n: D.MATS[id].n, q: g.mats[id] });
     for (const id in (g.presents || {})) if (D.GIFTS[id]) out.push({ ic: D.GIFTS[id].ic, n: D.GIFTS[id].n, q: g.presents[id] });
     (g.gear || []).forEach((it) => { const B = D.BASES[it.base]; if (B) { const ri = rarIdx(it.rarity || 0), r = D.RARITY[ri] || D.RARITY[0]; out.push({ ic: B.ic, n: it.nm || B.n, q: 1, c: r.c, r: r.n, ri: D.RARITY[ri] ? ri : 0 }); } });
+    (g.unique || []).forEach((id) => { const U = D.UNIQUE_ITEMS && D.UNIQUE_ITEMS[id]; if (U) { const r = D.RARITY[U.r]; out.push({ ic: D.BASES[U.base].ic, img: U.img128 || U.img, n: U.nm, q: 1, c: r.c, r: r.n, ri: U.r, uq: id }); } });
     if (g.item === 'tear') out.push({ ic: '📿', n: 'Слеза Осколка', q: 1, c: D.RARITY[5].c, r: D.RARITY[5].n, ri: 5 });
     return out;
   };
@@ -97,6 +118,7 @@
       if (x.nm) it.nm = String(x.nm).slice(0, 40);
       got.items.push(E.addItem(slot, it));
     });
+    (g.unique || []).forEach((id) => { const it = E.makeUnique && E.makeUnique(id); if (it) got.items.push(E.addItem(slot, it)); });
     if (g.item === 'tear') E.give(slot, { item: 'tear' });
     slot.rev = (slot.rev || 0) + 1;
     return got;
@@ -112,6 +134,7 @@
     if (L.body != null && typeof L.body !== 'string') err.push('body: текст');
     if (L.date != null && !Number.isFinite(parseT(L.date))) err.push('date: дата вида 2026-10-06');
     if (L.expires != null && !Number.isFinite(parseT(L.expires))) err.push('expires: дата вида 2026-10-13');
+    if (L.to != null) { const to = Array.isArray(L.to) ? L.to : [L.to]; if (!to.length || to.length > 200) err.push('to: 1…200 кодов игроков'); to.forEach((x) => { if (!M.CODE_RE.test(M.normCode(x))) err.push(`to: «${x}» — не код игрока (вид NM-XXXXXX)`); }); }
     const c = L.conditions;
     if (c != null) {
       if (typeof c !== 'object') err.push('conditions: объект');
@@ -136,7 +159,7 @@
       if (!e.length && ids.has(L.id)) e.push('id повторяется: ' + L.id);
       if (e.length) { errors.push(`#${i + 1} ${L && L.id || ''}: ${e.join('; ')}`); return; }
       ids.add(L.id);
-      letters.push({ id: L.id, from: str(L.from || 'Администрация', 40), title: str(L.title, 80), body: str(L.body, 4000), date: L.date || null, expires: L.expires || null, conditions: L.conditions || null, gifts: M.normGifts(L.gifts) });
+      letters.push({ id: L.id, from: str(L.from || 'Администрация', 40), title: str(L.title, 80), body: str(L.body, 4000), date: L.date || null, expires: L.expires || null, conditions: L.conditions || null, to: L.to != null ? (Array.isArray(L.to) ? L.to : [L.to]).map(M.normCode) : null, gifts: M.normGifts(L.gifts) });
     });
     return { letters, errors };
   };
@@ -151,6 +174,7 @@
     if (!m.claimed || typeof m.claimed !== 'object') m.claimed = {};
     // письма за арки — только за арки, пройденные после появления почты (без «ретро-подарков» за 50 глав сразу)
     if (typeof m.arcBase !== 'number') m.arcBase = Math.floor(M.chapters(slot) / 10);
+    M.code(slot);
     return m;
   };
   // expires «2026-10-13» (только дата) — письмо действует весь этот день включительно
@@ -164,6 +188,7 @@
     if (m.seen[L.id] || m.claimed[L.id]) return false;
     const d = parseT(L.date); if (Number.isFinite(d) && d > now + 864e5) return false;   // запланированное письмо (с запасом на часовой пояс — сутки)
     if (M.isExpired(L, now)) return false;
+    if (L.to && L.to.length && !L.to.map(M.normCode).includes(M.code(slot))) return false;   // адресное письмо — только этим игрокам
     const c = L.conditions || {}, h = slot.hero || {};
     if (c.minLevel && (h.level || 1) < c.minLevel) return false;
     if (c.minChapter && M.chapters(slot) < c.minChapter) return false;
@@ -231,7 +256,7 @@
   };
 
   // новый герой: почта сразу «с нуля»
-  const _new = E.newSlot; E.newSlot = function (o) { const s = _new(o); s.mail = { list: [], seen: {}, claimed: {}, arcBase: 0 }; return s; };
+  const _new = E.newSlot; E.newSlot = function (o) { const s = _new(o); s.mail = { list: [], seen: {}, claimed: {}, arcBase: 0 }; s.pcode = M.genCode([s.created || Date.now(), (s.hero || {}).name || '', Math.random()].join('|')); return s; };
   // миграция старых сохранений: поле mail добавляется при загрузке (формат v5 не меняется — старая версия игры спокойно читает такие сейвы)
   if (RPG.S) { const mig = RPG.S.migrate; RPG.S.migrate = function (p) { p = mig(p); if (p && Array.isArray(p.slots)) p.slots.forEach((s) => { if (s && typeof s === 'object' && s.hero) M.ensure(s); }); return p; }; }
   if (typeof module !== 'undefined') module.exports = RPG;

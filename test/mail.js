@@ -38,7 +38,7 @@ t('giftErrors: все типы подарков проверяются по да
   assert(M.giftErrors({ gear: [{ base: 'sword', rarity: 9 }] }).length === 1);
   assert(M.giftErrors({ cons: { pot_hp1: 1.5 } }).length === 1);
   assert(M.giftErrors({ gold: '100' }).length === 1);
-  Object.keys(M.GIFT_TYPES).forEach((k) => assert(['gold', 'xp', 'sp', 'cons', 'mats', 'presents', 'gear'].includes(k)));
+  Object.keys(M.GIFT_TYPES).forEach((k) => assert(['gold', 'xp', 'sp', 'cons', 'mats', 'presents', 'gear', 'unique'].includes(k)));
 });
 
 console.log('Почта: доставка и подарки');
@@ -133,6 +133,38 @@ t('tools/mail.js: add/list/remove/check работают с файлом и не
   assert.deepStrictEqual(M.parseFeed(j).errors, []); assert(run(['check']).includes('писем 2')); assert(run(['list']).includes('Второе'));
   assert.throws(() => run(['add', '--title', 'x', '--item', 'nope'])); assert.throws(() => run(['add', '--title', 'x', '--gold', '-1'])); assert.throws(() => run(['add', '--title', 'x', '--id', 'second']));
   run(['remove', 'second']); assert.strictEqual(JSON.parse(fs.readFileSync(f, 'utf8')).letters.length, 1); fs.unlinkSync(f);
+});
+
+console.log('Почта: уникальные предметы, код игрока, адресные письма');
+t('unique: «Свет Эдема» выдаётся письмом один раз; случайная редкость ≥8 по-прежнему запрещена', () => {
+  assert.deepStrictEqual(M.giftErrors({ unique: 'eden_light' }), []); assert.strictEqual(M.giftErrors({ unique: 'nope' }).length, 1);
+  assert.strictEqual(M.giftErrors({ gear: [{ base: 'sword', rarity: 8 }] }).length, 1); assert.strictEqual(M.giftErrors({ gear: [{ base: 'sword', rarity: 'concept' }] }).length, 1);
+  const s = mk(); M.deliver(s, M.parseFeed({ letters: [L({ id: 'eden', gifts: { unique: 'eden_light' } })] }).letters, NOW);
+  const r = M.claim(s, 'eden', NOW); assert(r.ok); const it = s.inv.find((x) => x.uq === 'eden_light'); assert(it); assert.strictEqual(it.r, 8); assert.strictEqual(it.st.atk, 1000); assert(it.lock);
+  assert(!M.claim(s, 'eden', NOW).ok); M.claimAll(s, NOW); assert.strictEqual(s.inv.filter((x) => x.uq).length, 1, 'второй раз не выдан');
+  M.deliver(s, M.parseFeed({ letters: [L({ id: 'eden', gifts: { unique: 'eden_light' } })] }).letters, NOW); assert.strictEqual(s.inv.filter((x) => x.uq).length, 1);
+  assert.strictEqual(E.sell(s, it.id), 0); assert(s.inv.includes(it), 'не продаётся');
+  assert(M.giftList({ unique: 'eden_light' })[0].img);
+});
+t('код игрока: формат NM-XXXXXX, стабилен, сохраняется; старый сейв получает код при миграции', () => {
+  const s = mk(); const c = M.code(s); assert(M.CODE_RE.test(c), c); assert.strictEqual(M.code(s), c); M.ensure(s); assert.strictEqual(s.pcode, c);
+  const old = mk(); delete old.pcode; delete old.mail; const p = S.migrate({ v: 5, id: 'x', nick: 'a', settings: S.defaultSettings(), slots: [old, null, null] }); const c1 = p.slots[0].pcode; assert(M.CODE_RE.test(c1));
+  const old2 = JSON.parse(JSON.stringify(old)); delete old2.pcode; M.ensure(old2); assert.strictEqual(old2.pcode, c1, 'тот же код для того же сейва на другом устройстве');
+  const codes = new Set(); for (let i = 0; i < 300; i++) codes.add(mk({ name: 'Г' + i }).pcode); assert(codes.size >= 299, 'коды почти не повторяются');
+  assert.strictEqual(M.normCode('nm-ab2cd3'), 'NM-AB2CD3'); assert.strictEqual(M.normCode('AB2CD3'), 'NM-AB2CD3');
+});
+t('адресные письма (to): получают только указанные коды', () => {
+  const a = mk({ name: 'А' }), b = mk({ name: 'Б' }); const f = M.parseFeed({ letters: [L({ id: 'to-a', to: [a.pcode.toLowerCase()], gifts: { unique: 'eden_light' } }), L({ id: 'all' })] });
+  assert.deepStrictEqual(f.errors, []); assert.strictEqual(M.deliver(a, f.letters, NOW), 2); assert.strictEqual(M.deliver(b, f.letters, NOW), 1); assert(!M.find(b, 'to-a'));
+  assert(M.letterErrors(L({ to: ['XYZ'] })).length === 1); assert(M.letterErrors(L({ to: [] })).length === 1);
+});
+t('tools/mail.js: --unique и --to; --gear с редкостью 8 отклоняется', () => {
+  const { execFileSync } = require('child_process'), os = require('os'); const f = path.join(os.tmpdir(), 'inbox-u-' + process.pid + '.json');
+  fs.writeFileSync(f, JSON.stringify({ letters: [] })); const run = (args) => execFileSync('node', [path.join(__dirname, '../tools/mail.js')].concat(args), { env: Object.assign({}, process.env, { MAIL_FILE: f }), encoding: 'utf8', stdio: 'pipe' });
+  run(['add', '--title', 'Дар', '--unique', 'eden_light', '--to', 'nm-ab2cd3', '--id', 'eden-x']);
+  const a = JSON.parse(fs.readFileSync(f, 'utf8')).letters[0]; assert.deepStrictEqual(a.gifts, { unique: ['eden_light'] }); assert.deepStrictEqual(a.to, ['NM-AB2CD3']);
+  assert.throws(() => run(['add', '--title', 'x', '--gear', 'sword:8'])); assert.throws(() => run(['add', '--title', 'x', '--gear', 'sword:concept'])); assert.throws(() => run(['add', '--title', 'x', '--unique', 'nope'])); assert.throws(() => run(['add', '--title', 'x', '--to', 'BAD']));
+  fs.unlinkSync(f);
 });
 
 console.log(`\nПочта: ${pass} ✓, ${fail} ✗`);
