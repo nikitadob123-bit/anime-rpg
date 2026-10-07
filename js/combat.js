@@ -89,6 +89,9 @@
     const ovr = srcDmg(src, tgt) && (def.item || 0) >= D.ORIGIN_R;   // ✶ Общий приоритет: эффекты Истока не режут свойства более низких редкостей
     const fp = Math.max(tgt.mods.srcForm || 0, tgt.mods.pcFirst || 0);
     if (foe && deb && fp > 0 && !tgt._formUsed && !ovr) { tgt._formUsed = true; if (B.rng() * 100 < fp) { if (tgt.mods.pcFirst >= (tgt.mods.srcForm || 0)) { ev(B, { t: 'txt', u: tgt.id, s: 'Первая причина' }); msg(B, tgt.name + ': «' + def.n + '» не возникает — Первая причина'); return; } ev(B, { t: 'txt', u: tgt.id, s: 'Вода приняла форму' }); msg(B, tgt.name + ': «' + def.n + '» растворяется'); return; } }   // ✧ «Вода принимает любую форму»
+    if (foe && deb && tgt.mods.pcFix > 0 && (tgt._pcFixT == null || tgt.turns - tgt._pcFixT >= 4)) {   // ✶ «Исправление причины»: раз в 4 хода владельца эффект не накладывается, источник теряет 15% шкалы хода
+      tgt._pcFixT = tgt.turns; if (src.alive && src.gauge != null) src.gauge -= tgt.mods.pcFix; ev(B, { t: 'txt', u: tgt.id, s: 'Исправление причины' }); msg(B, tgt.name + ': Исправление причины — «' + def.n + '» не произошло, шкала ' + src.name + ' −' + tgt.mods.pcFix + '%'); return;
+    }
     if (foe && deb && tgt.mods.chronoShort > 0 && dur < 90 && !ovr) dur = Math.max(1, dur - tgt.mods.chronoShort);   // «Вне мгновения»
     if (id === 'shield' && has(tgt, 'heatDeath')) pow *= 0.2;   // ✧ Тепловая смерть: щиты −80%
     if (id === 'shield') { if (s) { s.pow += pow; s.dur = Math.max(s.dur, dur); } else tgt.st.push({ id, dur, pow, src: src.id }); }
@@ -135,17 +138,16 @@
     // сначала регенерация и DoT
     const hr = (u.mods.hpRegen || 0); if (hr) heal(B, u, u, u.maxHp * hr / 100, true);
     if (u.mods.srcRegen > 0) heal(B, u, u, u.maxHp * u.mods.srcRegen / 100, true, true);   // «Восстановление потока»
-    (has(u, 'regen') ? [has(u, 'regen')] : []).forEach(s => heal(B, { id: s.src, hpow: s.pow }, u, s.pow, true, true));
+    (has(u, 'regen') ? [has(u, 'regen')] : []).forEach(s => heal(B, { id: s.src, hpow: s.pow }, u, s.pow * (1 - (s.wk || 0)) * (1 - (s.half || 0)), true, true));
     u.st.filter(s => D.ST[s.id].k === 'dot').forEach(s => { if (!u.alive) return; const v = Math.max(1, Math.round(s.pow * (1 - clamp(u.sub && u.sub.tenac || 0, 0, 70) / 100) * (1 - clamp(u.mods.dotTaken || 0, 0, 90) / 100))); const su = B.units.find(x => x.id === s.src); hurt(B, u, v, D.ST[s.id].el, isOrigin(su) && su.side !== u.side ? su : null, true); ev(B, { t: 'dot', u: u.id, id: s.id, v }); msg(B, u.name + ': ' + D.ST[s.id].n + ' −' + v); });
     if (!u.alive) return;
     // ✧ «Жажда Эдема»: в начале хода владельца, если у любого живого врага текущее HP больше текущего HP владельца — +X% макс. HP
     if (u.mods.edenThirst > 0 && alive(opp(B, u)).some(e => e.hp > u.hp)) { const v = heal(B, u, u, u.maxHp * u.mods.edenThirst / 100, true, true); if (v) { ev(B, { t: 'txt', u: u.id, s: 'Жажда Эдема +' + v }); msg(B, u.name + ': Жажда Эдема +' + v + ' HP'); } }
     u._pcUsed = false;
-    if (u.mods.pcFix > 0 && (u._pcFixT == null || u.turns - u._pcFixT >= 4)) { const x = u.st.find(isDeb); if (x) { u._pcFixT = u.turns; u.st.splice(u.st.indexOf(x), 1); const su = B.units.find(y => y.id === x.src && y.side !== u.side); if (su && su.alive) su.gauge -= u.mods.pcFix; ev(B, { t: 'txt', u: u.id, s: 'Исправление причины' }); msg(B, u.name + ': Исправление причины — «' + D.ST[x.id].n + '» снят' + (su ? ', шкала ' + su.name + ' −' + u.mods.pcFix + '%' : '')); } }   // ✶
     if (u.mods.zlCancel > 0) alive(opp(B, u)).forEach(t => {   // ✶ «Отмена Закона»: самое сильное усиление врага слабее до следующего хода владельца
       t.st.forEach(x => { if (x.wkBy === u.id) { x.wk = 0; x.wkBy = null; } });
-      const pw = (x) => x.id === 'shield' ? 2 * x.pow / Math.max(1, t.maxHp) : ['dealt', 'def', 'spd', 'taken'].reduce((a, k) => a + Math.abs(D.ST[x.id][k] || 0), 0) + Math.abs(D.ST[x.id].crit || 0) / 100 + Math.abs(D.ST[x.id].eva || 0) / 100;
-      const bs = t.st.filter(x => D.ST[x.id].k === 'buff' && pw(x) > 0).sort((a, b) => pw(b) - pw(a)); if (!bs.length) return;
+      const pw = (x) => x.id === 'shield' ? 2 * x.pow / Math.max(1, t.maxHp) : D.ST[x.id].k === 'hot' ? 2 * (x.pow || 0) / Math.max(1, t.maxHp) : ['dealt', 'def', 'spd', 'taken'].reduce((a, k) => a + Math.abs(D.ST[x.id][k] || 0), 0) + Math.abs(D.ST[x.id].crit || 0) / 100 + Math.abs(D.ST[x.id].eva || 0) / 100;
+      const bs = t.st.filter(x => (D.ST[x.id].k === 'buff' || D.ST[x.id].k === 'hot') && pw(x) > 0).sort((a, b) => pw(b) - pw(a)); if (!bs.length) return;
       bs[0].wk = u.mods.zlCancel / 100 * (big(t) ? 0.5 : 1); bs[0].wkBy = u.id; ev(B, { t: 'txt', u: t.id, s: 'Отмена Закона' });
     });
     const c = has(u, 'stun') || has(u, 'freeze') || has(u, 'stop') || has(u, 'chronoStop');
@@ -334,7 +336,7 @@
     let cc = att.crit + (eff.crit || 0) + stMod(att, 'crit'); let cdx = 0;
     if (am.abyssBack > 0) { cc = att.crit + (eff.crit || 0) + stMod(att, 'crit') + (tgt.hp > tgt.maxHp * 0.5 ? am.abyssBack : 0); if (cc > 80) { cdx = (cc - 80) * 2 / 100; cc = 80; } }   // ✧ «Тень за спиной»: сверх 80% → урон крита 1:2
     let crit = B.rng() * 100 < cc || (am.markCrit > 0 && has(tgt, 'mark'));
-    if (crit && tgt.mods.critImm > 0) { if (am.zlCrit > 0 && (att._zlCritT == null || att.turns - att._zlCritT >= am.zlCrit)) { att._zlCritT = att.turns; notes.push('exc'); } else crit = false; }   // хук иммунитета к критам; ✶ «Исключение из правила»
+    if (crit && tgt.mods.critImm > 0) { if (am.zlCrit > 0 && (att._zlCritT == null || att.turns - att._zlCritT >= am.zlCrit)) { att._zlCritT = att.turns; notes.push('exc'); if (tgt.mods.critImm >= 100) { crit = false; mul *= 1.5; } } else crit = false; }   // хук иммунитета к критам; ✶ «Исключение из правила»
       if (crit && att.side === 'e' && B.law && B.law.nocrit > 0) crit = false; if (crit) { mul *= 1 + (att.critDmg + cdx - 1) * (1 - clamp(tsub.tenac || 0, 0, 70) / 100); if (tgt.mods.critTaken > 0) mul *= 1 - clamp(tgt.mods.critTaken, 0, 90) / 100; if (has(att, 'focus')) rmSt(att, 'focus'); }
     let penK = Math.min(0.9, (eff.pierce || 0) + ((eff.s === 'mag' ? asub.penMag : asub.pen) || 0) / 100 + hellStacks(att) * 0.04); if (am.fdEdge > 0) penK = Math.max(penK, am.fdEdge / 100); const defv = (eff.s === 'mag' ? tgt.res : tgt.def) * (1 - penK) * (1 + stMod(tgt, 'def')) * (1 - clamp(am.entIgnore || 0, 0, 90) / 100);
     const K = 50 + 4 * tgt.lv, mit = K / (K + Math.max(0, defv));
@@ -482,9 +484,9 @@
           else if (u.mods.entDecay > 0) addDecay(B, u, t, eff.add); else { addDecay(B, { mods: { entDecay: 6 }, id: u.id }, t, eff.add); }
         }); break;
         // ───── навыки клинков Истока v2.13 (урон Истока, без тега концепции) ─────
-        case 'primeSk': targets.forEach(t => {   // ✶ «Первопричина»
+        case 'primeSk': targets.forEach(t => {   // ✶ «Первая причина»
           if (!t.alive) return; const rk = redK(B, t, null), K = rk < 1 ? 1 - (1 - rk) * (1 - eff.red) : rk;
-          dealt += oHurt(B, u, t, (u.maxHp * eff.m + lostPart(u, t, eff)) * K * (1 + cxBonus(u) + stMod(u, 'dealt')), 'origin', 'Первопричина');
+          dealt += oHurt(B, u, t, (u.maxHp * eff.m + lostPart(u, t, eff)) * K * (1 + cxBonus(u) + stMod(u, 'dealt')), 'origin', 'Первая причина');
           if (t.alive) addSt(B, u, t, 'preConseq', eff.dur, eff.back);
         }); break;
         case 'zeroSk': targets.forEach(t => {   // ✶ «Нулевой Закон»
@@ -632,7 +634,13 @@
       else if (f.k === 'mantraUp') score += u.m0 ? 30 : 0;
       else if (f.k === 'echo') { const l = u.lastSk && C.skillOf(u, u.lastSk); score += l && l.id !== sk.id ? estimate(B, u, l) * 0.7 : 0; }
       else if (f.k === 'edenLight') score += 18 * (u.hp * f.m) / Math.max(1, u.atk) + (u.hp < u.maxHp * 0.6 ? 20 : 0);
-      else if (/^(prime|zero|div)Sk$/.test(f.k)) { const t0 = foes[0] || u; const lost = Math.min((t0.maxHp - t0.hp) * (f.lost || 0), big(t0) && f.bossLost ? u.maxHp * f.bossLost : 1e15); score += 18 * (u.maxHp * f.m + lost) / Math.max(1, u.atk); }
+      else if (/^(prime|zero|div)Sk$/.test(f.k)) {   // ✶ навыки Истока: ожидаемый урон навыка против ожидаемого обычного удара (17 очков) + польза эффекта
+        const t0 = foes.slice().sort((a, b) => b.hp - a.hp)[0] || u, ak = armorK(u, t0), lost = Math.min((t0.maxHp - t0.hp) * (f.lost || 0), big(t0) && f.bossLost ? u.maxHp * f.bossLost : 1e15);
+        const basic = Math.max(1, u.atk * (1 + (u.mods.dmg || 0) / 100) * (1 + Math.min(0.8, u.crit / 100) * Math.max(0, u.critDmg - 1)) * ak * (u.mods.fdTwo > 0 ? 1.1 : 1));
+        const dmg = (u.maxHp * f.m * (f.k === 'zeroSk' ? ak : 1) + lost) * (f.k === 'divSk' ? 1 : 1), kill = dmg >= t0.hp ? 8 : 0;
+        const util = f.k === 'zeroSk' ? 17 * 2 * Math.max(0, armorK(u, Object.assign({}, t0, { def: t0.def * (1 - 0.35 * (big(t0) ? f.boss : 1)) })) / ak - 1) : f.k === 'primeSk' ? 4 : t0.st.some(x => D.ST[x.id].k === 'buff') ? 8 : 0;
+        score += 17 * dmg / basic + util + kill;
+      }
       else if (/^(abyss|hell|flame|source|chrono|entropy)Sk$/.test(f.k)) { const t0 = foes[0] || u; const raw = { abyssSk: u.maxHp * f.m + (t0.maxHp - t0.hp) * (f.lost || 0), hellSk: u.maxHp * f.mx + (u.maxHp - u.hp * (1 - f.cost)) * f.m, flameSk: u.maxHp * f.m * 1.4, sourceSk: u.maxHp * f.m * (1 + f.per * u.st.filter(cleanable).length) + (u.hp < u.maxHp * 0.7 ? u.maxHp : 0), chronoSk: u.hp * f.m * 1.3, entropySk: u.maxHp * f.m + (t0.maxHp - t0.hp) * f.lost }[f.k]; score += 18 * raw / Math.max(1, u.atk) + (f.k === 'hellSk' && u.hp < u.maxHp * 0.35 ? -60 : 0); }
       else if (f.k === 'hpCost') score -= u.hp / u.maxHp < 0.6 ? 80 : 0;
       else if (f.k === 'st') {

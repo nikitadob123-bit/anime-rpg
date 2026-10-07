@@ -212,10 +212,10 @@ console.log('Баланс: вода ≈ огонь, вода — самая жи
 t('concept-duel: Исток в пределах ±10% от Пламени по ходам до победы (4 босса), оба медленнее Эдема; --tank: у Истока меньше всех урона за ход врага и живучесть выше Пламени', () => {
   const run = (a) => { const o = require('child_process').execFileSync('node', [path.join(__dirname, '../tools/concept-duel.js')].concat(a, ['--json']), { encoding: 'utf8' }).trim().split('\n'); return JSON.parse(o[o.length - 1]); };
   [['ember_titan', '47'], ['frost_queen', '47'], ['void_sovereign', '47'], ['ember_titan', '52']].forEach(([b, l]) => {
-    const r = run(['40', b, l]), w = r.boundless_source.turnsToWin, f = r.first_flame.turnsToWin, e = r.eden_light.turnsToWin;
+    const r = run(['40', b, l, '--hero', '47', '--r8']), w = r.boundless_source.turnsToWin, f = r.first_flame.turnsToWin, e = r.eden_light.turnsToWin;
     assert(Math.abs(w / f - 1) <= 0.1, `${b} ${l}: вода ${w} / огонь ${f}`); assert(w > e && f > e, `${b}: слабее Эдема (${e})`); assert(r.end_of_all.turnsToWin < Math.min(w, f, e));
   });
-  ['55', '60'].forEach((l) => { const r = run(['40', 'void_sovereign', l, '--tank']), w = r.boundless_source;
+  ['55', '60'].forEach((l) => { const r = run(['40', 'void_sovereign', l, '--tank', '--hero', '47', '--r8']), w = r.boundless_source;
     Object.keys(r).filter((k) => k !== 'boundless_source').forEach((k) => assert(w.takenPerEnemyTurn < r[k].takenPerEnemyTurn, `${l}: урон за ход ${w.takenPerEnemyTurn} < ${k} ${r[k].takenPerEnemyTurn}`));
     assert(w.turns > r.first_flame.turns * 1.2 && w.turns >= r.eden_light.turns, `${l}: живучесть ${w.turns} vs огонь ${r.first_flame.turns}, Эдем ${r.eden_light.turns}`); });
 });
