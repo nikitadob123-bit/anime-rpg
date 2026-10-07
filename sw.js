@@ -12,6 +12,7 @@ const ASSETS = [
   'assets/gear/prime_cause_128.webp', 'assets/gear/prime_cause_256.webp', 'assets/gear/prime_cause_art.webp',
   'assets/gear/zero_law_128.webp', 'assets/gear/zero_law_256.webp', 'assets/gear/zero_law_art.webp',
   'assets/gear/first_division_128.webp', 'assets/gear/first_division_256.webp', 'assets/gear/first_division_art.webp',
+  'assets/gear/null_possibility_128.webp', 'assets/gear/null_possibility_256.webp', 'assets/gear/null_possibility_art.webp',
   'assets/gear/abyss_dark_128.webp', 'assets/gear/abyss_dark_256.webp', 'assets/gear/abyss_dark_art.webp', 'assets/gear/hell_heart_128.webp', 'assets/gear/hell_heart_256.webp', 'assets/gear/hell_heart_art.webp', 'assets/gear/first_flame_128.webp', 'assets/gear/first_flame_256.webp', 'assets/gear/first_flame_art.webp', 'assets/gear/boundless_source_128.webp', 'assets/gear/boundless_source_256.webp', 'assets/gear/boundless_source_art.webp', 'assets/gear/chronos_128.webp', 'assets/gear/chronos_256.webp', 'assets/gear/chronos_art.webp', 'assets/gear/end_of_all_128.webp', 'assets/gear/end_of_all_256.webp', 'assets/gear/end_of_all_art.webp',
   'assets/vn/manifest.json'
 ];
