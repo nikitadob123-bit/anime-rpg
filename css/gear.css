@@ -91,10 +91,11 @@ img.uqi.big{width:100%;height:100%;max-width:56px;max-height:56px}
 .sk.cxs img.uqi{width:26px;height:26px}
 .tag.cx{color:#1a0f2e;background:linear-gradient(90deg,#9ff0ff,#c9a2ff,#ffb3e6,#fff1a8)}
 .mgift .gi img.uqi{width:34px;height:34px}
-.pcode{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:8px 0;padding:8px 10px}
+.pcode{display:grid!important;grid-template-columns:1fr auto;align-items:center;gap:4px 10px;margin:8px 0;padding:10px 12px;text-align:left}
+.pcode>span:first-child,.pcode .pch{grid-column:1/-1}
 .pcode b{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;letter-spacing:1.5px;color:#ffe08a;user-select:all}
-.pcode .pch{flex-basis:100%}
 @property --ca{syntax:'<angle>';inherits:false;initial-value:0deg}
 @keyframes cxSpin{to{--ca:360deg}}
 @keyframes cxRot{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.eqs.r8,.uqart::before{animation:none}}
+.uqart,.cxbox,.cxsk{flex:none}
