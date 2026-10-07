@@ -1,16 +1,17 @@
 /* Дуэль клинков (Концептуальные + Исток): один и тот же билд (воин ур. 55 по умолчанию, обычная экипировка ур. героя −1), меняется только меч; соло против босса.
-   --hero N — уровень героя (тест баланса v2.12.1 закреплён на 47); --r8 — только 7 Концептуальных.
+   --hero N — уровень героя (тест баланса v2.12.1 закреплён на 47); --r8 — только 7 Концептуальных; --r9 — без «До существования».
+   «Отрицание существования» в дуэли недоступно (только в бою этапа подземелья) — клинок r 10 бьёт обычными ударами.
    node tools/concept-duel.js [runs=40] [boss=void_sovereign] [lv=55] → ходы героя до победы, доля побед, остаток HP
    node tools/concept-duel.js [runs] [boss] [lv] --tank → живучесть: босс неубиваем (HP 1e12), сколько ходов ВРАГА герой выдержит (предел 300 ходов героя) */
 const RPG = require('../js/data-core.js');
 require('../js/data-stats.js');
 ['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save'].forEach((f) => require('../js/' + f + '.js'));
 const D = RPG.D, E = RPG.E, C = RPG.C;
-const TANK = process.argv.includes('--tank'), R8 = process.argv.includes('--r8'); let HERO = 55;
+const TANK = process.argv.includes('--tank'), R8 = process.argv.includes('--r8'), R9 = process.argv.includes('--r9'); let HERO = 55;
 { const i = process.argv.indexOf('--hero'); if (i > 0) { HERO = +process.argv[i + 1] || 55; process.argv.splice(i, 2); } }
-process.argv = process.argv.filter((a) => a !== '--tank' && a !== '--r8');
+process.argv = process.argv.filter((a) => a !== '--tank' && a !== '--r8' && a !== '--r9');
 const N = +process.argv[2] || 40, BOSS = process.argv[3] || 'void_sovereign', LV = +process.argv[4] || 55;
-const ORDER = ['boundless_source', 'first_flame', 'eden_light', 'abyss_dark', 'hell_heart', 'chronos', 'end_of_all'].concat(R8 ? [] : ['prime_cause', 'zero_law', 'first_division']);
+const ORDER = ['boundless_source', 'first_flame', 'eden_light', 'abyss_dark', 'hell_heart', 'chronos', 'end_of_all'].concat(R8 ? [] : ['prime_cause', 'zero_law', 'first_division']).concat(R8 || R9 ? [] : ['null_possibility']);
 function hero(id) {
   const s = E.newSlot({ name: 'Дуэлянт', race: 'o_street', uniq: 'phoenix', prof1: 'smith', prof2: 'miner' }); s.hero.level = HERO;
   const fs = C.fakeSlot('warrior', HERO); ['head', 'body', 'boots'].forEach((k) => { s.eq[k] = fs.eq[k]; });

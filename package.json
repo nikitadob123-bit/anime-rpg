@@ -4,7 +4,7 @@
   "private": true,
   "description": "Нимб Мира — RPG-PWA без сборки",
   "scripts": {
-    "test": "node test/run.js && node test/story.js && node test/mail.js && node test/concept.js && node test/origin.js",
+    "test": "node test/run.js && node test/story.js && node test/mail.js && node test/concept.js && node test/origin.js && node test/preexist.js",
     "sim": "node tools/sim.js",
     "icons": "node tools/make-icons.js",
     "e2e": "node tools/e2e.js",
