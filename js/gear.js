@@ -256,5 +256,46 @@
     if (s.run && s.run.bag && Array.isArray(s.run.bag.items)) s.run.bag.items.forEach((x) => out.push(x));
     return out;
   };
+
+  // ───── Уникальные предметы (фиксированные, не случайные) ─────
+  // Не выпадают, не продаются в лавке, не куются и не создаются генератором: только подарком почты { unique: id }.
+  // cx — концептуальные свойства (боевые моды, читает combat.js), skill — навык, который даёт предмет, пока надет.
+  D.CX_T = 'Концептуальное свойство'; D.CX_IC = '✧';
+  D.UNIQUE_ITEMS = {
+    eden_light: {
+      id: 'eden_light', base: 'sword', r: 8, il: 47, nm: 'Свет Эдема', img: 'assets/gear/eden_light_256.webp', img128: 'assets/gear/eden_light_128.webp', art: 'assets/gear/eden_light_art.webp',
+      lore: 'Клинок, выкованный из первого луча, что упал на сад Эдема. Он не режет — он вспоминает миру, каким тот был до тьмы.',
+      // ≈3× божественного меча ур. 47 (атака ≈333): каждая линия ×3. Линии выше предела обычных вещей отмечены — их режут глобальные пределы боя.
+      st: { atk: 1000, str: 75, vit: 66, luk: 63, spi: 60, dmg: 66, crit: 63, critDmg: 1.65, pen: 42, lifesteal: 19, res_dark: 84, tenac: 75, startShield: 66, taken: -45 },
+      fx: ['will', 'aegis', 'untouch'],
+      cx: [
+        { id: 'eden_thirst', n: 'Жажда Эдема', k: 'edenThirst', v: 15, d: 'В начале каждого хода владельца: если у любого живого врага текущее HP (число) больше текущего HP владельца — владелец восстанавливает 15% максимального здоровья.' },
+        { id: 'eden_dawn', n: 'Рассвет над Тьмой', k: 'edenDark', v: 30, d: 'Урон от врагов стихии Тьмы (Тень) по владельцу снижен на 30% — множитель после всех сопротивлений.' },
+        { id: 'eden_skill', n: 'Свет Эдема', skill: 'x_eden', d: 'Навык: урон врагу, равный 70% текущего HP владельца (светом, без брони), и лечение на 50% нанесённого урона.' }
+      ],
+      skill: 'x_eden', up: true
+    }
+  };
+  D.UNIQUE_IDS = Object.keys(D.UNIQUE_ITEMS);
+  D.SKILLS.x_eden = { id: 'x_eden', n: 'Свет Эдема', ic: '✧', img: 'assets/gear/eden_light_128.webp', cls: null, gear: 'eden_light', mp: 16, cd: 3, tgt: 'foe',
+    d: 'Концептуальный навык меча: урон цели = 70% вашего текущего HP (свет, мимо брони и уклонения), затем вы исцеляетесь на 50% нанесённого урона. Перезарядка 3 хода.', fx: [{ k: 'edenLight', m: 0.7, heal: 0.5, el: 'light' }] };
+  E.uniqOf = (it) => (it && it.uq && D.UNIQUE_ITEMS[it.uq]) || null;
+  E.makeUnique = function (id) {
+    const U = D.UNIQUE_ITEMS[id]; if (!U) return null; const B = D.BASES[U.base];
+    return { id: 0, k: U.base, r: U.r, il: U.il, nm: U.nm, st: Object.assign({}, U.st), up: 0, en: null, sl: B.slot, fx: U.fx.slice(), gv: 2, uq: id, lock: 1 };
+  };
+  E.itemImg = (it) => { const U = E.uniqOf(it); return U ? U.img : null; };
+  // навыки от надетых вещей (герой: slot.eq, Свита: s.eq)
+  E.gearSkills = function (eq) { const out = []; Object.values(eq || {}).forEach((it) => { const U = E.uniqOf(it); if (U && U.skill && !out.includes(U.skill)) out.push(U.skill); }); return out; };
+  E.ownsRarity = (slot, r) => E.slotItems(slot).some((it) => (it.r | 0) >= r);
+  // концептуальные моды надетых уникальных вещей → в общие моды
+  const _collect = E.collect;
+  E.collect = function (slot, ctx) {
+    const c = _collect(slot, ctx);
+    for (const sl in slot.eq || {}) { const U = E.uniqOf(slot.eq[sl]); if (U) U.cx.forEach((x) => { if (x.k) { c.mods[x.k] = Math.max(c.mods[x.k] || 0, x.v); (c.by[x.k] = c.by[x.k] || {}).gear = x.v; } }); }
+    return c;
+  };
+  // продажа уникальной вещи невозможна (даже если снять замок)
+  const _sell = E.sell; E.sell = function (slot, id) { const it = (slot.inv || []).find((x) => x.id === id); if (it && it.uq) return 0; return _sell(slot, id); };
   if (typeof module !== 'undefined') module.exports = RPG;
 })();

@@ -12,7 +12,7 @@
   C.unitFromSlot = function (slot) {
     const h = slot.hero, d = E.derive(slot), cls = D.CLASSES[h.cls], run = slot.run;
     const u = base({ id: 'p', side: 'a', name: h.name, cls: h.cls, lv: h.level, hero: true, portrait: h.portrait, ic: cls.ic, tags: ['human'] }, d);
-    u.skb = d.skb; u.sk = E.skillsOf(h); u.ov = {};
+    u.skb = d.skb; u.sk = E.skillsOf(h).concat(E.gearSkills ? E.gearSkills(slot.eq) : []); u.ov = {};
     if (h.uniq) {
       const U = D.UNIQ[h.uniq], sid = 'u_' + h.uniq, sk0 = JSON.parse(JSON.stringify(D.SKILLS[sid]));
       let cdm = 0, mpm = 0;
@@ -118,6 +118,8 @@
     (has(u, 'regen') ? [has(u, 'regen')] : []).forEach(s => heal(B, { id: s.src, hpow: s.pow }, u, s.pow, true, true));
     u.st.filter(s => D.ST[s.id].k === 'dot').forEach(s => { if (!u.alive) return; const v = Math.max(1, Math.round(s.pow * (1 - clamp(u.sub && u.sub.tenac || 0, 0, 70) / 100))); hurt(B, u, v, D.ST[s.id].el, null, true); ev(B, { t: 'dot', u: u.id, id: s.id, v }); msg(B, u.name + ': ' + D.ST[s.id].n + ' −' + v); });
     if (!u.alive) return;
+    // ✧ «Жажда Эдема»: в начале хода владельца, если у любого живого врага текущее HP больше текущего HP владельца — +X% макс. HP
+    if (u.mods.edenThirst > 0 && alive(opp(B, u)).some(e => e.hp > u.hp)) { const v = heal(B, u, u, u.maxHp * u.mods.edenThirst / 100, true, true); if (v) { ev(B, { t: 'txt', u: u.id, s: 'Жажда Эдема +' + v }); msg(B, u.name + ': Жажда Эдема +' + v + ' HP'); } }
     const c = has(u, 'stun') || has(u, 'freeze') || has(u, 'stop');
     if (c) { u.skip = true; msg(B, u.name + ' пропускает ход (' + D.ST[c.id].n + ')'); ev(B, { t: 'skip', u: u.id, id: c.id }); rmSt(u, c.id); }
     const dm = has(u, 'dominate');
@@ -149,6 +151,7 @@
   function hurt(B, tgt, v, el, src, dot) {
     if (!tgt.alive) return 0;
     if (!dot && v > 0 && tgt.mods.erase && (tgt.erased || 0) < tgt.mods.erase) { tgt.erased++; ev(B, { t: 'txt', u: tgt.id, s: 'Стёрто!' }); msg(B, 'Удар по ' + tgt.name + ' стёрт из реальности'); return 0; }
+    if (v > 0 && src && src.el === 'dark' && src.side !== tgt.side && tgt.mods.edenDark > 0) v *= 1 - Math.min(90, tgt.mods.edenDark) / 100;   // ✧ «Рассвет над Тьмой»
     if (!dot) v = absorb(B, tgt, v);
     v = Math.max(0, Math.round(v));
     const rf = has(tgt, 'reflect'); if (rf && !dot && src && src.alive && src.side !== tgt.side && v > 0) { const back = Math.round(v * rf.pow * 1.5); v = Math.round(v * (1 - rf.pow)); ev(B, { t: 'txt', u: tgt.id, s: 'Обращено!' }); msg(B, tgt.name + ' обращает урон на ' + src.name + ' (' + back + ')'); const rr = hurt(B, src, back, 'arcane', null, true); ev(B, { t: 'dmg', u: src.id, from: tgt.id, v: rr, thorn: 1 }); }
@@ -298,6 +301,12 @@
           en.forEach(t => { const real = hurt(B, t, Math.round(T * eff.m * 100 / (100 + t.res * 0.1)), 'arcane', u); ev(B, { t: 'dmg', u: t.id, from: u.id, v: real, el: 'arcane' }); msg(B, '→ ' + t.name + ' −' + real + ' (реверс)'); });
           heal(B, u, u, T * eff.heal, true, true); u.takenTot = 0; break;
         }
+        case 'edenLight': targets.forEach(t => {   // ✧ «Свет Эдема»: урон = m × текущее HP владельца (мимо брони/уклонения), лечение heal × нанесённого
+          if (!t.alive) return; const raw = Math.max(1, Math.round(u.hp * eff.m));
+          const real = hurt(B, t, raw, eff.el || 'light', u); dealt += real;
+          ev(B, { t: 'dmg', u: t.id, from: u.id, v: real, el: eff.el || 'light', notes: [] }); msg(B, '→ ' + t.name + ' −' + real + ' (Свет Эдема)');
+          const hv = heal(B, u, u, real * (eff.heal || 0), true, true); if (hv) ev(B, { t: 'txt', u: u.id, s: 'Эдем +' + hv });
+        }); break;
         case 'hpCost': u.hp = Math.max(1, u.hp - Math.round(u.maxHp * eff.v)); break;
         case 'law': { B.law = B.law || {}; (eff.ids || [eff.id]).forEach(id => { B.law[id] = Math.max(B.law[id] || 0, eff.dur || 2); }); ev(B, { t: 'txt', u: u.id, s: 'Закон!' }); msg(B, u.name + ' объявляет закон: ' + (eff.n || '') ); break; }
         case 'timestop': { alive(opp(B, u)).forEach(t => { addSt(B, u, t, 'stop', eff.dur || 1); }); u.gauge += eff.extra == null ? 100 : eff.extra; ev(B, { t: 'txt', u: u.id, s: 'Время остановлено' }); msg(B, 'Время остановлено — враги замерли'); break; }
@@ -428,6 +437,7 @@
       else if (f.k === 'strip') score += foes.filter(x => x.st.some(s => D.ST[s.id].k === 'buff')).length * 25;
       else if (f.k === 'mantraUp') score += u.m0 ? 30 : 0;
       else if (f.k === 'echo') { const l = u.lastSk && C.skillOf(u, u.lastSk); score += l && l.id !== sk.id ? estimate(B, u, l) * 0.7 : 0; }
+      else if (f.k === 'edenLight') score += 18 * (u.hp * f.m) / Math.max(1, u.atk) + (u.hp < u.maxHp * 0.6 ? 20 : 0);
       else if (f.k === 'hpCost') score -= u.hp / u.maxHp < 0.6 ? 80 : 0;
       else if (f.k === 'st') {
         const id = f.id, kind = D.ST[id].k;

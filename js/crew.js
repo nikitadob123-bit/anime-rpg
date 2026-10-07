@@ -59,7 +59,7 @@
     const k = (c.k || 0.9) * lt.k * (1 + hm / 100);
     ['maxHp', 'atk', 'mag', 'hpow', 'def', 'res'].forEach((st) => { d[st] = Math.round(d[st] * k); });
     const u = C.baseUnit({ id, side: 'a', name: c.n, cls: c.arch, lv: L, portrait: c.art, ic: c.ic, ai: true, crewUnit: true, compSlot: true, loy: s.loy, tags: [c.t === 'sub' ? 'sub' : 'human'] }, d);
-    u.sk = E.crewSkills(slot, id); u.rcMax = D.CLASSES[c.arch].rc.max; u.hp = Math.round(u.maxHp * (hpFrac == null ? 1 : hpFrac)); u.mp = u.maxMp; return u;
+    u.sk = E.crewSkills(slot, id).concat(E.gearSkills ? E.gearSkills(eq) : []); u.rcMax = D.CLASSES[c.arch].rc.max; u.hp = Math.round(u.maxHp * (hpFrac == null ? 1 : hpFrac)); u.mp = u.maxMp; return u;
   };
   // ───── Подарки, разговоры, свидания ─────
   E.giftCount = (slot, g) => (slot.gifts && slot.gifts[g]) || 0;
