@@ -206,6 +206,7 @@
     if (m.hellPact > 0 && a.hp < a.maxHp * 0.5) b += m.hellPact / 100;   // «Кровавый договор»
     b += 0.06 * hellStacks(a);   // ✧ «Цена силы»
     if (m.flameHeat > 0) b += Math.min(25, m.flameHeat * (a.heat || 0)) / 100;   // «Жар битвы»
+    if (m.srcTide > 0 && a.st && a.st.some(x => x.id === 'shield' && x.pow > 0)) b += m.srcTide / 100;   // ✧ «Обратное течение»: пока на владельце щит — весь урон +X%
     return b;
   }
   C._cxBonus = cxBonus;
@@ -231,7 +232,7 @@
   function onHit(B, u, t, crit) {
     if (!t.alive || u.side === t.side) return;
     if (u.mods.flameSteel > 0) addSt(B, u, t, 'fburn', 3, Math.max(1, u.atk * u.mods.flameSteel / 100));
-    if (crit && u.mods.flameIgnite > 0) { let tot = 0; t.st.forEach(s => { if (s.id === 'burn' || s.id === 'fburn' || s.id === 'primal') tot += (s.pow || 0) * Math.max(0, s.dur); }); if (tot > 0) { const r = hurt(B, t, Math.round(tot), 'fire', u, true); ev(B, { t: 'dmg', u: t.id, from: u.id, v: r, el: 'fire', notes: [] }); ev(B, { t: 'txt', u: t.id, s: 'Воспламенение!' }); msg(B, 'Воспламенение: ' + t.name + ' −' + r); } }
+    if (crit && u.mods.flameIgnite > 0) { let tot = 0; t.st.forEach(s => { if (s.id === 'fburn' || s.id === 'primal') tot += (s.pow || 0) * Math.max(0, s.dur); }); if (tot > 0) { const r = hurt(B, t, Math.round(tot), 'fire', u, true); ev(B, { t: 'dmg', u: t.id, from: u.id, v: r, el: 'fire', notes: [] }); ev(B, { t: 'txt', u: t.id, s: 'Воспламенение!' }); msg(B, 'Воспламенение: ' + t.name + ' −' + r); } }
   }
   function addDecay(B, src, tgt, n) {
     if (!tgt.alive) return; const mx = src.mods.entDecay || 6; let s = has(tgt, 'decay'); const prev = s ? s.pow : 0, nw = Math.min(mx, prev + n);

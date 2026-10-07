@@ -113,6 +113,10 @@ t('Неугасимое Пламя: Горение и Первичное Гор�
   const cl = { id: 'tc', n: 'c', tgt: 'self', fx: [{ k: 'cleanse' }] }; B.cur = e; D.ESK.__tc = cl; C.act(B, e, { t: 'enemy', id: '__tc' }); delete D.ESK.__tc;
   assert(stOf(e, 'fburn') && stOf(e, 'primal')); assert(!stOf(e, 'burn') && !stOf(e, 'weak'));
 });
+t('Воспламенение: считается только Горение этого оружия — обычное Горение (не от меча) не повторяется', () => {
+  const x = bat('first_flame'); x.P.mods.flameSteel = 0; C.addSt(x.B, { id: 'z', side: 'a' }, x.e, 'burn', 3, 1000); fixR(x.B, 0); np(x.B, x.P); x.P.crit = 80; const h1 = x.e.hp; C.act(x.B, x.P, { t: 'basic', tid: 'e0' }); const withBurn = h1 - x.e.hp;
+  const y = bat('first_flame'); y.P.mods.flameSteel = 0; fixR(y.B, 0); np(y.B, y.P); y.P.crit = 80; const h2 = y.e.hp; C.act(y.B, y.P, { t: 'basic', tid: 'e0' }); assert.strictEqual(withBurn, h2 - y.e.hp);
+});
 t('Воспламенение: крит мгновенно наносит весь оставшийся урон Горения ещё раз, эффект остаётся', () => {
   const { B, P, e } = bat('first_flame'); P.mods.flameSteel = 0; C.addSt(B, P, e, 'primal', 3, 1000); fixR(B, 0.99); np(B, P); const h0 = e.hp; C.act(B, P, { t: 'basic', tid: 'e0' }); const noCrit = h0 - e.hp;
   const x = bat('first_flame'); x.P.mods.flameSteel = 0; C.addSt(x.B, x.P, x.e, 'primal', 3, 1000); fixR(x.B, 0); np(x.B, x.P); x.P.crit = 80; const h1 = x.e.hp; C.act(x.B, x.P, { t: 'basic', tid: 'e0' }); assert(h1 - x.e.hp >= 3000, 'крит + 3000 Горения'); assert(stOf(x.e, 'primal')); assert(noCrit < h1 - x.e.hp);
@@ -126,24 +130,32 @@ t('навык «Первый Пожар»: огонь 65% макс. HP + Пер�
 });
 
 console.log('Безбрежный Исток');
-t('Текучая форма: периодический урон по владельцу −55%; Восстановление потока: +4% макс. HP в начале хода', () => {
+t('Текучая форма: периодический урон по владельцу −55%; Восстановление потока: +6% макс. HP в начале хода', () => {
   const { B, P, e } = bat('boundless_source'); P.sub.tenac = 0; P.hp = 1000; P.maxHp = 1e5; C.addSt(B, e, P, 'poison', 3, 1000); P._formUsed = true; if (!stOf(P, 'poison')) P.st.push({ id: 'poison', dur: 3, pow: 1000, src: 'e0' });
-  stOf(P, 'poison').pow = 1000; np(B, P); assert.strictEqual(P.hp, 1000 + 4000 - 450);
+  stOf(P, 'poison').pow = 1000; np(B, P); assert.strictEqual(P.hp, 1000 + 6000 - 450);
 });
 t('Вода принимает любую форму: первый дебафф врага за ход с шансом 50% исчезает', () => {
   const { B, P, e } = bat('boundless_source'); fixR(B, 0.1); C.addSt(B, e, P, 'weak', 2); assert(!stOf(P, 'weak')); C.addSt(B, e, P, 'vuln', 2); assert(stOf(P, 'vuln'), 'только первый');
   const x = bat('boundless_source'); fixR(x.B, 0.9); C.addSt(x.B, x.e, x.P, 'weak', 2); assert(stOf(x.P, 'weak'), 'не повезло (50%)');
 });
-t('Обратное течение: избыточное лечение → щит, не больше 35% макс. HP', () => {
+t('Обратное течение: избыточное лечение → щит, не больше 50% макс. HP; пока есть щит — весь урон +25%', () => {
   const { B, P } = bat('boundless_source'); P.hp = P.maxHp - 100; C._heal(B, P, P, 300, true, true); assert.strictEqual(P.hp, P.maxHp); assert.strictEqual(Math.round(stOf(P, 'shield').pow), 200);
-  C._heal(B, P, P, P.maxHp * 5, true, true); assert.strictEqual(Math.round(stOf(P, 'shield').pow), Math.round(P.maxHp * 0.35));
+  C._heal(B, P, P, P.maxHp * 5, true, true); assert.strictEqual(Math.round(stOf(P, 'shield').pow), Math.round(P.maxHp * 0.5));
+  assert.strictEqual(P.mods.srcTide, 25); assert(Math.abs(C._cxBonus(P) - 0.25) < 1e-9, 'со щитом +25%'); stOf(P, 'shield').pow = 0; assert.strictEqual(C._cxBonus(P), 0, 'без щита — нет');
+  const x = bat('boundless_source'); const eff = { k: 'dmg', s: 'atk', m: 1 }; fixR(x.B, 0.99); const a = C._dmgCalc(x.B, x.P, x.e, eff, { id: 'basic' }, 0).v; C.addSt(x.B, x.P, x.P, 'shield', 3, 100); const b = C._dmgCalc(x.B, x.P, x.e, eff, { id: 'basic' }, 0).v;
+  const m0 = 1 + x.P.mods.dmg / 100; assert(Math.abs(b / a - (m0 + 0.25) / m0) < 0.01, 'урон атаки ×' + (b / a));
 });
 t('навык «Безбрежный Исток»: снимает до 3 дебаффов, 45% макс. HP +15% за каждый, лечит 35%', () => {
-  const { B, P, e } = bat('boundless_source'); np(B, P); P.mp = 999; ['weak', 'vuln', 'mark', 'chill'].forEach((id) => P.st.push({ id, dur: 3, pow: 0, src: 'e0' })); P.hp = 100;
+  const { B, P, e } = bat('boundless_source'); np(B, P); P.mp = 999; P.st = P.st.filter((x) => x.id !== 'shield'); ['weak', 'vuln', 'mark', 'chill'].forEach((id) => P.st.push({ id, dur: 3, pow: 0, src: 'e0' })); P.hp = 100;
   C.act(B, P, { t: 'skill', id: 'x_source', tid: 'e0' }); assert.strictEqual(P.st.filter((x) => ['weak', 'vuln', 'mark', 'chill'].includes(x.id)).length, 1);
   assert.strictEqual(1e7 - e.hp, Math.round(P.maxHp * 0.45 * 1.45)); assert(P.hp >= 100 + Math.round(P.maxHp * 0.35)); assert.strictEqual(P.cds.x_source, 3);
 });
 
+t('Безбрежный Исток v2.12.1: Весь урон +62%, урон крита +155%, бронепробитие +38%, получаемый урон −45%; тексты совпадают', () => {
+  const U = D.UNIQUE_ITEMS.boundless_source; assert.strictEqual(U.st.dmg, 62); assert.strictEqual(U.st.critDmg, 1.55); assert.strictEqual(U.st.pen, 38); assert.strictEqual(U.st.taken, -45);
+  assert(/−45%/.test(U.sp[2].d) && /6%/.test(U.sp[1].d) && U.sp[1].v === 6 && /50%/.test(U.cx[1].d) && /\+25%/.test(U.cx[1].d) && U.cx[1].v === 50 && U.cx[1].v2 === 25);
+  assert(/слабее основных Концептуальных мечей, но значительно сильнее в выживаемости/.test(U.note));
+});
 console.log('Хронос');
 t('Вне мгновения: дебаффы на владельце −1 ход (мин. 1); Предвидение: уклонение +25%; контроль: сопротивление 70%', () => {
   const { B, P, e } = bat('chronos'); C.addSt(B, e, P, 'weak', 3); assert.strictEqual(stOf(P, 'weak').dur, 2); C.addSt(B, e, P, 'vuln', 1); assert.strictEqual(stOf(P, 'vuln').dur, 1);
@@ -194,6 +206,18 @@ t('навык «Вселенская Энтропия»: 80% макс. HP + 20% 
   let { B, P, e } = bat('end_of_all'); e.eva = 100; e.def = 1e6; e.mods.taken = -40; e.hp = 5e6; skill(B, P, 'x_entropy'); assert.strictEqual(5e6 - e.hp, Math.round((P.maxHp * 0.8 + 5e6 * 0.2) * 0.8)); assert.strictEqual(stOf(e, 'decay').pow, 4, '1 за удар + 3');
   ({ B, P, e } = bat('end_of_all')); e.st.push({ id: 'decay', dur: 99, pow: 6 }); skill(B, P, 'x_entropy'); const first = Math.round(P.maxHp * 0.8); assert.strictEqual(1e7 - e.hp, first + Math.round((1e7 - first) * 0.2), 'Коллапс 20% текущего');
   ({ B, P, e } = bat('end_of_all', { boss: true })); e.st.push({ id: 'decay', dur: 99, pow: 6 }); skill(B, P, 'x_entropy'); const f2 = Math.round(P.maxHp * 0.8); assert.strictEqual(1e7 - e.hp, f2 + Math.round((1e7 - f2) * 0.08), 'боссы 8%'); assert.strictEqual(P.cds.x_entropy, 5);
+});
+
+console.log('Баланс: вода ≈ огонь, вода — самая живучая по получаемому урону');
+t('concept-duel: Исток в пределах ±10% от Пламени по ходам до победы (4 босса), оба медленнее Эдема; --tank: у Истока меньше всех урона за ход врага и живучесть выше Пламени', () => {
+  const run = (a) => { const o = require('child_process').execFileSync('node', [path.join(__dirname, '../tools/concept-duel.js')].concat(a, ['--json']), { encoding: 'utf8' }).trim().split('\n'); return JSON.parse(o[o.length - 1]); };
+  [['ember_titan', '47'], ['frost_queen', '47'], ['void_sovereign', '47'], ['ember_titan', '52']].forEach(([b, l]) => {
+    const r = run(['40', b, l]), w = r.boundless_source.turnsToWin, f = r.first_flame.turnsToWin, e = r.eden_light.turnsToWin;
+    assert(Math.abs(w / f - 1) <= 0.1, `${b} ${l}: вода ${w} / огонь ${f}`); assert(w > e && f > e, `${b}: слабее Эдема (${e})`); assert(r.end_of_all.turnsToWin < Math.min(w, f, e));
+  });
+  ['55', '60'].forEach((l) => { const r = run(['40', 'void_sovereign', l, '--tank']), w = r.boundless_source;
+    Object.keys(r).filter((k) => k !== 'boundless_source').forEach((k) => assert(w.takenPerEnemyTurn < r[k].takenPerEnemyTurn, `${l}: урон за ход ${w.takenPerEnemyTurn} < ${k} ${r[k].takenPerEnemyTurn}`));
+    assert(w.turns > r.first_flame.turns * 1.2 && w.turns >= r.eden_light.turns, `${l}: живучесть ${w.turns} vs огонь ${r.first_flame.turns}, Эдем ${r.eden_light.turns}`); });
 });
 
 console.log(`\nКонцептуальные: ${pass} ✓, ${fail} ✗`);
