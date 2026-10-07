@@ -110,6 +110,7 @@
     ['xp', 'gold', 'drop', 'crew', 'hpRegen', 'mpRegen', 'counter', 'thorns', 'lifesteal'].forEach((k) => { m[k] = sub[k]; });
     d.hpow = Math.round((s.spi * 1.0 + s.wis * 1.0 + s.int * 0.5 + L * 2 + (f.mag || 0) * 0.25) * (1 + sub.heal / 100));
     d.crit = sub.crit; d.critDmg = sub.critDmg / 100; d.eva = sub.eva;
+    { const cd = D.SUBS.find((x) => x.id === 'crit'); d.critRaw = cd ? cd.base + sumCoef(cd.coef, s) + (m.crit || 0) : d.crit; }   // шанс крита без предела (для «Тени за спиной»)
     // стихии: сопротивления и бонусы урона
     sub.resEl = {}; sub.dmgEl = {};
     D.ELEM_IDS.concat(['phys']).forEach((e) => { sub.resEl[e] = clamp((m['res_' + e] || 0) + s.spi * 0.04 + (e === 'phys' ? s.vit * 0.05 : 0), -50, 75); sub.dmgEl[e] = m['dmg_' + e] || 0; });
