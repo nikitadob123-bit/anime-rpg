@@ -223,6 +223,9 @@
     if (real > 0) onHit(B, u, t, false); return real;
   }
   C._cHurt = cHurt;
+  // доля потерянного HP цели; у боссов/минибоссов ограничена bossLost × макс. HP владельца
+  const lostPart = (u, t, eff) => { const v = (t.maxHp - t.hp) * (eff.lost || 0); return big(t) && eff.bossLost != null ? Math.min(v, u.maxHp * eff.bossLost) : v; };
+  C._lostPart = lostPart;
   // после удара владельца: «Раскалённая сталь», «Воспламенение»
   function onHit(B, u, t, crit) {
     if (!t.alive || u.side === t.side) return;
@@ -263,7 +266,7 @@
     else if (el === 'ice' && has(tgt, 'wet')) { react = 'Заморозка'; rmSt(tgt, 'wet'); tgt._freeze = true; }
     else if (el === 'fire' && has(tgt, 'chill')) { mul *= 1.3; react = 'Таяние'; rmSt(tgt, 'chill'); }
     let cc = att.crit + (eff.crit || 0) + stMod(att, 'crit'); let cdx = 0;
-    if (am.abyssBack > 0) { cc = Math.max(att.crit, att.critRaw || 0) + (eff.crit || 0) + stMod(att, 'crit') + (tgt.hp > tgt.maxHp * 0.5 ? am.abyssBack : 0); if (cc > 80) { cdx = (cc - 80) * 2 / 100; cc = 80; } }   // ✧ «Тень за спиной»: сверх 80% → урон крита 1:2
+    if (am.abyssBack > 0) { cc = att.crit + (eff.crit || 0) + stMod(att, 'crit') + (tgt.hp > tgt.maxHp * 0.5 ? am.abyssBack : 0); if (cc > 80) { cdx = (cc - 80) * 2 / 100; cc = 80; } }   // ✧ «Тень за спиной»: сверх 80% → урон крита 1:2
     let crit = B.rng() * 100 < cc || (am.markCrit > 0 && has(tgt, 'mark')); if (crit && att.side === 'e' && B.law && B.law.nocrit > 0) crit = false; if (crit) { mul *= 1 + (att.critDmg + cdx - 1) * (1 - clamp(tsub.tenac || 0, 0, 70) / 100); if (tgt.mods.critTaken > 0) mul *= 1 - clamp(tgt.mods.critTaken, 0, 90) / 100; if (has(att, 'focus')) rmSt(att, 'focus'); }
     const penK = Math.min(0.9, (eff.pierce || 0) + ((eff.s === 'mag' ? asub.penMag : asub.pen) || 0) / 100 + hellStacks(att) * 0.04); const defv = (eff.s === 'mag' ? tgt.res : tgt.def) * (1 - penK) * (1 + stMod(tgt, 'def')) * (1 - clamp(am.entIgnore || 0, 0, 90) / 100);
     const K = 50 + 4 * tgt.lv, mit = K / (K + Math.max(0, defv));
@@ -375,8 +378,8 @@
         case 'abyssSk': targets.forEach(t => {   // ✧ «Тьма Бездны»
           if (!t.alive) return; if (B.rng() * 100 < clamp(t.eva + stMod(t, 'eva') - (u.sub && u.sub.acc || 0), 0, 80)) { ev(B, { t: 'miss', u: t.id }); msg(B, t.name + ' уклоняется'); return; }
           const K = (1 + cxBonus(u) + stMod(u, 'dealt')) * redK(B, t, eff.el);
-          dealt += cHurt(B, u, t, (u.maxHp * eff.m + (t.maxHp - t.hp) * eff.lost) * K, eff.el, 'Тьма Бездны');
-          if (t.alive && t.hp < t.maxHp * eff.thr) { ev(B, { t: 'txt', u: t.id, s: 'Добивание' }); dealt += cHurt(B, u, t, t.maxHp * eff.fin * K, eff.el, 'добивание'); }
+          dealt += cHurt(B, u, t, (u.maxHp * eff.m + lostPart(u, t, eff)) * K, eff.el, 'Тьма Бездны');
+          if (t.alive && t.hp < t.maxHp * eff.thr) { ev(B, { t: 'txt', u: t.id, s: 'Добивание' }); dealt += cHurt(B, u, t, t.maxHp * (big(t) ? eff.bossFin : eff.fin) * K, eff.el, 'добивание'); }
         }); break;
         case 'hellSk': targets.forEach(t => {   // ✧ «Сердце Преисподней»
           if (!t.alive) return; const cost = Math.min(u.hp - 1, Math.round(u.hp * eff.cost)); u.hp -= cost; ev(B, { t: 'txt', u: u.id, s: '−' + cost + ' HP' });
@@ -401,7 +404,7 @@
         case 'entropySk': targets.forEach(t => {   // ✧ «Вселенская Энтропия»
           if (!t.alive) return; const d0 = has(t, 'decay'), full = !!(d0 && d0.pow >= (u.mods.entDecay || 6));
           const rk = redK(B, t, eff.el), K = rk < 1 ? 1 - (1 - rk) * eff.red : rk;
-          dealt += cHurt(B, u, t, (u.maxHp * eff.m + (t.maxHp - t.hp) * eff.lost) * K * (1 + cxBonus(u) + stMod(u, 'dealt')), eff.el, 'Энтропия');
+          dealt += cHurt(B, u, t, (u.maxHp * eff.m + lostPart(u, t, eff)) * K * (1 + cxBonus(u) + stMod(u, 'dealt')), eff.el, 'Энтропия');
           if (!t.alive) return;
           if (full) { ev(B, { t: 'txt', u: t.id, s: 'Коллапс!' }); dealt += cHurt(B, u, t, t.hp * (big(t) ? eff.boss : eff.col), eff.el, 'Коллапс'); }
           else if (u.mods.entDecay > 0) addDecay(B, u, t, eff.add); else { addDecay(B, { mods: { entDecay: 6 }, id: u.id }, t, eff.add); }
