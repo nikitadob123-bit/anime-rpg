@@ -81,7 +81,7 @@
   const dt = (iso) => { const t = M.parseT(iso); if (!Number.isFinite(t)) return ''; const d = new Date(t), y = d.getFullYear() !== new Date().getFullYear(); return d.toLocaleDateString('ru-RU', y ? { day: 'numeric', month: 'short', year: 'numeric' } : { day: 'numeric', month: 'short' }); };
   const body = (s, txt) => esc(E.fmtText(txt || '', s)).replace(/\n/g, '<br>');
   const sealIc = (L) => (L.src === 'local' ? '🪶' : L.from === 'Администрация' ? '👑' : '✉️');
-  const giftTiles = (g, cls) => M.giftList(g).map((x, i) => `<div class="mgift ${cls || ''} ${x.r ? 'rar r' + (x.ri || 0) : ''}" style="${x.c ? '--rc:' + x.c + ';--rg:' + RPG.D.RARITY[x.ri || 0].g + ';' : ''}--i:${i}"><span class="gi">${x.ic}</span><b>${x.q > 1 || !x.r ? '×' + fmt(x.q) : ''}</b><small>${esc(x.n)}</small>${x.r ? `<i class="mgr">${esc(x.r)}</i>` : ''}</div>`).join('');
+  const giftTiles = (g, cls) => M.giftList(g).map((x, i) => `<div class="mgift ${cls || ''} ${x.r ? 'rar r' + (x.ri || 0) : ''}" style="${x.c ? '--rc:' + x.c + ';--rg:' + RPG.D.RARITY[x.ri || 0].g + ';' : ''}--i:${i}"><span class="gi">${x.img ? `<img class="uqi" src="${x.img}" alt="">` : x.ic}</span><b>${x.q > 1 || !x.r ? '×' + fmt(x.q) : ''}</b><small>${esc(x.n)}</small>${x.r ? `<i class="mgr">${esc(x.r)}</i>` : ''}</div>`).join('');
   const status = (s, L) => {
     if (!M.hasGifts(L.gifts)) return '';
     if (L.claimed || M.ensure(s).claimed[L.id]) return '<span class="mst ok">✔ Получено</span>';
@@ -104,6 +104,7 @@
     return `<div class="mailtop"><div class="row center-v gap"><span class="mailic">${ENV}</span><h2 class="grow m0">Почта</h2><button class="btn ghost mref" data-act="mailRefresh" data-quiet="1" aria-label="Проверить почту" title="Проверить почту"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4.5h-4.5"/></svg></button></div>${net}
       <div class="row gap">${claimable ? `<button class="btn primary grow" data-act="mailClaimAll" id="btnMailAll">🎁 Забрать всё (${claimable})</button>` : ''}${removable ? `<button class="btn ghost ${claimable ? '' : 'grow'}" data-act="mailClean">🗑 Удалить прочитанные</button>` : ''}</div></div>
       <div class="mlistbox">${rows || '<div class="card center mempty"><div class="big-ic">📭</div><b>Писем пока нет</b><div class="dim small">Вести от Администрации и Свиты появятся здесь.</div></div>'}</div>
+      <div class="pcode card"><span class="small dim">Ваш код игрока</span><b id="pcodeMail">${esc(M.code(s))}</b><button class="btn ghost small" data-act="copyPcode" data-quiet="1">📋 Копировать</button><div class="small dim pch">Сообщите его Администрации, чтобы получить личное письмо.</div></div>
       <div class="dim small center pad">Письма с подарками хранятся, пока вы их не заберёте. Подарок из письма можно получить только один раз.</div>`;
   };
   UI.act.mailRefresh = () => { UI.sfx('click'); if (!online()) { UI.toast('📡 Нет связи', 'warn'); UI.mailNet = { st: 'off', t: Date.now() }; UI.refresh(); return; } UI.mailFetch(true); };
@@ -120,6 +121,7 @@
       <div class="row gap">${rm ? `<button class="btn ghost danger" data-act="mailDel" data-id="${esc(L.id)}">🗑 Удалить</button>` : ''}<button class="btn ghost grow" data-act="closeModal">Закрыть</button></div></div>`, { cls: 'tall mailsheet' });
     if (UI.tab === 'mail') { const r = $(`.mrow[data-id="${CSS.escape(id)}"]`); if (r) { r.classList.remove('unread'); const d = r.querySelector('.mdot'); if (d) d.remove(); } }
   };
+  UI.act.copyPcode = async () => { const c = M.code(UI.slot()); let ok = false; try { await navigator.clipboard.writeText(c); ok = true; } catch (e) { try { const t = document.createElement('textarea'); t.value = c; document.body.appendChild(t); t.select(); ok = document.execCommand('copy'); t.remove(); } catch (e2) { /* ignore */ } } UI.toast(ok ? 'Код ' + c + ' скопирован' : 'Код: ' + c, 'ok'); };
   UI.act.mailOpen = (el) => UI.mailOpen(el.dataset.id);
   const after = () => { if (UI.v === 'game') UI.refresh(); };
   UI.act.mailClaim = (el) => {

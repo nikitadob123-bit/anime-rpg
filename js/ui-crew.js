@@ -73,11 +73,11 @@
     UI.refresh();
   };
   UI.act.crewOpen = (el) => { UI.sub.crewId = el.dataset.id; UI.crewModal(); };
-  const gearName = (it) => `${D.BASES[it.k].ic} ${UI.itemName(it)}`;
+  const gearName = (it) => `${UI.itemIc(it)} ${UI.itemName(it)}`;
   UI.crewModal = function () {
     const s = UI.slot(), id = UI.sub.crewId, c = D.CREW[id], st = s.crew[id]; if (!st) return;
     const u = RPG.C.unitFromCrew(s, id), inP = s.party.includes(id), onM = E.onMission(s, id);
-    const eq = [['weapon', 'Оружие', '🗡️'], ['armor', 'Броня', '🛡️'], ['trinket', 'Украшение', '💍']].map(([k, n, ic]) => `<button class="eqs" data-act="crewEq" data-k="${k}" data-quiet="1"><span>${st.eq[k] ? D.BASES[st.eq[k].k].ic : ic}</span><small>${st.eq[k] ? esc(st.eq[k].nm) : n}</small></button>`).join('');
+    const eq = [['weapon', 'Оружие', '🗡️'], ['armor', 'Броня', '🛡️'], ['trinket', 'Украшение', '💍']].map(([k, n, ic]) => `<button class="eqs" data-act="crewEq" data-k="${k}" data-quiet="1"><span>${st.eq[k] ? UI.itemIc(st.eq[k]) : ic}</span><small>${st.eq[k] ? esc(st.eq[k].nm) : n}</small></button>`).join('');
     const sk = E.crewSkills(s, id).map((x) => D.SKILLS[x]).filter(Boolean).map((k) => `<div class="small tl"><b>${k.ic} ${k.n}</b> — ${k.d}</div>`).join('');
     const gifts = Object.keys(D.GIFTS).filter((g) => E.giftCount(s, g) > 0).map((g) => `<button class="btn ghost small" data-act="giveGift" data-id="${id}" data-g="${g}" data-quiet="1">${D.GIFTS[g].ic} ×${E.giftCount(s, g)}</button>`).join('') || '<span class="dim small">Подарков нет — купите в лавке.</span>';
     UI.modal(`<div class="crewm"><div class="row gap">${UI.por(c.art, 'lg', false)}<div class="grow tl"><h3 class="m0">${esc(c.n)}</h3><div class="dim small">${esc(c.role)} · ${D.ARCH_N[c.arch]} · ур. ${st.lv}</div>${loyBar(st)}<div class="small dim">Опыт ${st.xp}/${E.crewXpNeed(st.lv)} · потолок ур. ${E.crewCap(s)}</div></div></div>

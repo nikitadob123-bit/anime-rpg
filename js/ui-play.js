@@ -5,7 +5,7 @@
   const bar = (v, max, cl) => `<span class="bar ${cl || ''}"><i style="width:${Math.max(0, Math.min(100, v / max * 100))}%"></i></span>`;
   const EVIC = { chest: '🎁', rest: '🔥', shrine: '⛩️', gather_ore: '⛏️', gather_herb: '🌿', gather_hunt: '🐾', gather_fish: '🎣' };
   const evIcon = (ev) => EVIC[ev] || (D.GATHER_EV[ev] ? D.GATHER_EV[ev].ic : '❓');
-  const rarSpan = (it) => `<span class="lootl">${D.BASES[it.k].ic} ${UI.itemName(it)} ${UI.rarBadge(it)}</span>`;
+  const rarSpan = (it) => `<span class="lootl">${UI.itemIc(it)} ${UI.itemName(it)} ${UI.rarBadge(it)}</span>`;
 
   // ═════ ПОДЗЕМЕЛЬЯ ═════
   UI.tabs.dun = function (s) {
@@ -204,7 +204,7 @@
       const basic = D.BASIC[u.cls] || D.BASIC.warrior;
       const sk = skills.map((id) => {
         const k = C.skillOf(u, id), why = C.canUse(B, u, id), cost = (k.mp ? `💧${k.mp}` : '') + (k.rc ? ` ${D.CLASSES[u.cls].rc.n}${k.rc}` : '') + (k.rcAll ? ' всё' : '');
-        return `<button class="sk ${why ? 'off' : ''} ${id.startsWith('u_') ? 'echo' : id.startsWith('c_') ? 'echo conc' : ''}" data-act="bSkill" data-id="${id}" data-quiet="1" ${why ? 'data-why="' + why + '"' : ''}><span>${k.ic}</span><b>${esc(k.n)}</b><small>${why ? why : cost || '—'}</small></button>`;
+        return `<button class="sk ${why ? 'off' : ''} ${id.startsWith('u_') ? 'echo' : id.startsWith('c_') ? 'echo conc' : k.gear ? 'cxs' : ''}" data-act="bSkill" data-id="${id}" data-quiet="1" ${why ? 'data-why="' + why + '"' : ''}><span>${k.img ? `<img class="uqi" src="${k.img}" alt="">` : k.ic}</span><b>${esc(k.n)}</b><small>${why ? why : cost || '—'}</small></button>`;
       }).join('');
       const rc = u.rcMax > 0 ? `<div class="rcl">${D.CLASSES[u.cls].rc.n}: <b>${Math.round(u.rc)}/${u.rcMax}</b></div>` : '';
       $('#bact').innerHTML = `<div class="actrow"><div class="turnof">Ход: <b>${esc(u.name)}</b></div>${rc}</div><div class="mainbtns"><button class="abtn" data-act="bBasic" data-quiet="1"><span>${basic.ic}</span>${basic.n}</button><button class="abtn" data-act="bGuard" data-quiet="1"><span>🛡️</span>Защита</button><button class="abtn" data-act="bItems" data-quiet="1"><span>🧪</span>Предметы</button><button class="abtn" data-act="bFlee" data-quiet="1" ${B.opts.noFlee ? 'disabled' : ''}><span>🏃</span>Бегство</button></div><div class="skgrid">${sk}</div>`;

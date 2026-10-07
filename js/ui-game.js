@@ -17,8 +17,16 @@
   const FXI = { u: '✦', m: '✸', d: '☀' };
   const statLine = (l) => l.kind === 'fx' ? `<span class="il fxl fx-${l.fx.t}"><b>${FXI[l.fx.t]} ${esc(l.fx.n)}</b> ${l.txt}</span>` : `<span class="il ${l.kind}"><b>${l.txt}</b> ${esc(l.label)}</span>`;
   UI.itemStats = (it) => E.gearLines(it).map(statLine).join('');
+  // иконка предмета: у уникальных — картинка, у остальных — эмодзи основы
+  UI.itemIc = (it, big) => { const U = E.uniqOf(it); return U ? `<img class="uqi${big ? ' big' : ''}" src="${big ? U.img : U.img128 || U.img}" alt="" draggable="false">` : D.BASES[it.k].ic; };
+  // концептуальные свойства уникальной вещи (✧) + навык
+  UI.cxHtml = function (it) {
+    const U = E.uniqOf(it); if (!U) return '';
+    const sk = U.skill && D.SKILLS[U.skill];
+    return `<div class="cxbox"><div class="cxh">${D.CX_IC} Концептуальные свойства</div>${U.cx.map((x) => `<div class="cxrow"><b>${D.CX_IC} ${esc(x.n)}</b><span>${esc(x.d)}</span></div>`).join('')}${sk ? `<div class="cxsk"><img src="${sk.img}" alt=""><div class="grow tl"><b>${esc(sk.n)}</b> <small class="dim">💧${sk.mp} · перезарядка ${sk.cd}</small><div class="small">${esc(sk.d)}</div></div></div>` : ''}</div>`;
+  };
   UI.itemName = (it) => `<span class="rn ${UI.rarCls(it)}" style="${UI.rarVars(it)}">${esc(it.nm)}${it.up ? ' +' + it.up : ''}</span>`;
-  const itemRow = (it, act, extra) => `<button class="item ${UI.rarCls(it)}" style="${UI.rarVars(it)}" data-act="${act}" data-id="${it.id}" data-quiet="1"><span class="ico">${D.BASES[it.k].ic}</span><span class="grow tl"><b>${UI.itemName(it)}</b>${it.lock ? ' 🔒' : ''}${it.en ? ' ✨' : ''}<small>${UI.rarBadge(it)} ${D.SLOTS[it.sl]} · ур.${it.il}${it.fx && it.fx.length ? ' · ' + it.fx.map((id) => FXI[(D.GEAR_FX_BY[id] || {}).t] || '').join('') : ''}</small></span>${extra || ''}</button>`;
+  const itemRow = (it, act, extra) => `<button class="item ${UI.rarCls(it)}" style="${UI.rarVars(it)}" data-act="${act}" data-id="${it.id}" data-quiet="1"><span class="ico">${UI.itemIc(it)}</span><span class="grow tl"><b>${UI.itemName(it)}</b>${it.lock ? ' 🔒' : ''}${it.en ? ' ✨' : ''}<small>${UI.rarBadge(it)} ${D.SLOTS[it.sl]} · ур.${it.il}${it.fx && it.fx.length ? ' · ' + it.fx.map((id) => FXI[(D.GEAR_FX_BY[id] || {}).t] || '').join('') : ''}</small></span>${extra || ''}</button>`;
   UI.itemRow = itemRow;
 
   // ───── Вход в игру ─────
@@ -101,7 +109,7 @@
     let body = '';
     if (t === 'gear') {
       const disc = Math.min(30, E.collect(s).mods.discount || 0);
-      body = E.shopStock(s).map((it, i) => { const p = Math.round(E.buyPrice(it) * (1 - disc / 100)); const usable = E.canUse(s.hero, it); return `<div class="item ${UI.rarCls(it)}" style="${UI.rarVars(it)}"><span class="ico">${D.BASES[it.k].ic}</span><span class="grow tl"><b>${UI.itemName(it)}</b><small>${UI.rarBadge(it)} ${D.SLOTS[it.sl]} · ур.${it.il}</small><small class="ils">${UI.itemStats(it)}</small></span><button class="btn small ${s.gold >= p && usable ? 'primary' : 'ghost'}" data-act="buyGear" data-i="${i}" data-quiet="1">🪙 ${fmt(p)}</button></div>`; }).join('') + (disc ? `<div class="small dim">Скидка торговца: ${disc}%</div>` : '') + `<div class="small dim">Ассортимент растёт с каждым пройденным подземельем.</div>`;
+      body = E.shopStock(s).map((it, i) => { const p = Math.round(E.buyPrice(it) * (1 - disc / 100)); const usable = E.canUse(s.hero, it); return `<div class="item ${UI.rarCls(it)}" style="${UI.rarVars(it)}"><span class="ico">${UI.itemIc(it)}</span><span class="grow tl"><b>${UI.itemName(it)}</b><small>${UI.rarBadge(it)} ${D.SLOTS[it.sl]} · ур.${it.il}</small><small class="ils">${UI.itemStats(it)}</small></span><button class="btn small ${s.gold >= p && usable ? 'primary' : 'ghost'}" data-act="buyGear" data-i="${i}" data-quiet="1">🪙 ${fmt(p)}</button></div>`; }).join('') + (disc ? `<div class="small dim">Скидка торговца: ${disc}%</div>` : '') + `<div class="small dim">Ассортимент растёт с каждым пройденным подземельем.</div>`;
     } else if (t === 'cons') {
       body = E.SHOP_CONS.map((id) => { const c = D.CONS[id], p = E.consBuy(id); return `<div class="item"><span class="ico">${c.ic}</span><span class="grow tl"><b>${c.n}</b> <small>есть: ${s.cons[id] || 0} · ${c.d}</small></span><button class="btn small ${s.gold >= p ? 'primary' : 'ghost'}" data-act="buyCons" data-id="${id}" data-quiet="1">🪙 ${p}</button></div>`; }).join('');
     } else if (t === 'gifts') {
@@ -129,7 +137,7 @@
   UI.act.forge = () => UI.forgeModal();
   UI.forgeModal = function () {
     const s = UI.slot(), cap = E.upCap(s), items = Object.values(s.eq).filter(Boolean).concat(s.inv.filter((x) => x.r >= 1).sort((a, b) => b.r - a.r || b.il - a.il)).slice(0, 40);
-    const rows = items.map((it) => { const ic = E.upCap(s, it), maxed = (it.up || 0) >= ic, c = E.upCost(s, it), ok = E.canAfford(s, c); return `<div class="item ${UI.rarCls(it)}" style="${UI.rarVars(it)}"><span class="ico">${D.BASES[it.k].ic}</span><span class="grow tl"><b>${UI.itemName(it)}</b>${s.eq[it.sl] === it ? ' <small class="inl">(надето)</small>' : ''}<small>${UI.rarBadge(it)} +${it.up || 0}/${ic}</small><small>${maxed ? 'максимум +' + ic : '🪙 ' + fmt(c.gold) + ' ' + matTxt(c.mats, s)}</small></span>${maxed ? '' : `<button class="btn small ${ok ? 'primary' : 'ghost'}" data-act="upgrade" data-id="${it.id}" data-quiet="1">+${(it.up || 0) + 1}</button>`}</div>`; }).join('');
+    const rows = items.map((it) => { const ic = E.upCap(s, it), maxed = (it.up || 0) >= ic, c = E.upCost(s, it), ok = E.canAfford(s, c); return `<div class="item ${UI.rarCls(it)}" style="${UI.rarVars(it)}"><span class="ico">${UI.itemIc(it)}</span><span class="grow tl"><b>${UI.itemName(it)}</b>${s.eq[it.sl] === it ? ' <small class="inl">(надето)</small>' : ''}<small>${UI.rarBadge(it)} +${it.up || 0}/${ic}</small><small>${maxed ? 'максимум +' + ic : '🪙 ' + fmt(c.gold) + ' ' + matTxt(c.mats, s)}</small></span>${maxed ? '' : `<button class="btn small ${ok ? 'primary' : 'ghost'}" data-act="upgrade" data-id="${it.id}" data-quiet="1">+${(it.up || 0) + 1}</button>`}</div>`; }).join('');
     UI.modal(`<div class="row between center-v"><h3 class="m0">⚒️ Кузница Брума</h3><button class="btn ghost small qbtn" data-act="rarInfo" data-quiet="1" aria-label="Редкости">? Редкости</button></div><div class="small dim tl">Каждый уровень даёт +9% к характеристикам предмета. Предел: +${cap}${cap === 3 ? ' (кузнец-мастер улучшает до +6 и со скидкой 25%)' : ' — вы кузнец!'} и ещё до +${D.RARITY[D.RARITY_OPEN].up} за редкость (Редкий +1 … Божественный +${D.RARITY[D.RARITY_OPEN].up}). Чем реже вещь, тем дороже улучшение.</div><div class="mlist">${rows || '<div class="dim center pad">Нет предметов для улучшения</div>'}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
   };
   UI.act.upgrade = (el) => { const s = UI.slot(), it = E.findItem(s, +el.dataset.id); const r = E.upgrade(s, it); if (r) { UI.toast(r, 'bad'); UI.sfx('err'); } else { UI.sfx('forge'); UI.toast(`${esc(it.nm)} +${it.up}`, 'ok'); UI.save(true); } keepScroll(UI.forgeModal); UI.refresh(); };
@@ -163,7 +171,7 @@
   UI.tabs.hero = function (s) {
     const h = s.hero, d = E.derive(s), cls = D.CLASSES[h.cls], race = D.RACES[h.race], c = E.collect(s);
     const mods = Object.keys(c.mods).filter((k) => c.mods[k] && D.MODN[k]).map((k) => { const v = k === 'critDmg' ? c.mods[k] * 100 : c.mods[k], pct = /%$/.test(D.MODN[k]) || k === 'critDmg'; return `<span class="chip">${v > 0 && !/aken/.test(k) ? '+' : ''}${Math.round(v * 10) / 10}${pct ? '%' : ''} ${(D.MODN[k]).replace(/\s*%$/, '')}</span>`; }).join('');
-    const eq = Object.keys(D.SLOTS).map((sl) => { const it = s.eq[sl]; return `<button class="eqs ${it ? UI.rarCls(it) : 'empty'}" style="${it ? UI.rarVars(it) : '--rc:#444'}" data-act="${it ? 'itemOpen' : 'gearSlot'}" data-id="${it ? it.id : ''}" data-sl="${sl}" data-quiet="1"><span>${it ? D.BASES[it.k].ic : D.SLOT_IC[sl]}</span><small>${it ? UI.itemName(it) : D.SLOTS[sl]}</small>${it ? `<i class="eqr">${rar(it).n}</i>` : ''}</button>`; }).join('');
+    const eq = Object.keys(D.SLOTS).map((sl) => { const it = s.eq[sl]; return `<button class="eqs ${it ? UI.rarCls(it) : 'empty'}" style="${it ? UI.rarVars(it) : '--rc:#444'}" data-act="${it ? 'itemOpen' : 'gearSlot'}" data-id="${it ? it.id : ''}" data-sl="${sl}" data-quiet="1"><span>${it ? UI.itemIc(it, true) : D.SLOT_IC[sl]}</span><small>${it ? UI.itemName(it) : D.SLOTS[sl]}</small>${it ? `<i class="eqr">${rar(it).n}</i>` : ''}</button>`; }).join('');
     const st = s.stats, need = D.xpNeed(h.level);
     const xpTxt = h.level >= D.LEVEL_CAP ? 'МАКС' : fmt(h.xp) + ' / ' + fmt(need);
     return `<h2 class="herotitle">Герой</h2>
@@ -204,8 +212,8 @@
   UI.act.nodeSel = (el) => { UI.sub.node = el.dataset.id; UI.sfx('tab'); UI.refresh(); const d = $('.ndet'); if (d) d.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); };
   UI.act.learn = (el) => { const s = UI.slot(), r = E.learn(s.hero, el.dataset.id); if (r) { UI.toast(r, 'bad'); UI.sfx('err'); return; } UI.sfx('level'); UI.save(true); UI.refresh(); };
   function skillList(s) {
-    const ids = E.skillsOf(s.hero), d = E.derive(s);
-    const rows = ids.map((id) => { const sk = id.startsWith('u_') ? Object.assign({}, D.UNIQ[s.hero.uniq].act, { ic: D.UNIQ[s.hero.uniq].ic }) : D.SKILLS[id]; const bonus = d.skb[id]; return `<div class="card sk"><div class="row gap center-v"><span class="big-ic">${sk.ic}</span><div class="grow tl"><b>${sk.n}</b><div class="dim small">${sk.mp ? sk.mp + ' эн.' : ''}${sk.rc ? ' ресурс ' + sk.rc : ''}${sk.rcAll ? ' весь ресурс' : ''}${sk.cd ? ' · пер. ' + sk.cd : ''}${bonus ? ' · +' + bonus + '% силы' : ''}</div></div></div><div class="small tl">${sk.d}</div></div>`; }).join('');
+    const ids = E.skillsOf(s.hero).concat(E.gearSkills(s.eq)), d = E.derive(s);
+    const rows = ids.map((id) => { const sk = id.startsWith('u_') ? Object.assign({}, D.UNIQ[s.hero.uniq].act, { ic: D.UNIQ[s.hero.uniq].ic }) : D.SKILLS[id]; const bonus = d.skb[id]; return `<div class="card sk ${sk.gear ? 'cxsk-card' : ''}"><div class="row gap center-v"><span class="big-ic">${sk.img ? `<img class="uqi" src="${sk.img}" alt="">` : sk.ic}</span><div class="grow tl"><b>${sk.n}</b>${sk.gear ? ` <span class="tag cx">${D.CX_IC} от меча</span>` : ''}<div class="dim small">${sk.mp ? sk.mp + ' эн.' : ''}${sk.rc ? ' ресурс ' + sk.rc : ''}${sk.rcAll ? ' весь ресурс' : ''}${sk.cd ? ' · пер. ' + sk.cd : ''}${bonus ? ' · +' + bonus + '% силы' : ''}</div></div></div><div class="small tl">${sk.d}</div></div>`; }).join('');
     const b = D.BASIC[s.hero.cls];
     return `<div class="card sk"><div class="row gap center-v"><span class="big-ic">${b.ic}</span><div class="grow tl"><b>${b.n}</b> <span class="dim small">базовая атака</span></div></div></div>` + rows;
   }
@@ -254,12 +262,13 @@
     const worn = s.eq[it.sl] === it, cur = !worn && s.eq[it.sl], cap = E.upCap(s, it), c = E.upCost(s, it);
     const matsOk = Object.keys(c.mats || {}).every((m) => (s.mats[m] || 0) >= c.mats[m]);
     const matLine = Object.keys(c.mats || {}).map((m) => `${D.MATS[m].ic}${c.mats[m]}`).join(' ') || '';
-    UI.modal(`<div class="itemhead ${UI.rarCls(it)}" style="${UI.rarVars(it)}"><span class="big-ic">${D.BASES[it.k].ic}</span><div class="grow tl"><h3 class="m0">${UI.itemName(it)}</h3><div class="dim small">${UI.rarBadge(it)} ${D.SLOTS[it.sl]} · ур. ${it.il} · улучш. +${it.up || 0}/${cap}${it.en ? ' · ✨ ' + D.ENCHANTS.find((e) => e.id === it.en).n : ''}</div></div><button class="btn ghost small qbtn" data-act="rarInfo" data-quiet="1" aria-label="Редкости">?</button></div>
-      ${UI.itemDiffHtml(it, cur)}
+    UI.modal(`<div class="itemhead ${UI.rarCls(it)}" style="${UI.rarVars(it)}"><span class="big-ic">${UI.itemIc(it, true)}</span><div class="grow tl"><h3 class="m0">${UI.itemName(it)}</h3><div class="dim small">${UI.rarBadge(it)} ${D.SLOTS[it.sl]} · ур. ${it.il} · улучш. +${it.up || 0}/${cap}${it.en ? ' · ✨ ' + D.ENCHANTS.find((e) => e.id === it.en).n : ''}</div></div><button class="btn ghost small qbtn" data-act="rarInfo" data-quiet="1" aria-label="Редкости">?</button></div>
+      ${E.uniqOf(it) ? `<div class="uqart ${UI.rarCls(it)}"><img src="${E.uniqOf(it).art}" alt="${esc(it.nm)}"><div class="uqlore">«${esc(E.uniqOf(it).lore)}»</div><div class="uqtag">Уникальный предмет · не продаётся</div></div>` : ''}
+      ${UI.itemDiffHtml(it, cur)}${UI.cxHtml(it)}
       ${!E.canUse(s.hero, it) ? '<div class="warnbox">Ваш класс не может использовать это оружие.</div>' : ''}
       <div class="row gap wrap gearacts">${worn ? `<button class="btn ghost grow" data-act="unequip" data-id="${it.id}">Снять</button>` : `<button class="btn primary grow" data-act="equip" data-id="${it.id}" ${E.canUse(s.hero, it) ? '' : 'disabled'}>${cur ? 'Заменить' : 'Надеть'}</button>`}
-      <button class="btn ghost" data-act="lockItem" data-id="${it.id}">${it.lock ? '🔒' : '🔓'}</button>
-      ${worn ? '' : `<button class="btn ghost danger" data-act="sellOne" data-id="${it.id}">Продать 🪙${E.sellPrice(it)}</button>`}</div>
+      ${it.uq ? '' : `<button class="btn ghost" data-act="lockItem" data-id="${it.id}">${it.lock ? '🔒' : '🔓'}</button>`}
+      ${worn || it.uq ? '' : `<button class="btn ghost danger" data-act="sellOne" data-id="${it.id}">Продать 🪙${E.sellPrice(it)}</button>`}</div>
       <button class="btn ghost wide" data-act="upItem" data-id="${it.id}" ${(it.up || 0) >= cap || s.gold < c.gold || !matsOk ? 'disabled' : ''}>${(it.up || 0) >= cap ? `⚒️ Улучшено до предела +${cap}` : `⚒️ Улучшить до +${(it.up || 0) + 1} · 🪙${fmt(c.gold)}${matLine ? ' · ' + matLine : ''}`}</button>
       ${(s.hero.prof1 === 'ench' || s.hero.prof2 === 'ench') ? `<button class="btn ghost wide" data-act="enchOpen" data-id="${it.id}">✨ Зачаровать</button>` : ''}
       <button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
@@ -267,9 +276,9 @@
   // ═════ РЕДКОСТИ: справка ═════
   UI.rarInfoHtml = function () {
     const rows = D.RARITY.map((R, i) => {
-      const it = { r: i }, lockd = R.lock;
-      const what = lockd ? '<span class="dim">??? — ещё не открыто</span>' : `${R.attr[0] === R.attr[1] ? R.attr[0] : R.attr[0] + '–' + R.attr[1]} хар. · ${R.aff[0] === R.aff[1] ? R.aff[0] : R.aff[0] + '–' + R.aff[1]} аффикс.${R.fx.length ? ' · ' + R.fx.map((t) => FXI[t]).join('') : ''} · ×${R.mul} к основе${R.up ? ' · +' + R.up + ' улучш.' : ''}`;
-      const where = lockd ? '' : i === 0 || i === 1 ? 'везде' : i === 2 ? 'с первых подземелий, боссы' : i === 3 ? 'с ур. ' + R.lv + ', лавка после 3 подземелий' : i === 4 ? 'с ур. ' + R.lv + ', ремесло' : i === 7 ? 'только боссы, с ур. ' + R.lv + ' — крайне редко' : 'с ур. ' + R.lv;
+      const it = { r: i }, opened = R.lock && UI.slot() && E.slotItems(UI.slot()).some((x) => (x.r | 0) === i), lockd = R.lock && !opened;
+      const what = opened ? `открыто: ${E.slotItems(UI.slot()).filter((x) => (x.r | 0) === i).map((x) => esc(x.nm)).filter((v, j, a) => a.indexOf(v) === j).join(', ')} · ${D.CX_IC} концептуальные свойства` : lockd ? '<span class="dim">??? — ещё не открыто</span>' : `${R.attr[0] === R.attr[1] ? R.attr[0] : R.attr[0] + '–' + R.attr[1]} хар. · ${R.aff[0] === R.aff[1] ? R.aff[0] : R.aff[0] + '–' + R.aff[1]} аффикс.${R.fx.length ? ' · ' + R.fx.map((t) => FXI[t]).join('') : ''} · ×${R.mul} к основе${R.up ? ' · +' + R.up + ' улучш.' : ''}`;
+      const where = opened ? 'только уникальные предметы — особым даром' : lockd ? '' : i === 0 || i === 1 ? 'везде' : i === 2 ? 'с первых подземелий, боссы' : i === 3 ? 'с ур. ' + R.lv + ', лавка после 3 подземелий' : i === 4 ? 'с ур. ' + R.lv + ', ремесло' : i === 7 ? 'только боссы, с ур. ' + R.lv + ' — крайне редко' : 'с ур. ' + R.lv;
       return `<div class="rinfo ${UI.rarCls(it)} ${lockd ? 'lockd' : ''}" style="${UI.rarVars(it)}"><i class="rsw"></i><div class="grow tl"><b class="rn ${UI.rarCls(it)}" style="${UI.rarVars(it)}">${i + 1}. ${lockd ? '🔒 ' : ''}${R.n}</b><small>${what}</small>${where ? `<small class="dim">${where}</small>` : ''}</div></div>`;
     }).join('');
     return `<h3>💎 Редкости снаряжения</h3><div class="small dim tl">Чем реже вещь, тем больше у неё основных статов, линий характеристик и аффиксов, и тем они крупнее. ✦ уникальное, ✸ мифическое и ☀ божественное свойства работают в бою. Высокие редкости выпадают в поздних подземельях и с боссов; удача добычи и сложность повышают шанс.</div><div class="mlist rlistx">${rows}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`;
@@ -278,11 +287,11 @@
   UI.act.gearSlot = (el) => UI.gearSheet(el.dataset.sl);
   UI.gearSheet = function (sl) {
     const s = UI.slot(), cur = s.eq[sl], list = s.inv.filter((it) => it.sl === sl).sort((a, b) => E.itemScore(b) - E.itemScore(a) || b.r - a.r);
-    const curBlock = cur ? `<div class="card small tl"><div class="small dim">Надето</div><button class="item ${UI.rarCls(cur)}" style="${UI.rarVars(cur)}" data-act="itemOpen" data-id="${cur.id}" data-quiet="1"><span class="ico">${D.BASES[cur.k].ic}</span><span class="grow tl"><b>${UI.itemName(cur)}</b><small>${UI.rarBadge(cur)} ур.${cur.il}</small><small class="ils">${UI.itemStats(cur)}</small></span><span class="tag ok">надето</span></button></div>` : `<div class="small dim">Слот пуст</div>`;
+    const curBlock = cur ? `<div class="card small tl"><div class="small dim">Надето</div><button class="item ${UI.rarCls(cur)}" style="${UI.rarVars(cur)}" data-act="itemOpen" data-id="${cur.id}" data-quiet="1"><span class="ico">${UI.itemIc(cur)}</span><span class="grow tl"><b>${UI.itemName(cur)}</b><small>${UI.rarBadge(cur)} ур.${cur.il}</small><small class="ils">${UI.itemStats(cur)}</small></span><span class="tag ok">надето</span></button></div>` : `<div class="small dim">Слот пуст</div>`;
     const rows = list.map((it) => {
       const dv = E.itemScore(it) - (cur ? E.itemScore(cur) : 0);
       const tag = !E.canUse(s.hero, it) ? '<span class="tag">нельзя</span>' : dv > 0.5 ? '<span class="tag up">▲ лучше</span>' : dv < -0.5 ? '<span class="tag dn">▼ слабее</span>' : '<span class="tag">=</span>';
-      return `<button class="item gearpick ${UI.rarCls(it)}" style="${UI.rarVars(it)}" data-act="itemOpen" data-id="${it.id}" data-quiet="1"><span class="ico">${D.BASES[it.k].ic}</span><span class="grow tl"><b>${UI.itemName(it)}</b><small>${UI.rarBadge(it)} ур.${it.il}</small><small class="ils">${UI.itemStats(it)}</small></span>${tag}</button>`;
+      return `<button class="item gearpick ${UI.rarCls(it)}" style="${UI.rarVars(it)}" data-act="itemOpen" data-id="${it.id}" data-quiet="1"><span class="ico">${UI.itemIc(it)}</span><span class="grow tl"><b>${UI.itemName(it)}</b><small>${UI.rarBadge(it)} ур.${it.il}</small><small class="ils">${UI.itemStats(it)}</small></span>${tag}</button>`;
     }).join('') || '<div class="dim center pad">В сумке нет предметов для этого слота</div>';
     UI.modal(`<div class="row between center-v"><h3 class="m0">${D.SLOT_IC[sl]} ${D.SLOTS[sl]}</h3><button class="btn ghost small qbtn" data-act="rarInfo" data-quiet="1" aria-label="Редкости">?</button></div>${curBlock}<div class="small dim tl">В сумке</div><div class="mlist gearlist">${rows}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
   };
@@ -339,7 +348,7 @@
     const sp = (k, n, vals) => `<div class="setrow"><span>${n}</span><div class="seg small mini">${vals.map(([v, l]) => `<button class="${st[k] === v ? 'on' : ''}" data-act="setVal" data-k="${k}" data-v="${v}" data-quiet="1">${l}</button>`).join('')}</div></div>`;
     return `<h2>Настройки</h2><div class="card">${tg('sound', '🔊 Звуковые эффекты')}${tg('music', '🎵 Музыка (эмбиент)')}<div class="setrow"><span>Громкость</span><input type="range" min="0" max="1" step="0.05" value="${st.vol}" id="volR" data-act="vol" class="rng"></div>
       ${sp('textSpeed', '📖 Скорость текста', [[1, 'Медл.'], [2, 'Норм.'], [3, 'Быстр.']])}${sp('battleSpeed', '⚔️ Скорость боя', [[1, '×1'], [2, '×2']])}${tg('auto', '🤖 Авто-бой по умолчанию')}${tg('shake', '📳 Тряска экрана')}${tg('particles', '✨ Частицы')}${tg('tutorial', '📘 Подсказки')}</div>
-      <div class="card col gap"><b>Сохранения</b><div class="small dim">Профиль «${esc(UI.p.nick)}», слот ${UI.p.active + 1}. Автосохранение после каждого действия, плюс резервная копия.</div>
+      <div class="card col gap"><b>Сохранения</b><div class="small dim">Профиль «${esc(UI.p.nick)}», слот ${UI.p.active + 1}. Автосохранение после каждого действия, плюс резервная копия.</div>${RPG.M ? `<div class="pcode"><span class="small dim">Код игрока</span><b id="pcodeSet">${esc(RPG.M.code(s))}</b><button class="btn ghost small" data-act="copyPcode" data-quiet="1">📋 Копировать</button></div>` : ''}
         <div class="row gap wrap"><button class="btn ghost small" data-act="exportSlot" data-i="${UI.p.active}">Экспорт героя</button><button class="btn ghost small" data-act="exportProfile">Экспорт профиля</button><button class="btn ghost small" data-act="saveNow">💾 Сохранить</button></div>
         <div class="row gap wrap"><button class="btn ghost small" data-act="tutorial">📘 Обучение</button><button class="btn ghost small" data-act="credits">О игре</button></div>
         <div class="row gap wrap"><button class="btn ghost small" data-act="toSlots">⇄ Сменить слот</button><button class="btn ghost small" data-act="toProfiles">👤 Сменить профиль</button></div></div>`;
