@@ -14,6 +14,10 @@
   const srcDmg = (src, tgt) => isOrigin(src) && src.side !== tgt.side;
   const INSTA = 1e8;   // урон ≥ HP + 1e8 — «мгновенное убийство» (стирание/пожирание): хук для «Причинной устойчивости» и «Разделить неразделимое»
   C.isOrigin = isOrigin;
+  // ⊘ До существования (v2.14): владелец вещи r ≥ 10 — mods.prex; ничто ниже r 10 не обходит его свойства (в т.ч. урон/приоритет Истока)
+  const isPrex = (u) => !!(u && u.mods && u.mods.prex > 0);
+  const pxOver = (src, tgt) => !!(src && src !== tgt && isPrex(src) && src.side !== tgt.side);   // равная редкость с противоположной стороны (в игре таких врагов нет)
+  C.isPrex = isPrex;
 
   // ───── Создание юнитов ─────
   C.unitFromSlot = function (slot) {
@@ -62,7 +66,7 @@
   // ───── Бой ─────
   C.create = function (party, foes, rng, opts) {
     const B = { party, foes, units: party.concat(foes), rng, log: [], ev: [], over: null, cur: null, opts: opts || {}, stolen: 0, nextId: 1, cons: opts && opts.cons || {}, round: 0, potionK: (opts && opts.potionK) || 1, bombK: (opts && opts.bombK) || 1, killed: [] };
-    B.units.forEach(u => { u.gauge = rng() * 35 + (u.sub && u.sub.init || 0); if (u.mods.startShield) addSt(B, u, u, 'shield', 5, u.maxHp * u.mods.startShield / 100); if (u.mods.startHaste) addSt(B, u, u, 'haste', u.mods.startHaste + 1); u.reviveUsed = false; u.denyUsed = false; u.rewUsed = false; u.acts = 0; u.heat = 0; u._snapCur = { hp: u.hp, mp: u.mp }; });
+    B.units.forEach(u => { u.gauge = rng() * 35 + (u.sub && u.sub.init || 0); if (u.mods.startShield) addSt(B, u, u, 'shield', 5, u.maxHp * u.mods.startShield / 100); if (u.mods.startHaste) addSt(B, u, u, 'haste', u.mods.startHaste + 1); if (u.mods.pxShield > 0) addSt(B, u, u, 'shield', 1e9, u.maxHp * u.mods.pxShield / 100); u._pxDenyUsed = false; u.reviveUsed = false; u.denyUsed = false; u.rewUsed = false; u.acts = 0; u.heat = 0; u._snapCur = { hp: u.hp, mp: u.mp }; });
     B.units.forEach(u => { u.takenTot = 0; u.erased = 0; u.kills = 0; u.devStack = 0; u.immDebt = 0; if ((u.mods.mantra > 0 || u.mods.mantraMag > 0 || u.mods.mantraTime > 0) && u.side === 'a') { u.m0 = { atk: u.atk, def: u.def, spd: u.spd, mag: u.mag, res: u.res, hpow: u.hpow }; u.mst = 0; u.mgs = 0; } });
     B.law = {};
     B.units.forEach(u => { if (u.side === 'a' && u.mods.tyrant > 0) alive(B.foes).forEach(e => { addSt(B, u, e, 'tyrant', 99); e.gauge -= 20 * Math.min(2, u.mods.tyrant); }); });
@@ -84,6 +88,7 @@
     if (!tgt.alive) return;
     const def = D.ST[id]; let s = has(tgt, id);
     const foe = src && src.side && src.side !== tgt.side, deb = def.k === 'debuff' || def.k === 'dot' || def.k === 'ctrl';
+    if (deb && isPrex(tgt) && tgt.mods.pxNull > 0 && !pxOver(src, tgt)) { if (tgt._nullTxt !== B.round) { tgt._nullTxt = B.round; ev(B, { t: 'txt', u: tgt.id, s: 'Нулевая устойчивость' }); } msg(B, tgt.name + ': «' + def.n + '» не действует — Нулевая устойчивость'); return; }   // ⊘ иммунитет к любым отрицательным состояниям от любого источника
     if (foe && deb && isOrigin(tgt) && (def.item || 99) < D.ORIGIN_R) { if (!tgt._prioTxt || tgt._prioTxt !== B.round) { tgt._prioTxt = B.round; ev(B, { t: 'txt', u: tgt.id, s: 'Приоритет Истока' }); } msg(B, tgt.name + ': «' + def.n + '» не действует — Приоритет Истока'); return; }   // ✶ эффекты предметов ниже Истока
     if (tgt.blk && tgt.blk[id] > tgt.turns) { ev(B, { t: 'txt', u: tgt.id, s: 'Отделено' }); return; }   // ✶ «Отделение свойства»: усиление нельзя наложить снова 2 хода
     const ovr = srcDmg(src, tgt) && (def.item || 0) >= D.ORIGIN_R;   // ✶ Общий приоритет: эффекты Истока не режут свойства более низких редкостей
@@ -181,6 +186,10 @@
   }
   function hurt(B, tgt, v, el, src, dot) {
     if (!tgt.alive) return 0;
+    if (isPrex(tgt) && !pxOver(src, tgt)) {   // ⊘ ко всему урону ниже r 10 (удары, навыки, концепции, Исток, DoT, шипы, отражение)
+      if (v >= tgt.hp + INSTA && tgt.mods.pxNull > 0) { ev(B, { t: 'txt', u: tgt.id, s: 'Нулевая устойчивость' }); msg(B, tgt.name + ': мгновенная смерть не действует — Нулевая устойчивость'); return 0; }
+      v *= Math.max(0, 1 - (tgt.mods.allRes || 0) / 100) * (1 - clamp(tgt.mods.pxArmor || 0, 0, 100) / 100);   // «Сопротивление всему урону» без нижнего предела ×0,2 + «Предсуществующая броня»
+    }
     const S = srcDmg(src, tgt), lowR = S && !isOrigin(tgt);   // ✶ урон Истока; lowR — цель без Истока (Общий приоритет)
     if (v > 0 && !S && tgt.mods.dmgImm > 0) { let im = Math.min(100, tgt.mods.dmgImm); const lw = has(tgt, 'lawless'); if (lw) im *= 1 - 0.5 * (lw.pow || 1); if (src && src.mods && src.mods.zlNoAbs > 0) im = Math.min(im, src.mods.zlNoAbs); v *= 1 - im / 100; }   // хук неуязвимости/иммунитета к урону (у врагов игры пока нет); урон Истока его игнорирует
     if (v >= tgt.hp + INSTA && (tgt.mods.pcSteady > 0 && !tgt._steadyUsed || tgt.mods.fdUndiv > 0 && !tgt._undivUsed) && !(S && !isOrigin(tgt))) {   // ✶ мгновенное убийство владельца клинка Истока
@@ -193,11 +202,15 @@
     if (v > 0 && !dot && src && src.mods && src.mods.entHeat > 0 && src.side !== tgt.side && has(tgt, 'heatDeath')) v *= 1 + src.mods.entHeat / 100;   // ✧ Тепловая смерть: +35% урона владельца
     if (!dot) v = absorb(B, tgt, v);
     v = Math.max(0, Math.round(v));
+    if (v > 0 && v >= tgt.hp && isPrex(tgt) && tgt.mods.pxDeny > 0 && !tgt._pxDenyUsed) {   // ⊘ «Отказ смерти»: не воскрешение — запреты воскрешения и «Отрицание бессмертия» Истока не мешают
+      tgt._pxDenyUsed = true; const k = tgt.mods.pxDeny / 100; heal(B, tgt, tgt, tgt.maxHp * k, true, true); tgt.st = tgt.st.filter(x => !(x.id === 'shield' && x.pow <= 0)); addSt(B, tgt, tgt, 'shield', 2, tgt.maxHp * k);
+      ev(B, { t: 'txt', u: tgt.id, s: 'Отказ смерти' }); msg(B, tgt.name + ': Отказ смерти — смертельный удар не случился'); return 0;
+    }
     const rf = has(tgt, 'reflect'); if (rf && !dot && src && src.alive && src.side !== tgt.side && v > 0) { const back = Math.round(v * rf.pow * 1.5); v = Math.round(v * (1 - rf.pow)); ev(B, { t: 'txt', u: tgt.id, s: 'Обращено!' }); msg(B, tgt.name + ' обращает урон на ' + src.name + ' (' + back + ')'); const rr = hurt(B, src, back, 'arcane', null, true); ev(B, { t: 'dmg', u: src.id, from: tgt.id, v: rr, thorn: 1 }); }
     if (v > 0 && src && src.side !== tgt.side && tgt.alive) { const pc = has(src, 'preConseq'); if (pc && tgt.mods.pcMark > 0 && pc.src === tgt.id && src.alive && !B._pcBack) { B._pcBack = 1; const back = Math.round(v * (pc.pow || 0.4)); const rr = hurt(B, src, back, 'arcane', tgt, true); B._pcBack = 0; ev(B, { t: 'dmg', u: src.id, from: tgt.id, v: rr, thorn: 1, origin: 1 }); msg(B, 'Предопределённое Следствие: ' + src.name + ' −' + rr); } }   // ✶
     if (v > 0 && tgt.mods.pcBefore > 0 && src && src.side !== tgt.side) { if (tgt._pcSeq !== B.actSeq) { tgt._pcSeq = B.actSeq; tgt._pcDmg = 0; } tgt._pcDmg += v; }   // ✶ «До следствия»: копим урон за действие врага
     if (has(tgt, 'immortal') && tgt.hp - v < 1 && !S) { const cut = Math.max(0, tgt.hp - 1); tgt.immDebt = (tgt.immDebt || 0) + (v - cut); v = cut; if (!tgt._immTxt) { tgt._immTxt = 1; ev(B, { t: 'txt', u: tgt.id, s: 'Бессмертен!' }); } }
-    if (v > 0 && tgt.side === 'e' && tgt.role === 'boss' && tgt.lv >= C.TUNE.hitCapFrom) { const k = clamp((tgt.lv - C.TUNE.hitCapFrom) / (C.TUNE.hitCapTo - C.TUNE.hitCapFrom), 0, 1), cap = Math.max(1, Math.round(tgt.maxHp * (C.TUNE.hitCap[0] + (C.TUNE.hitCap[1] - C.TUNE.hitCap[0]) * k))); if (v > cap) v = cap; if (tgt._seq !== B.actSeq) { tgt._seq = B.actSeq; tgt._acc = 0; } const room = Math.max(0, cap * C.TUNE.actCapMul - tgt._acc); if (v > room) v = Math.round(room); tgt._acc += v; }
+    if (v > 0 && tgt.side === 'e' && tgt.role === 'boss' && tgt.lv >= C.TUNE.hitCapFrom && !isPrex(src)) { const k = clamp((tgt.lv - C.TUNE.hitCapFrom) / (C.TUNE.hitCapTo - C.TUNE.hitCapFrom), 0, 1), cap = Math.max(1, Math.round(tgt.maxHp * (C.TUNE.hitCap[0] + (C.TUNE.hitCap[1] - C.TUNE.hitCap[0]) * k))); if (v > cap) v = cap; if (tgt._seq !== B.actSeq) { tgt._seq = B.actSeq; tgt._acc = 0; } const room = Math.max(0, cap * C.TUNE.actCapMul - tgt._acc); if (v > room) v = Math.round(room); tgt._acc += v; }
     tgt.hp -= v; tgt.takenSince += v; tgt.takenTot = (tgt.takenTot || 0) + v;
     if (v > 0 && el === 'light' && src && src.side !== tgt.side && tgt.mods.abyssLight > 0 && tgt.hp > 0) addSt(B, tgt, tgt, 'abyssDusk', 1);
     if (v > 0 && src && src.mods && src.mods.entDecay > 0 && src.side !== tgt.side && tgt.hp > 0) addDecay(B, src, tgt, 1);   // ✧ «Энтропия всегда возрастает»
@@ -214,7 +227,7 @@
     }
     if (tgt.hp <= 0) {
       tgt.hp = 0; tgt.alive = false; tgt.st = []; ev(B, { t: 'death', u: tgt.id }); msg(B, tgt.name + ' повержен.');
-      if (S && tgt.side === 'e' && !tgt.summoned) { tgt.gone = true; tgt.st = [{ id: 'erasedSt', dur: 99, pow: 0, src: src.id }]; (B.erasedNow = B.erasedNow || []).push(tgt.id); ev(B, { t: 'txt', u: tgt.id, s: 'Стёрт из существования' }); msg(B, tgt.name + ' стёрт из существования'); }   // ✶ Стирание Истоком
+      if (S && !isPrex(src) && tgt.side === 'e' && !tgt.summoned) { tgt.gone = true; tgt.st = [{ id: 'erasedSt', dur: 99, pow: 0, src: src.id }]; (B.erasedNow = B.erasedNow || []).push(tgt.id); ev(B, { t: 'txt', u: tgt.id, s: 'Стёрт из существования' }); msg(B, tgt.name + ' стёрт из существования'); }   // ✶ Стирание Истоком
       if (tgt.side === 'e') { B.killed.push(tgt); if (src) src.kills = (src.kills || 0) + 1; if (src && src.alive && src.mods) { if (src.mods.killRc) src.rc = clamp(src.rc + src.mods.killRc, 0, src.rcMax); if (src.mods.killMp) src.mp = Math.min(src.maxMp, src.mp + src.mods.killMp); } if (src && src.alive && src.mods && src.mods.hellFeast > 0) { heal(B, src, src, src.maxHp * src.mods.hellFeast / 100, true, true); src.mp = Math.min(src.maxMp, src.mp + Math.round(src.maxMp * 0.2)); ev(B, { t: 'txt', u: src.id, s: 'Пир Падших' }); msg(B, src.name + ': Пир Падших'); } if (src && src.alive && src.mods && src.mods.devour) { heal(B, src, src, src.maxHp * src.mods.devour / 100, true, true); src.mp = Math.min(src.maxMp, src.mp + Math.round(src.maxMp * src.mods.devour / 200)); ev(B, { t: 'txt', u: src.id, s: 'Пожрано' }); } }
     } else if (tgt.side === 'e' && tgt.role && (tgt.role === 'boss' || tgt.role === 'mini') && tgt.phase === 1 && tgt.hp <= tgt.maxHp * 0.5) {
       tgt.phase = 2; addSt(B, tgt, tgt, 'enrage', 99); ev(B, { t: 'phase', u: tgt.id }); msg(B, tgt.name + ' впадает в ярость!');
@@ -254,8 +267,9 @@
     let k = 1; const tsub = tgt.sub || {};
     if (el && el !== 'phys') { if (tgt.weak.includes(el)) k *= 1.35; else if (tgt.resist.includes(el)) k *= 0.6; else if (tgt.el) { if (tgt.el === el) k *= 0.75; else if ((D.ELEM_BEATS[el] || []).includes(tgt.el)) k *= 1.2; } }
     if (tsub.resEl && tsub.resEl[el]) k *= 1 - clamp(tsub.resEl[el], -50, 75) / 100;
-    let tk = 1 + (tgt.mods.taken || 0) / 100 - (tgt.mods.allRes || 0) / 100 + stMod(tgt, 'taken'); if (tgt.mods.lowTaken && tgt.hp < tgt.maxHp * 0.3) tk -= tgt.mods.lowTaken / 100;
-    return k * Math.max(0.2, tk);
+    const px = isPrex(tgt);   // ⊘ у владельца r 10 «Сопротивление всему урону» применяется в hurt() без нижнего предела
+    let tk = 1 + (tgt.mods.taken || 0) / 100 - (px ? 0 : (tgt.mods.allRes || 0) / 100) + stMod(tgt, 'taken'); if (tgt.mods.lowTaken && tgt.hp < tgt.maxHp * 0.3) tk -= tgt.mods.lowTaken / 100;
+    return k * Math.max(px ? 0 : 0.2, tk);
   }
   // концептуальный урон: тег 'concept' — его режет «Сопротивление концептуальному урону»
   function cHurt(B, u, t, v, el, note) {
@@ -275,7 +289,7 @@
   }
   C._oHurt = oHurt;
   // ✶ доля брони цели для навыка с учётом брони (Нулевой Закон)
-  const armorK = (u, t) => { const pk = Math.min(0.9, Math.max(((u.sub && u.sub.pen) || 0) / 100, (u.mods.fdEdge || 0) / 100)), dv = t.def * (1 - pk) * (1 + stMod(t, 'def')), K = 50 + 4 * t.lv; return K / (K + Math.max(0, dv)); };
+  const armorK = (u, t) => { const pk = Math.min(isPrex(u) ? 1 : 0.9, Math.max(((u.sub && u.sub.pen) || 0) / 100, (u.mods.fdEdge || 0) / 100)), dv = t.def * (1 - pk) * (1 + stMod(t, 'def')), K = 50 + 4 * t.lv; return K / (K + Math.max(0, dv)); };
   // доля потерянного HP цели; у боссов/минибоссов ограничена bossLost × макс. HP владельца
   const lostPart = (u, t, eff) => { const v = (t.maxHp - t.hp) * (eff.lost || 0); return big(t) && eff.bossLost != null ? Math.min(v, u.maxHp * eff.bossLost) : v; };
   C._lostPart = lostPart;
@@ -300,7 +314,7 @@
     if (crit && u.mods.flameIgnite > 0) { let tot = 0; t.st.forEach(s => { if (s.id === 'fburn' || s.id === 'primal') tot += (s.pow || 0) * Math.max(0, s.dur); }); if (tot > 0) { const r = hurt(B, t, Math.round(tot), 'fire', u, true); ev(B, { t: 'dmg', u: t.id, from: u.id, v: r, el: 'fire', notes: [] }); ev(B, { t: 'txt', u: t.id, s: 'Воспламенение!' }); msg(B, 'Воспламенение: ' + t.name + ' −' + r); } }
   }
   function addDecay(B, src, tgt, n) {
-    if (!tgt.alive) return; if (isOrigin(tgt) && src.side !== tgt.side) { if (tgt._prioTxt !== B.round) { tgt._prioTxt = B.round; ev(B, { t: 'txt', u: tgt.id, s: 'Приоритет Истока' }); } return; }   // ✶ Распад — эффект предмета r 8
+    if (!tgt.alive) return; if (isOrigin(tgt) && src.side !== tgt.side) { if (tgt._prioTxt !== B.round) { tgt._prioTxt = B.round; ev(B, { t: 'txt', u: tgt.id, s: isPrex(tgt) ? 'Нулевая устойчивость' : 'Приоритет Истока' }); } return; }   // ✶ Распад — эффект предмета r 8
     const mx = src.mods.entDecay || 6; let s = has(tgt, 'decay'); const prev = s ? s.pow : 0, nw = Math.min(mx, prev + n);
     if (!s) { s = { id: 'decay', dur: 99, pow: nw, src: src.id }; tgt.st.push(s); } else { s.pow = nw; s.dur = 99; }
     ev(B, { t: 'st', u: tgt.id, id: 'decay', on: 1 });
@@ -338,12 +352,12 @@
     let crit = B.rng() * 100 < cc || (am.markCrit > 0 && has(tgt, 'mark'));
     if (crit && tgt.mods.critImm > 0) { if (am.zlCrit > 0 && (att._zlCritT == null || att.turns - att._zlCritT >= am.zlCrit)) { att._zlCritT = att.turns; notes.push('exc'); if (tgt.mods.critImm >= 100) { crit = false; mul *= 1.5; } } else crit = false; }   // хук иммунитета к критам; ✶ «Исключение из правила»
       if (crit && att.side === 'e' && B.law && B.law.nocrit > 0) crit = false; if (crit) { mul *= 1 + (att.critDmg + cdx - 1) * (1 - clamp(tsub.tenac || 0, 0, 70) / 100); if (tgt.mods.critTaken > 0) mul *= 1 - clamp(tgt.mods.critTaken, 0, 90) / 100; if (has(att, 'focus')) rmSt(att, 'focus'); }
-    let penK = Math.min(0.9, (eff.pierce || 0) + ((eff.s === 'mag' ? asub.penMag : asub.pen) || 0) / 100 + hellStacks(att) * 0.04); if (am.fdEdge > 0) penK = Math.max(penK, am.fdEdge / 100); const defv = (eff.s === 'mag' ? tgt.res : tgt.def) * (1 - penK) * (1 + stMod(tgt, 'def')) * (1 - clamp(am.entIgnore || 0, 0, 90) / 100);
+    let penK = Math.min(isPrex(att) ? 1 : 0.9, (eff.pierce || 0) + ((eff.s === 'mag' ? asub.penMag : asub.pen) || 0) / 100 + hellStacks(att) * 0.04); if (am.fdEdge > 0) penK = Math.max(penK, am.fdEdge / 100); const defv = (eff.s === 'mag' ? tgt.res : tgt.def) * (1 - penK) * (1 + stMod(tgt, 'def')) * (1 - clamp(am.entIgnore || 0, 0, 90) / 100);
     const K = 50 + 4 * tgt.lv, mit = K / (K + Math.max(0, defv));
     let tk = 1 + (tgt.mods.taken || 0) / 100 + stMod(tgt, 'taken') + (eff.s === 'mag' ? (tgt.mods.magTaken || 0) : (tgt.mods.physTaken || 0)) / 100;
     if (tgt.mods.lowTaken && tgt.hp < tgt.maxHp * 0.3) tk -= tgt.mods.lowTaken / 100;
-    tk -= (tgt.mods.allRes || 0) / 100;   // ✶ «Сопротивление всему урону»
-    tk = Math.max(0.2, tk);
+    if (!isPrex(tgt)) tk -= (tgt.mods.allRes || 0) / 100;   // ✶ «Сопротивление всему урону» (⊘ у владельца r 10 — в hurt())
+    tk = Math.max(isPrex(tgt) ? 0 : 0.2, tk);
     if (crit && am.fdCut > 0 && tk < 1) tk = tk * (1 - am.fdCut / 100) + am.fdCut / 100;   // ✶ «Совершенный разрез»
     const out = base * mul * mit * tk * (0.93 + B.rng() * 0.14);
     return { v: Math.max(1, Math.min(9e12, Math.round(out))), crit, notes, react };
@@ -377,10 +391,13 @@
     addSt(B, u, tgt, id, (eff.dur || 2) + (tgt === u && D.ST[id].k !== 'ctrl' && eff.to === 'self' ? 0 : 0), pow);
   }
   C.skillOf = (u, id) => (u.ov && u.ov[id]) || SKL(id);
-  const mpCost = (u, sk) => Math.max(1, Math.round(sk.mp * (1 - clamp(u.sub && u.sub.manaEff || 0, 0, 60) / 100)));
+  const mpCost = (u, sk) => sk.fixedMp ? sk.mp : Math.max(1, Math.round(sk.mp * (1 - clamp(u.sub && u.sub.manaEff || 0, 0, 60) / 100)));
   C.mpCost = mpCost;
   C.canUse = function (B, u, id) {
     const sk = C.skillOf(u, id); if (!sk) return 'нет навыка';
+    const fk = sk.fx && sk.fx[0] && sk.fx[0].k;
+    if (fk === 'denySk') { const w = C.denyWhy(B); if (w) return w; }   // ⊘
+    if (fk === 'restoreSk' && !(B.dslot && C.deniedList(B.dslot).length)) return 'некого возвращать';
     if ((u.cds[id] || 0) > 0) return 'перезарядка ' + u.cds[id];
     if (sk.mp && u.mp < mpCost(u, sk)) return 'мало энергии';
     if (sk.rc && u.rc < sk.rc) return 'мало ресурса';
@@ -499,6 +516,9 @@
           if (t.alive) { const v2 = Math.max(1, Math.round(lostPart(u, t, eff) * redK(B, t, null) * bk)); const r2 = hurt(B, t, v2, 'div', u); dealt += r2; ev(B, { t: 'dmg', u: t.id, from: u.id, v: r2, el: 'div', notes: [], origin: 1 }); msg(B, '→ ' + t.name + ' −' + r2 + ' (вторая сторона)'); }
           if (t.alive) { addSt(B, u, t, 'severed', eff.dur, big(t) ? eff.boss : 1); ev(B, { t: 'txt', u: t.id, s: 'Разрыв Связи' }); }
         }); break;
+        // ───── навыки «До существования» v2.14 ─────
+        case 'denySk': targets.forEach(t => { if (t.alive && t.side !== u.side) C.denyUnit(B, u, t); }); break;   // ⊘ «Отрицание существования»
+        case 'restoreSk': C.restoreDenied(B, u, tid); break;   // ⊘ «Возможность существования»
         case 'hpCost': u.hp = Math.max(1, u.hp - Math.round(u.maxHp * eff.v)); break;
         case 'law': { B.law = B.law || {}; (eff.ids || [eff.id]).forEach(id => { B.law[id] = Math.max(B.law[id] || 0, eff.dur || 2); }); ev(B, { t: 'txt', u: u.id, s: 'Закон!' }); msg(B, u.name + ' объявляет закон: ' + (eff.n || '') ); break; }
         case 'timestop': { alive(opp(B, u)).forEach(t => { addSt(B, u, t, 'stop', eff.dur || 1); }); u.gauge += eff.extra == null ? 100 : eff.extra; ev(B, { t: 'txt', u: u.id, s: 'Время остановлено' }); msg(B, 'Время остановлено — враги замерли'); break; }
@@ -520,8 +540,8 @@
         case 'cleanse': to.forEach(t => { t.st = t.st.filter(s => !cleanable(s)); ev(B, { t: 'txt', u: t.id, s: 'Очищение' }); }); break;
         case 'steal': { const g = Math.round(3 + 1.6 * targets[0].lv); B.stolen += g; ev(B, { t: 'txt', u: u.id, s: '+' + g + ' зол.' }); break; }
         case 'revive': to.forEach(t => { if (!t.alive && !t.gone) { t.alive = true; t.hp = Math.round(t.maxHp * eff.v); t.gauge = 40; ev(B, { t: 'revive', u: t.id }); msg(B, t.name + ' возвращён к жизни!'); } }); break;
-        case 'summon': {
-          if (alive(B.foes).length >= 4 || (B.law && B.law.nosummon > 0)) break; const lv = u.lv - 1; const nu = C.unitFromEnemy(eff.id, Math.max(1, lv), u.tier, false, 'e' + (B.nextId++) + 's'); nu.summoned = true; nu.gauge = 30;
+        case 'summon': {   // ⊘ B.noSummon — отрицаемого призывом не вернуть
+          if (alive(B.foes).length >= 4 || (B.law && B.law.nosummon > 0) || (B.noSummon && B.noSummon[eff.id])) break; const lv = u.lv - 1; const nu = C.unitFromEnemy(eff.id, Math.max(1, lv), u.tier, false, 'e' + (B.nextId++) + 's'); nu.summoned = true; nu.gauge = 30;
           B.foes.push(nu); B.units.push(nu); intent(B, nu); ev(B, { t: 'summon', u: nu.id }); msg(B, u.name + ' призывает: ' + nu.name); break;
         }
       }
@@ -728,7 +748,44 @@
   C.erasable = (node) => !!node && (node.t === 'b' || node.t === 'mini' || node.t === 'boss') && !(node.e || []).some((eid) => D.ENEMIES[eid] && D.ENEMIES[eid].duel);
   C.erasedList = function (slot) { const now = E.now(); if (slot.erased) slot.erased = slot.erased.filter((x) => x && x.until > now); return slot.erased || []; };
   C.erasedAt = function (slot, run, idx) { const k = C.eraseKey(run, idx); return C.erasedList(slot).filter((x) => x.k === k).map((x) => x.i); };
-  C.nodeErased = function (slot, run, idx) { const node = run.nodes[idx]; if (!C.erasable(node)) return false; const g = C.erasedAt(slot, run, idx); return node.e.every((_, i) => g.includes(i)); };
+  // ⊘ «Существование отрицается» (v2.14): slot.denied = [{ id, k, i, eid, n, did, tier, node, f, role, at }] — без таймера, до «Возможности существования».
+  // Сущность = тот же враг (eid) на том же месте (k = подземелье|сложность|узел, i = место во враге этапа): состав обычных этапов случаен в каждой вылазке — другой враг на этом месте появляется как обычно.
+  C.deniedList = (slot) => (slot && Array.isArray(slot.denied) ? slot.denied : []);
+  C.deniedAt = function (slot, run, idx) { const node = run.nodes[idx], k = C.eraseKey(run, idx); if (!node || !node.e) return []; return C.deniedList(slot).filter((x) => x.k === k && node.e[x.i] === x.eid).map((x) => x.i); };
+  C.goneAt = (slot, run, idx) => C.erasedAt(slot, run, idx).concat(C.deniedAt(slot, run, idx));   // стёрто Истоком (10 мин) ∪ отрицается (постоянно)
+  C.nodeErased = function (slot, run, idx) { const node = run.nodes[idx]; if (!C.erasable(node)) return false; const g = C.goneAt(slot, run, idx); return node.e.every((_, i) => g.includes(i)); };
+  // сюжетные бои: дуэли с героинями (в т.ч. босс-героиня) и боссы со сценой перед боем — отрицать нельзя (сюжет не сломать)
+  C.denyLocked = (run, node) => !C.erasable(node) || (node.t === 'boss' && !!(D.PRE_BOSS && D.PRE_BOSS[run.did]));
+  C.denyWhy = function (B) { const s = B.dslot, run = s && s.run; if (!run || !B.node || run.nodes[run.node] !== B.node) return 'только в бою этапа'; if (C.denyLocked(run, B.node)) return 'сюжетный бой — нельзя'; return ''; };
+  C.denyUnit = function (B, u, t) {
+    const s = B.dslot, run = s && s.run;
+    ev(B, { t: 'deny', u: t.id }); msg(B, t.name + ': существование отрицается');
+    t.alive = false; t.gone = true; t.denied = true; t.hp = 0; t.intent = null; t.charging = null; t.st = [{ id: 'deniedSt', dur: 99, pow: 0, src: u.id }];
+    t._gpos = B.foes.indexOf(t); (B.ghost = B.ghost || []).push(t);   // только для анимации исчезновения в UI
+    [B.foes, B.units].forEach((arr) => { const j = arr.indexOf(t); if (j >= 0) arr.splice(j, 1); });   // тела нет, место в волне свободно; не B.killed — ни добычи, ни опыта, ни эффектов «при смерти»
+    (B.deniedNow = B.deniedNow || []).push(t.id);
+    if (t.summoned) { (B.noSummon = B.noSummon || {})[t.eid] = 1; return null; }   // призванный — не часть этапа: отрицается до конца боя (повторно не призвать)
+    const m = /^e(\d+)$/.exec(t.id); if (!s || !run || !m) return null;
+    const i = +m[1], node = run.nodes[run.node], k = C.eraseKey(run, run.node);
+    s.denied = C.deniedList(s).filter((x) => !(x.k === k && x.i === i && x.eid === t.eid));
+    const rec = { id: k + '#' + i + '#' + t.eid, k, i, eid: t.eid, n: t.name, did: run.did, tier: run.tier, node: run.node, f: node.f, role: t.role, at: E.now() };
+    s.denied.push(rec); s.rev = (s.rev || 0) + 1; if (node.t === 'boss' && t.role === 'boss') B.deniedBoss = true;
+    return rec;
+  };
+  C.restoreDenied = function (B, u, rid) {
+    const s = B.dslot; if (!s) return null; const L = C.deniedList(s), rec = L.find((x) => x.id === rid) || L[0]; if (!rec) return null;
+    s.denied = L.filter((x) => x !== rec); s.rev = (s.rev || 0) + 1;
+    ev(B, { t: 'txt', u: u.id, s: 'Возможность существования' }); msg(B, rec.n + ' снова существует');
+    const run = s.run, id = 'e' + rec.i;
+    if (run && B.node && run.nodes[run.node] === B.node && C.eraseKey(run, run.node) === rec.k && B.node.e[rec.i] === rec.eid && !B.units.some((x) => x.id === id)) {
+      const nu = C.nodeEnemies(run, B.node)[rec.i]; nu.gauge = 0;
+      const pos = B.foes.findIndex((x) => { const mm = /^e(\d+)$/.exec(x.id); return mm && +mm[1] > rec.i; });
+      if (pos >= 0) B.foes.splice(pos, 0, nu); else B.foes.push(nu); B.units.push(nu); intent(B, nu);
+      ev(B, { t: 'summon', u: nu.id }); ev(B, { t: 'txt', u: nu.id, s: 'Возвращён в существование' }); msg(B, nu.name + ' возвращается на поле боя');
+      rec.back = true;
+    }
+    return rec;
+  };
   C.recordErased = function (slot, B) {
     const run = slot.run; if (!run || !B.erasedNow || !B.erasedNow.length) return 0; const node = run.nodes[run.node]; if (!C.erasable(node)) return 0;
     const now = E.now(), k = C.eraseKey(run, run.node); let n = 0; C.erasedList(slot); slot.erased = slot.erased || [];
@@ -738,7 +795,7 @@
   // этап, все враги которого стёрты, очищается сам: без опыта/золота/добычи; босс — прогресс без повторной добычи и без искры Нимба
   C.autoClear = function (slot) {
     const run = slot.run; if (!run) return null; const node = run.nodes[run.node]; if (!node || !C.nodeErased(slot, run, run.node)) return null;
-    const rep = { auto: true, result: 'win', xp: 0, gold: 0, mats: {}, items: [], node: node.t };
+    const rep = { auto: true, result: 'win', xp: 0, gold: 0, mats: {}, items: [], node: node.t, denied: C.deniedAt(slot, run, run.node).length };
     if (node.t === 'boss') { slot.prog.boss[run.did] = true; slot.prog.cleared[run.did] = Math.max(slot.prog.cleared[run.did] || 0, run.tier + 1); rep.bossDown = true; }
     run.node++; slot.rev++; return rep;
   };
@@ -748,10 +805,11 @@
     const run = slot.run, node = run.nodes[run.node]; const P = C.unitFromSlot(slot); const party = [P];
     (slot.party || []).forEach(cid => { if (slot.crew[cid] && party.length < 4) { const hf = run.comp && run.comp[cid] != null ? run.comp[cid] : 1; party.push(C.unitFromCrew(slot, cid, hf)); } });
     let foes = C.nodeEnemies(run, node);
-    if (C.erasable(node)) { const g = C.erasedAt(slot, run, run.node); const left = foes.filter((f, i) => !g.includes(i)); if (left.length) foes = left; }   // ✶ стёртые экземпляры не появляются (id сохраняют место в этапе)
+    if (C.erasable(node)) { const g = C.goneAt(slot, run, run.node); const left = foes.filter((f, i) => !g.includes(i)); if (left.length) foes = left; }   // ✶ стёртые и ⊘ отрицаемые экземпляры не появляются (id сохраняют место в этапе)
     const rng = E.rng((run.seed + run.node * 977 + run.kills * 31) >>> 0);
     const B = C.create(party, foes, rng, Object.assign({ cons: slot.cons, cmd: !!(slot.cmd) }, opts, { noFlee: node.t === 'boss' }));
     B.cons = slot.cons; const m = P.mods; B.potionK = 1 + (m.potion || 0) / 100; B.bombK = 1 + (m.bomb || 0) / 100; B.node = node;
+    Object.defineProperty(B, 'dslot', { value: slot, writable: true, enumerable: false });   // ⊘ для Отрицания/Возможности существования (не сериализуется)
     return B;
   };
   // Завершение боя: применяет результаты к слоту/вылазке. Возвращает отчёт.
@@ -762,6 +820,7 @@
     B.party.slice(1).forEach(c => { run.comp[c.id] = c.alive ? c.hp / c.maxHp : 0.5; });
     if (B.used) for (const k in B.used) { /* потрачено в slot.cons напрямую */ }
     rep.erased = C.recordErased(slot, B);   // ✶
+    rep.denied = (B.deniedNow || []).length;   // ⊘
     if (B.over === 'win') {
       const rng = E.rng((run.seed + 5 + run.node * 131 + run.kills) >>> 0);
       const r = C.rewards(slot, B, { rng, mods: d.mods, tier: D.TIERS[run.tier] });
@@ -773,8 +832,8 @@
       if (node.t === 'boss') {
         const wasFirst = !slot.prog.boss[run.did];
         slot.prog.boss[run.did] = true; slot.prog.cleared[run.did] = Math.max(slot.prog.cleared[run.did] || 0, run.tier + 1);
-        if (wasFirst) { slot.hero.bossPts = (slot.hero.bossPts || 0) + 1; rep.firstClear = true; }
-        slot.stats.wins++; rep.bossDown = true;
+        if (wasFirst && !B.deniedBoss) { slot.hero.bossPts = (slot.hero.bossPts || 0) + 1; rep.firstClear = true; }   // ⊘ отрицаемый босс: прохождение засчитано, без искры Нимба и победы
+        if (!B.deniedBoss) slot.stats.wins++; rep.bossDown = true;
       }
       run.node++;
     } else if (B.over === 'lose') {

@@ -17,7 +17,7 @@
     cons: 'расходники: { id: количество } — зелья, склянки, еда',
     mats: 'материалы: { id: количество } — руда, травы, слитки, эссенции',
     presents: 'подарки для Свиты: { id: количество }',
-    unique: 'уникальный предмет по id (например eden_light — «Свет Эдема», Концептуальный; prime_cause, zero_law, first_division — Исток); строка или массив id. Единственный способ получить такие вещи',
+    unique: 'уникальный предмет по id (например eden_light — «Свет Эдема», Концептуальный; prime_cause, zero_law, first_division — Исток; null_possibility — До существования, только один экземпляр на сохранение: второй подарок отклоняется); строка или массив id. Единственный способ получить такие вещи',
     gear: 'снаряжение: [{ base, rarity, il?, nm? }] — base из списка, rarity 0–7 или common/uncommon/rare/unique/epic/legend/mythic/divine, il — уровень (по умолчанию = уровень героя)'
   };
   const MAXN = 10000000;
@@ -118,7 +118,10 @@
       if (x.nm) it.nm = String(x.nm).slice(0, 40);
       got.items.push(E.addItem(slot, it));
     });
-    (g.unique || []).forEach((id) => { const it = E.makeUnique && E.makeUnique(id); if (it) got.items.push(E.addItem(slot, it)); });
+    (g.unique || []).forEach((id) => {   // ⊘ «Не может существовать более чем в одном экземпляре»: второй такой предмет не создаётся — отказ с пометкой
+      if (E.uniqueRefused && E.uniqueRefused(slot, id)) { (got.refused = got.refused || []).push({ id, n: D.UNIQUE_ITEMS[id].nm, why: 'уже существует — второй экземпляр невозможен' }); return; }
+      const it = E.makeUnique && E.makeUnique(id); if (it) { const a = E.addItem(slot, it); if (a) got.items.push(a); }
+    });
     if (g.item === 'tear') E.give(slot, { item: 'tear' });
     slot.rev = (slot.rev || 0) + 1;
     return got;
@@ -230,7 +233,7 @@
   };
   M.claimAll = function (slot, now) {
     const res = { n: 0, gifts: [], got: { items: [], levels: 0 } };
-    M.ensure(slot).list.slice().forEach((L) => { if (!M.canClaim(slot, L, now)) return; const r = M.claim(slot, L.id, now); if (r.ok) { res.n++; res.gifts.push(r.gifts); res.got.items.push(...r.got.items); res.got.levels += r.got.levels; } });
+    M.ensure(slot).list.slice().forEach((L) => { if (!M.canClaim(slot, L, now)) return; const r = M.claim(slot, L.id, now); if (r.ok) { res.n++; res.gifts.push(r.gifts); res.got.items.push(...r.got.items); res.got.levels += r.got.levels; if (r.got.refused) (res.got.refused = res.got.refused || []).push(...r.got.refused); } });
     res.sum = M.normGifts(res.gifts);
     return res;
   };
