@@ -434,5 +434,46 @@ t('подсветка говорящего: масштаб ≤5% вокруг л
 t('кольцо Нимба не рисуется на фонах сцен само по себе; только fx ring, без пунктирного эллипса', () => { assert(!/RING_BG/.test(JS_VN)); assert(/case 'ring'/.test(JS_VN) && /id="vring" hidden/.test(JS_VN)); assert(/\.story \.vring::after\{content:none\}/.test(CSS_VN)); assert(RPG.ST ? RPG.ST.FX.includes('ring') : true); });
 t('аватары *_av.webp: 256×320, кадр головы одинаковый (пересобраны из спрайтов)', () => { Object.values(MAN.av).forEach((f) => { const b = fs.readFileSync(path.join(__dirname, '../assets/vn', f)); assert(b.toString('ascii', 0, 4) === 'RIFF'); }); assert(fs.readFileSync(path.join(__dirname, '../tools/measure-heads.py'), 'utf8').includes('def avatars')); });
 
+console.log('Уникальные предметы: «Свет Эдема»');
+const edenSlot = (cls) => { const s = mk(cls || 'warrior'); s.hero.level = 40; const it = E.addItem(s, E.makeUnique('eden_light')); assert.strictEqual(E.equip(s, it.id), ''); return { s, it }; };
+const edenBattle = (o) => { o = o || {}; const { s } = edenSlot(o.cls); const P = C.unitFromSlot(s); const e = C.unitFromEnemy(o.eid || 'slime', 40, 0, false, 'e0'); e.weak = []; e.resist = []; if (o.el !== undefined) e.el = o.el; e.spd = 0.01; e.gauge = 0;
+  const B = C.create([P], [e], E.rng(o.seed || 5), {}); P.gauge = 99.9; e.gauge = 0; P.mods.hpRegen = 0; return { B, P, e, s }; };
+t('«Свет Эдема»: фиксированные статы — Атака 1000, Концептуальный, ×3 к божественному мечу ур.47, замок', () => {
+  const it = E.makeUnique('eden_light'); assert.strictEqual(it.r, 8); assert.strictEqual(it.st.atk, 1000); assert.strictEqual(it.nm, 'Свет Эдема'); assert(it.lock && it.uq === 'eden_light'); assert.strictEqual(it.sl, 'weapon');
+  const dv = E.genItem(E.rng(1), { base: 'sword', il: 47, rarity: 7 }); assert(Math.abs(it.st.atk / dv.st.atk - 3) < 0.25, 'атака ≈ ×3: ' + dv.st.atk);
+  assert.deepStrictEqual(E.makeUnique('eden_light'), E.makeUnique('eden_light'), 'не случайный');
+});
+t('«Свет Эдема»: свойства и навык действуют только когда надет', () => {
+  const { s, it } = edenSlot(); let d = E.derive(s); assert.strictEqual(d.mods.edenThirst, 15); assert.strictEqual(d.mods.edenDark, 30); assert(C.unitFromSlot(s).sk.includes('x_eden'));
+  E.unequip(s, 'weapon'); d = E.derive(s); assert(!d.mods.edenThirst && !d.mods.edenDark); assert(!C.unitFromSlot(s).sk.includes('x_eden')); assert(s.inv.includes(it));
+});
+t('Жажда Эдема: +15% макс. HP в начале хода, только если HP врага больше HP владельца', () => {
+  let { B, P, e } = edenBattle(); e.hp = e.maxHp = 1e6; P.hp = 100; let u = np(B, P); assert.strictEqual(u, P); assert.strictEqual(P.hp, 100 + Math.round(P.maxHp * 0.15));
+  ({ B, P, e } = edenBattle()); e.hp = 50; e.maxHp = 1e6; P.hp = 100; u = np(B, P); assert.strictEqual(P.hp, 100, 'враг слабее — нет лечения');
+  ({ B, P, e } = edenBattle()); e.hp = e.maxHp = 1e6; P.hp = P.maxHp - 5; np(B, P); assert.strictEqual(P.hp, P.maxHp, 'не выше максимума');
+});
+t('Рассвет над Тьмой: урон врага стихии Тьмы по владельцу −30% (после всех множителей)', () => {
+  const hit = (el, eden) => { const { B, P, e, s } = edenBattle({ el }); if (!eden) P.mods.edenDark = 0; P.st = []; P.hp = P.maxHp = 1e7; const h0 = P.hp; C._hurt(B, P, 1000, 'phys', e); return h0 - P.hp; };
+  assert.strictEqual(hit('dark', true), 700); assert.strictEqual(hit('dark', false), 1000); assert.strictEqual(hit('fire', true), 1000); assert.strictEqual(hit(null, true), 1000);
+});
+t('навык «Свет Эдема»: урон = 70% текущего HP владельца, лечение = 50% нанесённого; перезарядка 3, 16 энергии', () => {
+  const { B, P, e } = edenBattle(); e.hp = e.maxHp = 1e7; P.st = []; const u = np(B, P); P.maxHp = 1e5; P.hp = 2000; P.mp = 100; const mp0 = P.mp, hp0 = P.hp;
+  assert.strictEqual(C.canUse(B, P, 'x_eden'), ''); C.act(B, P, { t: 'skill', id: 'x_eden', tid: 'e0' });
+  assert.strictEqual(1e7 - e.hp, 1400); assert.strictEqual(P.hp, Math.min(P.maxHp, hp0 + 700)); assert.strictEqual(P.cds.x_eden, 3); assert(mp0 - P.mp >= 1 && mp0 - P.mp <= 18);
+  const sk = D.SKILLS.x_eden; assert.strictEqual(sk.cd, 3); assert.strictEqual(sk.mp, 16); assert(sk.img);
+});
+t('«Свет Эдема» не выпадает и не создаётся: дроп/лавка/кузня/ремесло/генерация (20000 бросков)', () => {
+  const rng = E.rng(77); for (let i = 0; i < 20000; i++) { const r = E.rollRarity(rng, 50, 0, 99, { boss: true }); assert(r <= 7, 'редкость ' + r); }
+  for (let i = 0; i < 3000; i++) { const it = E.genItem(rng, { base: 'sword', il: 60, rarity: 8 + (i % 3) }); assert(it.r <= 7 && !it.uq); }
+  const s = mk('warrior'); for (let t2 = 0; t2 < 6; t2++) { s.prog = s.prog || {}; s.shopSeed = t2; E.shopStock(s).forEach((it) => assert(it.r <= 7 && !it.uq)); }
+  assert(E.craftWeights(20, 1).length <= 8); assert(E.rarityWeights(999, 99, { boss: true }).slice(8).every((w) => w === 0));
+  const en = C.unitFromEnemy('slime', 60, 5, true, 'e0'); en.role = 'boss'; for (let i = 0; i < 400; i++) E.rollLoot(E.rng(i), s, en, { mods: { drop: 400 }, tier: D.TIERS[5] }).items.forEach((it) => assert(it.r <= 7 && !it.uq));
+  const src = ['engine', 'gear', 'combat', 'crew', 'stats'].map((f) => fs.readFileSync(path.join(__dirname, '../js/' + f + '.js'), 'utf8')).join('\n'); assert.strictEqual((src.match(/makeUnique\(/g) || []).length, 0, 'makeUnique не вызывается дропом/лавкой/кузней'); assert(fs.readFileSync(path.join(__dirname, '../js/mail.js'), 'utf8').includes('E.makeUnique(id)'), 'только почта');
+});
+t('«Свет Эдема» у Свиты: навык и свойства работают при экипировке спутника', () => {
+  const s = mk('warrior'); const id = Object.keys(D.CREW)[0]; if (!E.recruit && !s.crew) return; s.crew = s.crew || {}; if (!s.crew[id]) s.crew[id] = { lv: 30, loy: 60, eq: {} };
+  s.crew[id].eq = s.crew[id].eq || {}; s.crew[id].eq.weapon = E.makeUnique('eden_light'); const u = C.unitFromCrew(s, id); assert(u.sk.includes('x_eden')); assert.strictEqual(u.mods.edenThirst, 15);
+});
+
 console.log(`\nТесты: ${pass} ✓, ${fail} ✗`);
 if (fail) { console.log(failed.join('\n')); process.exit(1); }
