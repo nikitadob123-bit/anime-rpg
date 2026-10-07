@@ -194,7 +194,8 @@
     if (over > 0 && tgt.mods.srcOverflow > 0) { const cap = tgt.maxHp * tgt.mods.srcOverflow / 100, sh = has(tgt, 'shield'), cur = sh ? sh.pow : 0, add = Math.round(Math.min(over, cap - cur)); if (add > 0) { addSt(B, tgt, tgt, 'shield', 3, add); ev(B, { t: 'txt', u: tgt.id, s: 'Обратное течение +' + add }); } }   // ✧ «Обратное течение»
     v = Math.round(Math.min(v, tgt.maxHp - tgt.hp)); if (v <= 0) return 0;
     tgt.hp += v;
-    if (B.units && alive(opp(B, tgt)).some(x => x.mods && x.mods.entIrrev > 0)) { const k = alive(opp(B, tgt)).reduce((a, x) => Math.max(a, x.mods.entIrrev || 0), 0) * (big(tgt) ? 0.25 : 1), loss = Math.round(v * k / 100); if (loss > 0) { tgt.maxHp = Math.max(1, tgt.maxHp - loss); tgt.hp = Math.min(tgt.hp, tgt.maxHp); tgt.lostMax = (tgt.lostMax || 0) + loss; } }   // ✧ «Закон необратимости» (боссы: 20%×0.25 = 5%) ev(B, { t: 'heal', u: tgt.id, v }); if (!silent) msg(B, tgt.name + ' +' + v + ' HP'); return v;
+    if (B.units && alive(opp(B, tgt)).some(x => x.mods && x.mods.entIrrev > 0)) { const k = alive(opp(B, tgt)).reduce((a, x) => Math.max(a, x.mods.entIrrev || 0), 0) * (big(tgt) ? 0.25 : 1), loss = Math.round(v * k / 100); if (loss > 0) { tgt.maxHp = Math.max(1, tgt.maxHp - loss); tgt.hp = Math.min(tgt.hp, tgt.maxHp); tgt.lostMax = (tgt.lostMax || 0) + loss; } }   // ✧ «Закон необратимости» (боссы: 20%×0.25 = 5%)
+    ev(B, { t: 'heal', u: tgt.id, v }); if (!silent) msg(B, tgt.name + ' +' + v + ' HP'); return v;
   }
   const stMod = (u, k) => { let s = 0; u.st.forEach(x => { const d = D.ST[x.id]; if (d[k]) s += d[k] * (d.per ? (x.pow || 1) : 1); }); return s; };
 
@@ -369,7 +370,7 @@
           heal(B, u, u, T * eff.heal, true, true); u.takenTot = 0; break;
         }
         case 'edenLight': targets.forEach(t => {   // ✧ «Свет Эдема»: урон = m × текущее HP владельца (мимо брони/уклонения), лечение heal × нанесённого
-          if (!t.alive) return; const raw = Math.max(1, Math.round(u.hp * eff.m));
+          if (!t.alive) return; const raw = Math.max(1, Math.round(u.hp * eff.m * (t.mods.conceptRes > 0 ? 1 - clamp(t.mods.conceptRes, 0, 75) / 100 : 1)));   // тег concept
           const real = hurt(B, t, raw, eff.el || 'light', u); dealt += real;
           ev(B, { t: 'dmg', u: t.id, from: u.id, v: real, el: eff.el || 'light', notes: [] }); msg(B, '→ ' + t.name + ' −' + real + ' (Свет Эдема)');
           const hv = heal(B, u, u, real * (eff.heal || 0), true, true); if (hv) ev(B, { t: 'txt', u: u.id, s: 'Эдем +' + hv });
@@ -443,6 +444,7 @@
 
   // ───── Действия ─────
   C._hurt = hurt;   // для тестов баланса
+  C._dmgCalc = dmgCalc; C._heal = heal; C._redK = redK;
   C.act = function (B, u, a) {
     B.actSeq = (B.actSeq || 0) + 1;
     if (B.over || B.cur !== u) return false;
