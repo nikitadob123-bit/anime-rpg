@@ -127,7 +127,7 @@
   UI.act.runDone = () => { if (UI.runDone) { const f = UI.runDone; UI.runDone = null; f(); } };
 
   // ═════ БОЙ ═════
-  const stIcons = (u) => u.st.map((s) => `<i class="si ${D.ST[s.id].k}" title="${D.ST[s.id].n}">${D.ST[s.id].ic}${s.id === 'mantra' ? '<b>×' + Math.pow(2, s.pow) + '</b>' : s.dur > 1 && s.dur < 90 ? '<b>' + s.dur + '</b>' : ''}</i>`).join('');
+  const stIcons = (u) => u.st.map((s) => `<i class="si ${D.ST[s.id].k}${D.ST[s.id].fixed ? ' fx8' : ''}" title="${D.ST[s.id].n}${s.id === 'decay' ? ' ' + s.pow : ''}${D.ST[s.id].d ? ': ' + D.ST[s.id].d : ''}">${D.ST[s.id].ic}${s.id === 'decay' ? '<b>' + s.pow + '</b>' : s.id === 'mantra' ? '<b>×' + Math.pow(2, s.pow) + '</b>' : s.dur > 1 && s.dur < 90 ? '<b>' + s.dur + '</b>' : ''}</i>`).join('');
   UI.battle = async function () {
     const slot = UI.slot(), st = UI.p.settings;
     const B = C.startNodeBattle(slot, { auto: !!st.auto, cmd: !!slot.cmd }); UI.B = B; B.sel = null; B.speed = st.battleSpeed || 1;

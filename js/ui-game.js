@@ -23,7 +23,8 @@
   UI.cxHtml = function (it) {
     const U = E.uniqOf(it); if (!U) return '';
     const sk = U.skill && D.SKILLS[U.skill];
-    return `<div class="cxbox"><div class="cxh">${D.CX_IC} Концептуальные свойства</div>${U.cx.map((x) => `<div class="cxrow"><b>${D.CX_IC} ${esc(x.n)}</b><span>${esc(x.d)}</span></div>`).join('')}${sk ? `<div class="cxsk"><img src="${sk.img}" alt=""><div class="grow tl"><b>${esc(sk.n)}</b> <small class="dim">💧${sk.mp} · перезарядка ${sk.cd}</small><div class="small">${esc(sk.d)}</div></div></div>` : ''}</div>`;
+    const spH = (U.sp || []).length ? `<div class="cxbox sp"><div class="cxh">◆ Особые свойства</div>${U.sp.map((x) => `<div class="cxrow"><b>◆ ${esc(x.n)}</b><span>${esc(x.d)}</span></div>`).join('')}</div>` : '';
+    return spH + `<div class="cxbox"><div class="cxh">${D.CX_IC} Концептуальные свойства</div>${U.cx.map((x) => `<div class="cxrow"><b>${D.CX_IC} ${esc(x.n)}</b><span>${esc(x.d)}</span></div>`).join('')}${sk ? `<div class="cxsk"><img src="${sk.img}" alt=""><div class="grow tl"><b>${esc(sk.n)}</b> <small class="dim">💧${sk.mp} · перезарядка ${sk.cd}</small><div class="small">${esc(sk.d)}</div></div></div>` : ''}</div>`;
   };
   UI.itemName = (it) => `<span class="rn ${UI.rarCls(it)}" style="${UI.rarVars(it)}">${esc(it.nm)}${it.up ? ' +' + it.up : ''}</span>`;
   const itemRow = (it, act, extra) => `<button class="item ${UI.rarCls(it)}" style="${UI.rarVars(it)}" data-act="${act}" data-id="${it.id}" data-quiet="1"><span class="ico">${UI.itemIc(it)}</span><span class="grow tl"><b>${UI.itemName(it)}</b>${it.lock ? ' 🔒' : ''}${it.en ? ' ✨' : ''}<small>${UI.rarBadge(it)} ${D.SLOTS[it.sl]} · ур.${it.il}${it.fx && it.fx.length ? ' · ' + it.fx.map((id) => FXI[(D.GEAR_FX_BY[id] || {}).t] || '').join('') : ''}</small></span>${extra || ''}</button>`;
@@ -263,7 +264,7 @@
     const matsOk = Object.keys(c.mats || {}).every((m) => (s.mats[m] || 0) >= c.mats[m]);
     const matLine = Object.keys(c.mats || {}).map((m) => `${D.MATS[m].ic}${c.mats[m]}`).join(' ') || '';
     UI.modal(`<div class="itemhead ${UI.rarCls(it)}" style="${UI.rarVars(it)}"><span class="big-ic">${UI.itemIc(it, true)}</span><div class="grow tl"><h3 class="m0">${UI.itemName(it)}</h3><div class="dim small">${UI.rarBadge(it)} ${D.SLOTS[it.sl]} · ур. ${it.il} · улучш. +${it.up || 0}/${cap}${it.en ? ' · ✨ ' + D.ENCHANTS.find((e) => e.id === it.en).n : ''}</div></div><button class="btn ghost small qbtn" data-act="rarInfo" data-quiet="1" aria-label="Редкости">?</button></div>
-      ${E.uniqOf(it) ? `<div class="uqart ${UI.rarCls(it)}"><img src="${E.uniqOf(it).art}" alt="${esc(it.nm)}"><div class="uqlore">«${esc(E.uniqOf(it).lore)}»</div><div class="uqtag">Уникальный предмет · не продаётся</div></div>` : ''}
+      ${E.uniqOf(it) ? `<div class="uqart ${UI.rarCls(it)}"><img src="${E.uniqOf(it).art}" alt="${esc(it.nm)}">${E.uniqOf(it).sub ? `<div class="uqsub">${esc(E.uniqOf(it).sub)}</div>` : ''}<div class="uqlore">«${esc(E.uniqOf(it).lore)}»</div><div class="uqtag">Уникальный предмет · не продаётся</div>${E.uniqOf(it).note ? `<div class="uqnote">Примечание: ${esc(E.uniqOf(it).note)}</div>` : ''}</div>` : ''}
       ${UI.itemDiffHtml(it, cur)}${UI.cxHtml(it)}
       ${!E.canUse(s.hero, it) ? '<div class="warnbox">Ваш класс не может использовать это оружие.</div>' : ''}
       <div class="row gap wrap gearacts">${worn ? `<button class="btn ghost grow" data-act="unequip" data-id="${it.id}">Снять</button>` : `<button class="btn primary grow" data-act="equip" data-id="${it.id}" ${E.canUse(s.hero, it) ? '' : 'disabled'}>${cur ? 'Заменить' : 'Надеть'}</button>`}
