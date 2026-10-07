@@ -122,3 +122,27 @@ img.o9{mix-blend-mode:screen;filter:drop-shadow(0 0 4px rgba(143,123,255,.7))}
 .erz{display:inline-block;margin-top:3px;padding:1px 6px;border-radius:8px;font-size:11px;color:#d9d2ff;background:linear-gradient(90deg,#07031c,rgba(60,40,200,.5));border:1px solid rgba(143,123,255,.6)}
 .nd.gone{background:radial-gradient(circle,#2a1a8a,#05020f);border-color:#8f7bff;color:#d9d2ff}
 @media (prefers-reduced-motion:reduce){.eqs.r9{animation:none}}
+/* ⊘ До существования (r10): бесцветная белая пустота с призматической кромкой. Арт — на чёрном фоне (без альфы): screen растворяет чёрное */
+img.p10{mix-blend-mode:screen;filter:drop-shadow(0 0 5px rgba(255,255,255,.75)) drop-shadow(0 0 2px rgba(190,220,255,.6))}
+.item.r10{background:radial-gradient(circle at 14% 30%,rgba(255,255,255,.95) 0 .8px,transparent 1.4px),radial-gradient(circle at 46% 72%,rgba(255,255,255,.6) 0 .7px,transparent 1.3px),linear-gradient(90deg,#000 -10%,rgba(255,255,255,.08) 30%,var(--panel) 72%);border-color:rgba(255,255,255,.55);border-left-color:#fff;box-shadow:0 0 18px -4px rgba(255,255,255,.9),inset 4px 0 22px -8px #fff}
+.eqs.r10{position:relative;border:2px solid transparent;background:radial-gradient(circle at 50% 45%,#16161a,#000 70%) padding-box,conic-gradient(from var(--ca,0deg),#fff,#ff9ad5,#ffe08a,#9dffb0,#8fd8ff,#c8a8ff,#fff) border-box;box-shadow:0 0 22px -2px rgba(255,255,255,.9),inset 0 0 18px -6px rgba(255,255,255,.55);animation:cxSpin 12s linear infinite}
+.eqs.r10 .eqr{color:#fff;text-shadow:0 0 6px #fff}
+.itemhead.r10{background:radial-gradient(120% 160% at 0% 50%,rgba(255,255,255,.22),transparent 60%),radial-gradient(80% 120% at 100% 0%,rgba(0,0,0,.95),transparent 70%),linear-gradient(90deg,transparent 60%,rgba(255,154,213,.08),rgba(143,216,255,.08))}
+.uqart.r10{position:relative;border:2px solid transparent;background:radial-gradient(60% 55% at 50% 45%,#141418,#000 75%) padding-box,conic-gradient(from 210deg,#fff,#ff9ad5,#ffe08a,#9dffb0,#8fd8ff,#c8a8ff,#fff) border-box;box-shadow:0 0 30px -6px rgba(255,255,255,.95),inset 0 0 46px -12px rgba(255,255,255,.5)}
+.uqart.r10::before{background:conic-gradient(from 0deg,transparent,rgba(255,255,255,.14),transparent 22%,rgba(143,216,255,.12),transparent 50%,rgba(255,154,213,.12),transparent 75%)}
+.uqart.r10 img{mix-blend-mode:screen;filter:drop-shadow(0 0 8px rgba(255,255,255,.55))}
+.uqart.r10 .uqsub{color:#fff;letter-spacing:.06em}.uqart.r10 .uqtag{color:#e8e8f0}.uqart.r10 .uqnote{color:#fff}
+.cxbox.px,.cxbox.pxk,.cxbox.pc,.cxbox.pd{border-color:rgba(255,255,255,.6);background:linear-gradient(135deg,rgba(0,0,0,.8),rgba(255,255,255,.06))}
+.cxbox.pxk{border-image:linear-gradient(90deg,#fff,#ff9ad5,#ffe08a,#9dffb0,#8fd8ff,#c8a8ff) 1}
+.cxbox.pc{border-style:dashed}
+.cxbox.px .cxh,.cxbox.pxk .cxh,.cxbox.pc .cxh{background:linear-gradient(90deg,#fff,#ffd6ef,#d6f4ff,#fff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cxbox.pd .cxh{color:#fff}
+.cxbox.pxk .cxsk img,.sk.pxs img.uqi,.rpick .ico{mix-blend-mode:screen;filter:none}
+.sk.pxs{border-color:#fff;box-shadow:0 0 12px -3px rgba(255,255,255,.95),inset 0 0 10px -4px rgba(200,230,255,.8);background:linear-gradient(160deg,#000,rgba(255,255,255,.12))}
+.sk.pxs b{color:#fff}
+.dnz{display:inline-block;margin-top:3px;padding:1px 6px;border-radius:8px;font-size:11px;color:#fff;background:linear-gradient(90deg,#000,rgba(255,255,255,.18));border:1px solid rgba(255,255,255,.7)}
+.nd.denied{background:radial-gradient(circle,#2a2a2e,#000);border-color:#fff;color:#fff}
+.unit.denying{animation:pxGone .65s ease-in forwards}
+@keyframes pxGone{0%{filter:none;opacity:1}40%{filter:brightness(3) saturate(0);opacity:1}100%{filter:brightness(4) saturate(0) blur(3px);opacity:0;transform:scale(.6)}}
+.rinfo.r10 .rsw{background:#000;box-shadow:0 0 0 2px #fff,0 0 10px #fff,0 0 0 4px rgba(255,154,213,.35)}
+@media (prefers-reduced-motion:reduce){.eqs.r10{animation:none}.unit.denying{animation:none;opacity:0}}

@@ -10,6 +10,8 @@
   // ✶ стёртые экземпляры врагов: «Стёрт из существования · MM:SS» (data-until обновляется раз в секунду)
   const eraseBadge = (s, did) => { const L = C.erasedList(s).filter((x) => x.k.split('|')[0] === did); if (!L.length) return ''; const mx = L.reduce((a, x) => Math.max(a, x.until), 0);
     return `<div class="erz" data-until="${mx}" title="Стёртые Истоком враги этого подземелья не появятся до конца таймера">🌌 Стёрт из существования · <b>${C.fmtLeft(C.eraseLeft({ until: mx }))}</b>${L.length > 1 ? ' · ×' + L.length : ''}</div>`; };
+  // ⊘ «Существование отрицается ×N» — без таймера (до «Возможности существования»)
+  const denyBadge = (s, did) => { const L = C.deniedList(s).filter((x) => x.did === did); if (!L.length) return ''; return `<div class="dnz" title="${esc(L.map((x) => x.n + ' — ' + UI.deniedWhere(x)).join('; '))}">⚫ Существование отрицается${L.length > 1 ? ' ×' + L.length : ''}</div>`; };
   if (typeof setInterval !== 'undefined' && typeof document !== 'undefined') setInterval(() => { document.querySelectorAll('[data-until]').forEach((el) => { const b = el.querySelector('b'); const ms = +el.dataset.until - E.now(); if (ms <= 0) el.remove(); else if (b) b.textContent = C.fmtLeft(ms); }); }, 1000);
   // ═════ ПОДЗЕМЕЛЬЯ ═════
   UI.tabs.dun = function (s) {
@@ -19,7 +21,7 @@
       const open = E.dungeonUnlocked(s, d.id), cl = s.prog.cleared[d.id] || 0;
       const tiers = D.TIERS.map((t, i) => `<i class="td ${cl > i ? 'on' : ''}" title="${t.n}">${t.ic}</i>`).join('');
       const reason = !open ? (d.lockHint ? d.lockHint : d.id === 'cathedral' && s.prog.cleared.spire ? 'Сначала прочтите главу «У врат собора».' : d.need === 'ch1' ? 'Завершите пролог.' : 'Сначала пройдите «' + D.DUN[d.need].n + '».') : '';
-      return `<button class="card dcard ${open ? '' : 'lockd'}" style="--dc:${d.col}" data-act="dunOpen" data-id="${d.id}" ${open ? '' : 'data-quiet="1"'}><div class="dic">${d.ic}</div><div class="grow tl"><b>${d.n}</b><div class="dim small">ур. ${d.lv}–${d.lv + d.floors + 1} · этажей: ${d.floors}</div><div class="small tl dim">${open ? d.d : reason}</div>${eraseBadge(s, d.id)}</div><div class="tiers">${open ? tiers : '🔒'}</div></button>`;
+      return `<button class="card dcard ${open ? '' : 'lockd'}" style="--dc:${d.col}" data-act="dunOpen" data-id="${d.id}" ${open ? '' : 'data-quiet="1"'}><div class="dic">${d.ic}</div><div class="grow tl"><b>${d.n}</b><div class="dim small">ур. ${d.lv}–${d.lv + d.floors + 1} · этажей: ${d.floors}</div><div class="small tl dim">${open ? d.d : reason}</div>${eraseBadge(s, d.id)}${denyBadge(s, d.id)}</div><div class="tiers">${open ? tiers : '🔒'}</div></button>`;
     }).join('');
     return `<h2>Подземелья</h2><div class="small dim tl">Выберите место для вылазки. Сложность растёт после первой победы. Рекомендуемый уровень указан для «Обычного».</div>${cards}`;
   };
@@ -60,14 +62,15 @@
   const nodeIc = (n) => (n.t === 'ev' ? evIcon(n.ev) : n.t === 'boss' ? '👹' : n.t === 'mini' ? '💀' : n.elite ? '⚔️' : '🗡️');
   function runView(s) {
     const run = s.run, d = D.DUN[run.did], T = D.TIERS[run.tier], dd = E.derive(s), node = run.nodes[run.node], fl = node ? node.f : d.floors - 1;
-    const track = run.nodes.map((n, i) => { const gone = i >= run.node && C.nodeErased(s, run, i); return `<span class="nd ${i < run.node ? 'past' : i === run.node ? 'cur' : ''} ${n.t === 'boss' ? 'bossn' : ''} ${gone ? 'gone' : ''}" ${gone ? 'title="Стёрт из существования"' : ''}>${i < run.node ? '✔' : gone ? '🌌' : nodeIc(n)}</span>`; }).join('');
+    const track = run.nodes.map((n, i) => { const gone = i >= run.node && C.nodeErased(s, run, i), dn = gone && C.deniedAt(s, run, i).length > 0; return `<span class="nd ${i < run.node ? 'past' : i === run.node ? 'cur' : ''} ${n.t === 'boss' ? 'bossn' : ''} ${gone ? 'gone' : ''} ${dn ? 'denied' : ''}" ${gone ? `title="${dn ? 'Существование отрицается' : 'Стёрт из существования'}"` : ''}>${i < run.node ? '✔' : dn ? '⚫' : gone ? '🌌' : nodeIc(n)}</span>`; }).join('');
+    const dns = run.nodes.reduce((a, n, i) => a + (i >= run.node ? C.deniedAt(s, run, i).length : 0), 0);
     const ers = C.erasedList(s).filter((x) => x.k.startsWith(run.did + '|' + run.tier + '|') && +x.k.split('|')[2] >= run.node);
     const party = [`<div class="pm">${UI.por(s.hero.portrait, 'xs', false)}<div class="grow"><b>${esc(s.hero.name)}</b>${bar(run.hp, dd.maxHp, 'hp')}${bar(run.mp, dd.maxMp, 'mp')}<small>${fmt(run.hp)}/${fmt(dd.maxHp)} · ${fmt(run.mp)}/${fmt(dd.maxMp)}</small></div></div>`]
       .concat(s.party.map((id) => `<div class="pm">${UI.por(D.CREW[id].art, 'xs', false)}<div class="grow"><b>${D.CREW[id].n}</b>${bar((run.comp[id] == null ? 1 : run.comp[id]), 1, 'hp')}</div></div>`)).join('');
     const b = run.bag, mats = Object.keys(b.mats).map((k) => `${D.MATS[k].ic}${b.mats[k]}`).join(' ');
     let label = 'Дальше'; if (node) label = node.t === 'boss' ? '👹 Сразиться с боссом' : node.t === 'mini' ? '💀 К мини-боссу' : node.t === 'ev' ? 'Исследовать ' + evIcon(node.ev) : node.elite ? '⚔️ Закалённый отряд' : '🗡️ В бой';
     return `<div class="runhead" style="--dc:${d.col}"><span class="big-ic">${d.ic}</span><div class="grow tl"><h3 class="m0">${d.n}</h3><div class="dim small">${T.ic} ${T.n} · этаж ${fl + 1}/${d.floors}</div></div></div>
-      <div class="track">${track}</div>${ers.length ? `<div class="erz" data-until="${ers.reduce((a, x) => Math.max(a, x.until), 0)}">🌌 Стёрто впереди: ${ers.length} · <b>${C.fmtLeft(C.eraseLeft({ until: ers.reduce((a, x) => Math.max(a, x.until), 0) }))}</b></div>` : ''}
+      <div class="track">${track}</div>${dns ? `<div class="dnz">⚫ Отрицается впереди: ${dns}</div>` : ''}${ers.length ? `<div class="erz" data-until="${ers.reduce((a, x) => Math.max(a, x.until), 0)}">🌌 Стёрто впереди: ${ers.length} · <b>${C.fmtLeft(C.eraseLeft({ until: ers.reduce((a, x) => Math.max(a, x.until), 0) }))}</b></div>` : ''}
       <div class="card">${party}</div>
       <div class="card small"><b>Добыча вылазки</b><div class="dim">🪙 ${fmt(b.gold)} · ✨ ${fmt(b.xp)} опыта · ${b.items.length} предм.${mats ? ' · ' + mats : ''}</div>${b.items.length ? `<div class="loots">${b.items.slice(-6).map(rarSpan).join('<br>')}</div>` : ''}</div>
       <button class="btn primary big wide" data-act="runNext" id="btnRunNext">${label}</button>
@@ -87,7 +90,7 @@
       else {
         const pre = D.PRE_BOSS[run.did]; if (node.t === 'boss' && pre && !s.story.done.includes(pre)) { await UI.playScene(pre); UI.save(true); }
         const ac = C.autoClear(s);   // ✶ все враги этапа стёрты Истоком — этап очищается сам, без наград
-        if (ac) { UI.save(true); UI.toast('🌌 Этап очищен: враги стёрты из существования (без награды)', 'ok'); if (ac.bossDown) await finishRun('win'); else { UI.busy = false; UI.refresh(false); } return; }
+        if (ac) { UI.save(true); UI.toast(ac.denied ? '⚫ Этап очищен: существование врагов отрицается (без награды)' : '🌌 Этап очищен: враги стёрты из существования (без награды)', 'ok'); if (ac.bossDown) await finishRun('win'); else { UI.busy = false; UI.refresh(false); } return; }
         const rep = await UI.battle();
         UI.save(true);
         if (rep.result === 'win' && node.e && node.e.length === 1 && D.ENEMIES[node.e[0]].duel) { const ds = D.DUEL_SCENE[node.e[0]]; if (ds) { await UI.playScene(ds, !!s.story.done.includes(ds)); UI.save(true); } }
@@ -185,9 +188,11 @@
   }
   // переносим класс со свежей карточки, но не стираем «кратковременные» классы анимаций (hit/acting): раньше renderUnits после каждого события обрывал их в тот же кадр
   function syncCls(old, nw) { const keep = ['hit', 'acting'].filter((c) => old.classList.contains(c)); old.className = nw.className; keep.forEach((c) => old.classList.add(c)); }
+  // ⊘ отрицаемый враг уже вне боя, но его карточка дожидается анимации исчезновения (B.ghost)
+  const foeList = (B) => { const arr = B.foes.slice(); (B.ghost || []).forEach((g) => arr.splice(Math.min(g._gpos, arr.length), 0, g)); return arr; };
   function renderUnits(B, full) {
-    const foes = $('#foes'), party = $('#party'); if (!foes) return;
-    if (full || foes.children.length !== B.foes.length) foes.innerHTML = B.foes.map((u) => foeCard(B, u)).join(''); else B.foes.forEach((u) => { const old = $('#u_' + u.id); if (old) { const t = document.createElement('div'); t.innerHTML = foeCard(B, u); const nw = t.firstElementChild; // обновляем, сохраняя CSS-переходы полос
+    const foes = $('#foes'), party = $('#party'); if (!foes) return; const FL = foeList(B);
+    if (full || foes.children.length !== FL.length) foes.innerHTML = FL.map((u) => foeCard(B, u)).join(''); else FL.forEach((u) => { const old = $('#u_' + u.id); if (old) { const t = document.createElement('div'); t.innerHTML = foeCard(B, u); const nw = t.firstElementChild; // обновляем, сохраняя CSS-переходы полос
       syncCls(old, nw); $$('.bar i', old).forEach((i, k) => { i.style.width = $$('.bar i', nw)[k].style.width; }); const a = $('.sts', old); if (a) a.innerHTML = $('.sts', nw).innerHTML; const it = $('.intent', old); if (it) it.innerHTML = $('.intent', nw).innerHTML; } });
     if (full || party.children.length !== B.party.length) party.innerHTML = B.party.map((u) => partyCard(B, u)).join(''); else B.party.forEach((u) => { const old = $('#u_' + u.id); if (old) { const t = document.createElement('div'); t.innerHTML = partyCard(B, u); const nw = t.firstElementChild; syncCls(old, nw); $$('.bar i', old).forEach((i, k) => { i.style.width = $$('.bar i', nw)[k].style.width; }); const a = $('.sts', old); if (a) a.innerHTML = $('.sts', nw).innerHTML; const hn = $('.hpn', old); if (hn) hn.textContent = $('.hpn', nw).textContent; } });
     renderTurns(B);
@@ -212,7 +217,7 @@
       const basic = D.BASIC[u.cls] || D.BASIC.warrior;
       const sk = skills.map((id) => {
         const k = C.skillOf(u, id), why = C.canUse(B, u, id), cost = (k.mp ? `💧${k.mp}` : '') + (k.rc ? ` ${D.CLASSES[u.cls].rc.n}${k.rc}` : '') + (k.rcAll ? ' всё' : '');
-        return `<button class="sk ${why ? 'off' : ''} ${id.startsWith('u_') ? 'echo' : id.startsWith('c_') ? 'echo conc' : k.origin ? 'oxs' : k.gear ? 'cxs' : ''}" data-act="bSkill" data-id="${id}" data-quiet="1" ${why ? 'data-why="' + why + '"' : ''}><span>${k.img ? `<img class="uqi" src="${k.img}" alt="">` : k.ic}</span><b>${esc(k.n)}</b><small>${why ? why : cost || '—'}</small></button>`;
+        return `<button class="sk ${why ? 'off' : ''} ${id.startsWith('u_') ? 'echo' : id.startsWith('c_') ? 'echo conc' : k.prex ? 'pxs' : k.origin ? 'oxs' : k.gear ? 'cxs' : ''}" data-act="bSkill" data-id="${id}" data-quiet="1" ${why ? 'data-why="' + why + '"' : ''}><span>${k.img ? `<img class="uqi" src="${k.img}" alt="">` : k.ic}</span><b>${esc(k.n)}</b><small>${why ? why : cost || '—'}</small></button>`;
       }).join('');
       const rc = u.rcMax > 0 ? `<div class="rcl">${D.CLASSES[u.cls].rc.n}: <b>${Math.round(u.rc)}/${u.rcMax}</b></div>` : '';
       $('#bact').innerHTML = `<div class="actrow"><div class="turnof">Ход: <b>${esc(u.name)}</b></div>${rc}</div><div class="mainbtns"><button class="abtn" data-act="bBasic" data-quiet="1"><span>${basic.ic}</span>${basic.n}</button><button class="abtn" data-act="bGuard" data-quiet="1"><span>🛡️</span>Защита</button><button class="abtn" data-act="bItems" data-quiet="1"><span>🧪</span>Предметы</button><button class="abtn" data-act="bFlee" data-quiet="1" ${B.opts.noFlee ? 'disabled' : ''}><span>🏃</span>Бегство</button></div><div class="skgrid">${sk}</div>`;
@@ -226,6 +231,7 @@
     const B = UI.B; if (!B || !B.pending) return; const u = B.pending.u, id = el.dataset.id, k = C.skillOf(u, id);
     if (el.dataset.why) { UI.toast(el.dataset.why, 'bad'); UI.sfx('err'); return; }
     if (k.tgt === 'ally' || k.tgt === 'dead') { allyPick(B, k.tgt === 'dead', (tid) => sendAct({ t: 'skill', id, tid })); return; }
+    if (k.fx[0] && k.fx[0].k === 'restoreSk') { restorePick(B, (tid) => sendAct({ t: 'skill', id, tid })); return; }   // ⊘ выбор отрицаемой сущности
     sendAct({ t: 'skill', id, tid: B.sel });
   };
   function allyPick(B, dead, cb) {
@@ -233,6 +239,13 @@
     UI.modal(`<h3>${dead ? 'Кого вернуть?' : 'Кому?'}</h3><div class="mlist">${list.map((x) => `<button class="item" data-act="allyChosen" data-id="${x.id}" data-quiet="1"><span class="grow tl"><b>${esc(x.name)}</b><small>${fmt(x.hp)}/${fmt(x.maxHp)} здоровья</small></span></button>`).join('')}</div><button class="btn ghost wide" data-act="closeModal">Отмена</button>`);
     UI.allyCb = cb;
   }
+  // ⊘ «Возможность существования»: список всех отрицаемых сущностей (имя, подземелье/этап); со своего этапа — вернётся прямо в бой
+  function restorePick(B, cb) {
+    const s = UI.slot(), run = s.run, L = C.deniedList(s), here = (x) => run && B.node && run.nodes[run.node] === B.node && C.eraseKey(run, run.node) === x.k && B.node.e[x.i] === x.eid;
+    UI.modal(`<h3>⊘ Возможность существования</h3><div class="small dim tl">Выберите, кому вернуть право существовать (100 маны). Сущность снова появится на своём месте при следующем запуске этапа; с этого этапа — сразу на поле боя с полным HP.</div><div class="mlist rpick">${L.map((x) => `<button class="item dnitem" data-act="restoreChosen" data-id="${esc(x.id)}" data-quiet="1"><span class="ico">⚫</span><span class="grow tl"><b>${esc(x.n)}</b><small>${esc(UI.deniedWhere(x))}${here(x) ? ' · <span class="ok">вернётся в этот бой</span>' : ''}</small></span></button>`).join('')}</div><button class="btn ghost wide" data-act="closeModal">Отмена</button>`, { cls: 'tall' });
+    UI.restoreCb = cb;
+  }
+  UI.act.restoreChosen = (el) => { const f = UI.restoreCb; UI.restoreCb = null; UI.closeModal(); if (f) f(el.dataset.id); };
   UI.act.allyChosen = (el) => { const f = UI.allyCb; UI.allyCb = null; UI.closeModal(); if (f) f(el.dataset.id); };
   UI.act.bItems = () => {
     const B = UI.B; if (!B || !B.pending) return; const ids = Object.keys(B.cons).filter((k) => B.cons[k] > 0 && D.CONS[k] && !D.CONS[k].buff);
@@ -267,6 +280,7 @@
         case 'summon': renderUnits(B, true); UI.sfx('magic'); await d(300); break;
         case 'revive': floatTxt(e.u, '✨ Возрождён!', 'heal'); burst(e.u, '#fff2a8', 24); UI.sfx('level'); await d(350); break;
         case 'skip': floatTxt(e.u, 'Пропуск хода', 'txt'); await d(250); break;
+        case 'deny': { const el = unitEl(e.u); floatTxt(e.u, '⚫ Существование отрицается', 'warn'); if (el) el.classList.add('denying'); burst(e.u, '#ffffff', 26); UI.sfx('magic'); await d(650); B.ghost = (B.ghost || []).filter((g) => g.id !== e.u); renderUnits(B, true); break; }
         case 'st': if (e.on) UI.sfx('buff'); break;
         default: break;
       }
@@ -281,7 +295,7 @@
       let body;
       if (rep.result === 'win') {
         UI.sfx(rep.lvUp ? 'level' : 'win'); const mats = Object.keys(rep.mats).map((k) => `${D.MATS[k].ic}${rep.mats[k]}`).join(' ');
-        body = `<div class="big-ic xl center">${rep.bossDown ? '👑' : '⚔️'}</div><h3 class="center">${rep.bossDown ? 'Босс повержен!' : 'Победа!'}</h3><div class="card"><div>✨ +${fmt(rep.xp)} опыта · 🪙 +${fmt(rep.gold)}</div>${mats ? `<div class="small">${mats}</div>` : ''}${rep.items.map((it) => `<div>${rarSpan(it)}</div>`).join('')}</div>${rep.lvUp ? `<div class="lvup">🌟 Новый уровень: <b>${s.hero.level}</b>! Очко навыков получено${s.hero.level % 3 === 0 ? ' + искра Эха' : ''}.</div>` : ''}${rep.firstClear ? '<div class="lvup">🔥 Первая победа над боссом — искра Эха!</div>' : ''}`;
+        body = `<div class="big-ic xl center">${rep.bossDown ? '👑' : '⚔️'}</div><h3 class="center">${rep.bossDown ? 'Босс повержен!' : 'Победа!'}</h3><div class="card"><div>✨ +${fmt(rep.xp)} опыта · 🪙 +${fmt(rep.gold)}</div>${mats ? `<div class="small">${mats}</div>` : ''}${rep.items.map((it) => `<div>${rarSpan(it)}</div>`).join('')}</div>${rep.lvUp ? `<div class="lvup">🌟 Новый уровень: <b>${s.hero.level}</b>! Очко навыков получено${s.hero.level % 3 === 0 ? ' + искра Эха' : ''}.</div>` : ''}${rep.firstClear ? '<div class="lvup">🔥 Первая победа над боссом — искра Эха!</div>' : ''}${rep.denied ? `<div class="dnz">⚫ Существование отрицается: ${rep.denied} (без добычи за них)</div>` : ''}`;
       } else if (rep.result === 'lose') { UI.sfx('lose'); body = `<div class="big-ic xl center">💀</div><h3 class="center">Поражение</h3><div class="mtext tl dim center">Отряд пал. Тьма отступает не сразу — но Лира ещё поёт.</div>`; }
       else body = `<div class="big-ic xl center">🏃</div><h3 class="center">Отступление</h3>`;
       UI.modal(body + `<button class="btn primary wide" id="btnBtDone" data-act="btDone">Продолжить</button>`, { lock: true, cls: 'btsum' });

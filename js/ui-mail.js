@@ -81,7 +81,7 @@
   const dt = (iso) => { const t = M.parseT(iso); if (!Number.isFinite(t)) return ''; const d = new Date(t), y = d.getFullYear() !== new Date().getFullYear(); return d.toLocaleDateString('ru-RU', y ? { day: 'numeric', month: 'short', year: 'numeric' } : { day: 'numeric', month: 'short' }); };
   const body = (s, txt) => esc(E.fmtText(txt || '', s)).replace(/\n/g, '<br>');
   const sealIc = (L) => (L.src === 'local' ? '🪶' : L.from === 'Администрация' ? '👑' : '✉️');
-  const giftTiles = (g, cls) => M.giftList(g).map((x, i) => `<div class="mgift ${cls || ''} ${x.r ? 'rar r' + (x.ri || 0) : ''}" style="${x.c ? '--rc:' + x.c + ';--rg:' + RPG.D.RARITY[x.ri || 0].g + ';' : ''}--i:${i}"><span class="gi">${x.img ? `<img class="uqi${(x.ri || 0) >= 9 ? ' o9' : ''}" src="${x.img}" alt="">` : x.ic}</span><b>${x.q > 1 || !x.r ? '×' + fmt(x.q) : ''}</b><small>${esc(x.n)}</small>${x.r ? `<i class="mgr">${esc(x.r)}</i>` : ''}</div>`).join('');
+  const giftTiles = (g, cls) => M.giftList(g).map((x, i) => `<div class="mgift ${cls || ''} ${x.r ? 'rar r' + (x.ri || 0) : ''}" style="${x.c ? '--rc:' + x.c + ';--rg:' + RPG.D.RARITY[x.ri || 0].g + ';' : ''}--i:${i}"><span class="gi">${x.img ? `<img class="uqi${(x.ri || 0) >= 9 ? ' o9' : ''}${(x.ri || 0) >= 10 ? ' p10' : ''}" src="${x.img}" alt="">` : x.ic}</span><b>${x.q > 1 || !x.r ? '×' + fmt(x.q) : ''}</b><small>${esc(x.n)}</small>${x.r ? `<i class="mgr">${esc(x.r)}</i>` : ''}</div>`).join('');
   const status = (s, L) => {
     if (!M.hasGifts(L.gifts)) return '';
     if (L.claimed || M.ensure(s).claimed[L.id]) return '<span class="mst ok">✔ Получено</span>';
@@ -139,8 +139,9 @@
   // ───── Окно наград ─────
   UI.mailReward = function (g, got, n) {
     const lv = got && got.levels ? `<div class="center gold">⬆ Уровень героя +${got.levels}!</div>` : '';
+    const rf = got && got.refused && got.refused.length ? got.refused.map((x) => `<div class="dnz center">⊘ «${esc(x.n)}» не создан: ${esc(x.why)}</div>`).join('') : '';
     UI.modal(`<div class="mreward"><div class="mrglow" aria-hidden="true"></div><div class="mrbox" aria-hidden="true">🎁</div><h3 class="center">Получено!</h3><div class="dim small center">${n > 1 ? 'Подарки из писем: ' + n : 'Подарок из письма'}</div>
-      <div class="mgrid rw">${giftTiles(g, 'pop')}</div>${lv}<button class="btn primary big wide" data-act="closeModal" id="btnMailOk">Отлично</button></div>`, { cls: 'mrewardbox' });
+      <div class="mgrid rw">${giftTiles(g, 'pop')}</div>${lv}${rf}<button class="btn primary big wide" data-act="closeModal" id="btnMailOk">Отлично</button></div>`, { cls: 'mrewardbox' });
     UI.sfx('win');
     try { const b = $('.mrbox'); if (b && RPG.F && RPG.F.burst) { const r = b.getBoundingClientRect(); RPG.F.burst(r.left + r.width / 2, r.top + r.height / 2, '#ffd36b', 26, 'big'); setTimeout(() => RPG.F.burst(r.left + r.width / 2, r.top + r.height / 2, '#c04cff', 18), 180); } } catch (e) { /* ignore */ }
   };
