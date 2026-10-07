@@ -166,7 +166,7 @@ t('навык «Первая причина»: 90% макс. HP + 25% потер
 
 console.log('Клинок Нулевого Закона');
 t('Закон ещё не написан: периодический урон −55%, ослабления характеристик вдвое слабее; Нулевая константа: не больше 3 дебаффов', () => {
-  const { s } = slotWith('zero_law'); const d = E.derive(s); assert.strictEqual(d.mods.dotTaken, 55); assert.strictEqual(d.mods.zlHalf, 50);
+  const { s } = slotWith('zero_law'); const d = E.derive(s); assert.strictEqual(d.mods.dotTaken, 55); assert.strictEqual(d.mods.zlHalf, 50); assert.strictEqual(d.mods.taken, -40, 'снижение получаемого урона как у других клинков Истока'); assert(/Получаемый урон −40%/.test(D.UNIQUE_ITEMS.zero_law.sp[0].d));
   const { B, P, e } = bat('zero_law'); C.addSt(B, e, P, 'weak', 3); C.addSt(B, e, P, 'vuln', 3); const ref = plain('a', 'q'); ref.st = P.st.map((x) => Object.assign({}, x));
   const k = (u, key) => u.st.reduce((a, x) => a + (D.ST[x.id][key] || 0), 0); assert(k(ref, 'dealt') < 0); assert(Math.abs(C._redK(B, P, null) - Math.max(0.2, 1 + (P.mods.taken || 0) / 100 + k(ref, 'taken') * 0.5)) < 1e-9, 'уязвимость вдвое');
   P.st = []; ['poison', 'weak', 'vuln', 'bleed'].forEach((id) => C.addSt(B, e, P, id, 3, 5)); assert.strictEqual(P.st.filter((x) => ['debuff', 'dot', 'ctrl'].includes(D.ST[x.id].k)).length, 3); assert(!stOf(P, 'poison'), 'самый старый исчез');
@@ -245,6 +245,13 @@ t('живучесть (--tank, void_sovereign ур. 55): Первопричин�
   const o = require('child_process').execFileSync('node', [path.join(__dirname, '../tools/concept-duel.js'), '30', 'void_sovereign', '55', '--tank', '--json'], { encoding: 'utf8' }).trim().split('\n'); const r = JSON.parse(o[o.length - 1]);
   assert(r.prime_cause.turns > r.zero_law.turns && r.prime_cause.turns > r.first_division.turns, JSON.stringify([r.prime_cause.turns, r.zero_law.turns, r.first_division.turns]));
   assert(r.prime_cause.takenPerEnemyTurn < r.zero_law.takenPerEnemyTurn && r.prime_cause.takenPerEnemyTurn < r.first_division.takenPerEnemyTurn);
+});
+
+t('Нулевой Закон: живучесть сравнима с Разделением/Первопричиной (--tank 55 и 60), победы над void_sovereign ур. 55 ≈100%', () => {
+  const run = (a) => { const o = require('child_process').execFileSync('node', [path.join(__dirname, '../tools/concept-duel.js')].concat(a, ['--json']), { encoding: 'utf8' }).trim().split('\n'); return JSON.parse(o[o.length - 1]); };
+  ['55', '60'].forEach((l) => { const r = run(['30', 'void_sovereign', l, '--tank']), z = r.zero_law.turns, d = r.first_division.turns, p = r.prime_cause.turns;
+    assert(z >= d * 0.95 && z < p, `ур. ${l}: Разделение ${d} ≤ Нулевой Закон ${z} < Первопричина ${p}`); });
+  const k = run(['30', 'void_sovereign', '55']); assert(k.zero_law.win >= 0.95, 'победы Нулевого Закона ' + k.zero_law.win);
 });
 
 console.log(`\nИсток: ${pass} ✓, ${fail} ✗`);
