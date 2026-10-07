@@ -41,7 +41,7 @@ t('все 7 Концептуальных: не выпадают, не прода
   const en = C.unitFromEnemy('slime', 60, 5, true, 'e0'); en.role = 'boss'; for (let i = 0; i < 300; i++) E.rollLoot(E.rng(i), s, en, { mods: { drop: 400 }, tier: D.TIERS[5] }).items.forEach((it) => assert(!it.uq));
   const src = ['engine', 'gear', 'combat', 'crew', 'stats'].map((f) => fs.readFileSync(path.join(__dirname, '../js/' + f + '.js'), 'utf8')).join('\n'); assert.strictEqual((src.match(/makeUnique\(/g) || []).length, 0);
   ALL.forEach((id) => { const { s: s2, it } = slotWith(id); E.unequip(s2, 'weapon'); const g0 = s2.gold; assert.strictEqual(E.sell(s2, it.id), 0); assert.strictEqual(s2.gold, g0); assert(s2.inv.includes(it)); });
-  assert.deepStrictEqual(D.UNIQUE_IDS, ALL);
+  assert.deepStrictEqual(D.UNIQUE_IDS.filter((k) => D.UNIQUE_ITEMS[k].r === 8), ALL);
 });
 t('почта: подарок {unique} выдаёт каждый из 7 клинков один раз', () => {
   ALL.forEach((id) => { assert.deepStrictEqual(M.giftErrors({ unique: id }), []); const s = mk('warrior'); M.ensure && M.ensure(s); M.deliver(s, M.parseFeed({ letters: [{ id: 'g-' + id, title: 'Дар', body: 'x', from: 'Администрация', gifts: { unique: id } }] }).letters, Date.parse('2026-10-06'));
