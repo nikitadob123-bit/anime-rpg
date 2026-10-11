@@ -180,6 +180,99 @@ body[data-view="title"] #view { background: linear-gradient(#100d18e8, #0e0d16f5
 #nav button.on { background: linear-gradient(180deg, #66413266, #38213655); }
 #nav button.on::before { left: 25%; right: 25%; }
 .title-sigil { border-color: #e2bd7b80; box-shadow: 0 0 0 12px #a23b5710, 0 0 0 13px #b45b7740; }
+/* Аниме-интерфейс престола: герб героя, командная панель и королевский двор. */
+body { background: radial-gradient(ellipse at 50% 0, #351644, #080710 72%); }
+body[data-view="game"] #view { background: radial-gradient(ellipse at 100% 0, #4e214125, transparent 50%), #0c0a14; }
+.gtop { padding: calc(12px + var(--sat)) 14px 12px; background: linear-gradient(110deg, #30192e, #171021 60%, #241724); border-bottom: 1px solid #d9b57570; }
+.gh { gap: 10px; }
+.sovereign-avatar { position: relative; flex: none; width: 54px; height: 54px; border: 1px solid #e9c47e; border-radius: 16px 16px 20px 20px; background: #21172e; box-shadow: 0 0 0 3px #d9b57510; }
+.sovereign-avatar .por, .sovereign-avatar .svgpor { width: 100%; height: 100%; border-radius: inherit; border: 0; box-shadow: none; }
+.sovereign-avatar > span { position: absolute; bottom: -8px; right: -4px; display: grid; place-items: center; width: 23px; height: 23px; border-radius: 50%; font-size: 17px; background: #201222; color: #ffe4ad; border: 1px solid #d9b575; }
+.sovereign-rank { display: block; margin-bottom: 2px; font-size: 9px; letter-spacing: .1em; color: #dfb975; text-transform: uppercase; }
+.gh .grow > b { display: block; font-family: var(--serif); font-size: 18px; line-height: 1.15; }
+.gh .xpb { gap: 7px; margin-top: 4px; }
+.gh .xpb small { font-size: 10px; white-space: nowrap; }
+.gh > .gold { border-radius: 9px; font-size: 12px; background: #0e0b1777; }
+.realm-breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 10px; letter-spacing: .04em; color: #ad92b9; padding: 2px 0 8px; border-bottom: 1px solid #d9b57526; }
+.realm-breadcrumb b { color: #efd3a2; font-weight: 600; }
+.realm-breadcrumb i { font-style: normal; color: #715676; }
+.hub { height: 220px; max-height: 30dvh; border-radius: 18px 18px 5px 5px; }
+.hub::before { content: '♛'; position: absolute; top: 12px; left: 12px; z-index: 1; display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid #e9c47e88; border-radius: 8px; background: #120d1cbb; color: #ffe4ad; font-size: 24px; }
+.hub .hubtxt { bottom: 18px; padding: 0 18px; }
+.hub .hubtxt h2 { max-width: 260px; font-size: 25px; line-height: 1.13; }
+.hub .royal-kicker { font-size: 9px; letter-spacing: .12em; }
+.realm-shortcuts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: -2px; }
+.realm-shortcuts button { position: relative; min-height: 88px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1px solid #a27b5655; border-radius: 6px 6px 14px 14px; background: linear-gradient(145deg, #392139, #171222); transition: border-color .18s, transform .18s; }
+.realm-shortcuts button > span { display: grid; place-items: center; width: 28px; height: 28px; font-size: 23px; color: #f2cf91; }
+.realm-shortcuts b { font-size: 12px; font-weight: 600; color: #f9e4c8; }
+.realm-shortcuts small { font-size: 9px; color: #baa8ca; }
+.realm-shortcuts button:active { transform: translateY(1px); border-color: var(--gold); }
+.campaign-heading { display: flex; align-items: center; justify-content: space-between; padding: 8px 2px 0; color: #e2bd7b; }
+.campaign-heading .royal-kicker { font-size: 9px; letter-spacing: .12em; }
+.campaign-heading > span:last-child { font-size: 9px; }
+.card { border-radius: 6px 16px 6px 16px; }
+.card.goal, .card.story.goal.glow { border-left: 1px solid #c59861; border-color: #a277555c; background: linear-gradient(120deg, #3c2335, #1e1628); padding: 16px; }
+.goalh .goali { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border: 1px solid #d9b57544; border-radius: 10px; background: #d9b5750a; }
+.card.goal .btn { margin-top: 4px; }
+.btn { border-radius: 8px 14px 8px 14px; }
+.btn.primary { background: linear-gradient(115deg, #ffe6b7, #d8aa68 70%, #ebc58a); }
+.card.ptsrow { border-left: 2px solid #b79bea; background: linear-gradient(110deg, #32213e, #1b1426); }
+.card.ptsrow .ptsic { font-size: 24px; color: #d9b8ff; }
+.bgrid.bcity .bld { border-radius: 6px 18px 6px 18px; height: 158px; }
+.bld .bldtxt { padding: 42px 12px 12px; }
+.bld .bldtxt b { font-size: 15px; }
+.bld .bldtxt small { font-size: 10px; }
+.dcard { border-radius: 6px 16px 6px 16px; }
+.seg { background: #0c0915; border: 1px solid #d9b57526; padding: 5px; }
+.seg button.on { background: linear-gradient(125deg, #613a58, #30203c); color: #ffe4ad; border-radius: 8px; }
+.mbox { border-radius: 22px 22px 0 0; border-top: 2px solid #e2bd7b; background: linear-gradient(145deg, #2f1d33, #120d1c); }
+.court-heading h3 { font-family: var(--serif); font-size: 27px; color: #ffe4ad; margin: 5px 0; }
+.court-heading p { margin: 6px 0 16px; }
+.morelist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.morelist .moreitem { position: relative; min-height: 100px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 9px; padding: 14px; border-radius: 6px 14px 6px 14px; }
+.moreitem .nic { width: 28px; height: 28px; color: #e9c47e; }
+.moreitem .nic svg { display: block; width: 100%; height: 100%; }
+.morecopy { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.morecopy b { font-family: var(--serif); font-size: 17px; color: #ffe4ad; }
+.morecopy small { color: #c4aecf; font-size: 10px; line-height: 1.4; }
+.moreitem .chev { position: absolute; right: 12px; top: 16px; color: #bd9465; }
+.moreitem .mnb { position: absolute; right: 12px; top: 48px; }
+#nav { margin: 0 8px 0; border: 1px solid #ae825666; border-bottom: 0; border-radius: 18px 18px 0 0; background: linear-gradient(180deg, #2a192b, #110c1b); padding: 7px 5px calc(7px + var(--sab)); box-shadow: 0 -4px 16px #0004; }
+#nav button { min-height: 60px; border-radius: 12px; gap: 6px; }
+#nav button > span:not(.nb) { width: 30px; height: 28px; }
+#nav button > span:not(.nb)::before { display: none; }
+#nav button.on { background: linear-gradient(135deg, #69404488, #39273f); color: #ffe4ad; }
+#nav button.on::before { bottom: 2px; left: 35%; right: 35%; height: 2px; }
+#nav button em { font-size: 10px; }
+.title .logo h1 { font-size: clamp(36px, 10vw, 46px); }
+.title-art { height: clamp(230px, 37dvh, 330px); }
+.title .plist .prof { border-radius: 6px 16px 6px 16px; border-left: 2px solid #d9b575; }
+.tipday { border-style: dashed; border-color: #ad8ca53a; background: #20162777; }
+.arcbox { overflow: hidden; padding: 0; }
+.arcrow { min-height: 68px; padding: 14px; background: linear-gradient(110deg, #3f253d, #21172d); }
+.arcrow .an { display: grid; place-items: center; min-width: 36px; height: 36px; border: 1px solid #d9b57566; border-radius: 6px 12px; color: #f6d49d; background: #d9b5750b; font-family: var(--serif); font-size: 18px; }
+.arcrow .grow > b { font-family: var(--serif); font-size: 18px; color: #ffe4ad; }
+.chrow { margin-inline: 10px; padding-block: 12px; border-color: #d9b57520; }
+.chrow .cn { color: #dcb875; background: #291c34; border: 1px solid #d9b5753d; border-radius: 8px; }
+.chrow.cur { background: linear-gradient(90deg, #9c6a3624, transparent); }
+.crewc .por, .crewc .svgpor { border: 1px solid #d9b57577; border-radius: 9px 16px; }
+.crewc .grow > b { font-family: var(--serif); font-size: 19px; color: #ffe4ad; }
+.crewc.inparty { border-color: #c49b65; background: linear-gradient(120deg, #402838, #20182c); }
+.pcell { border: 1px solid #bd945855; border-radius: 10px; background: #291a32; min-height: 78px; }
+.pcell.empty { border-style: dashed; color: #b79ac7; }
+.herocard { border-radius: 8px 20px 8px 20px; border-color: #d9b57577; }
+.herocard .hinfo { background: linear-gradient(transparent, #160d22ed); }
+.herotitle { color: #ffe4ad; font-size: 28px; }
+@media (max-width: 360px) {
+  .gtop { padding-inline: 10px; }
+  .gh { gap: 7px; }
+  .sovereign-avatar { width: 48px; height: 48px; }
+  .gh .grow > b { font-size: 16px; }
+  .gh > .gold { padding: 6px; font-size: 11px; }
+  .hub .hubtxt h2 { font-size: 23px; }
+  .realm-shortcuts small { font-size: 8px; }
+}
+@media (prefers-reduced-motion: reduce) { .realm-shortcuts button { transition: none; } }
 @media (hover: hover) {
   .btn:not(:disabled):hover, .bld:hover, button.card:hover { border-color: var(--gold); }
 }
