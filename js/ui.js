@@ -69,7 +69,8 @@
       return `<button class="card prof tap" data-act="pickProfile" data-id="${esc(s.id)}"><div class="av">${esc(s.avatar)}</div><div class="grow tl"><b>${esc(s.nick)}</b><div class="dim">${info}</div></div>${s.recovered ? '<span class="tag warn">из копии</span>' : ''}<span class="chev">›</span></button>`;
     }).join('');
     return `<div class="screen title">
-      <div class="logo"><div class="seal" aria-hidden="true"><i></i></div><div class="ring"></div><h1>Нимб Мира</h1><p>Король Демонов пробуждается</p></div>
+      <div class="title-art" aria-hidden="true"><div class="title-sigil"></div><img src="assets/vn/hero_demon_neutral.webp" alt="" width="689" height="606" decoding="async"><span class="title-rune">✦</span></div>
+      <div class="logo"><span class="royal-kicker">Тёмная фэнтези · история твоей власти</span><h1>Нимб Мира</h1><p>Король Демонов пробуждается</p><div class="royal-divider" aria-hidden="true">◆</div></div>
       <div class="plist">${cards || '<div class="dim center pad">Профилей ещё нет. Создайте первый — и Король проснётся.</div>'}</div>
       <div class="col gap pad">
         <button class="btn primary big" data-act="newProfile" id="btnNewProfile">✦ Новый профиль</button>

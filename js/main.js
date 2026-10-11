@@ -7,7 +7,7 @@
   UI.buildNav = function () {
     const labels = Object.fromEntries(UI.TABS.map(([t, , n]) => [t, n]));
     labels.city = 'Лагерь'; labels.more = 'Ещё';
-    const btn = (t, extra) => `<button data-act="tab" data-t="${t}" data-quiet="1" aria-label="${labels[t] || t}" class="${extra || ''}"><span class="nic">${NAV_IC[t] || '·'}</span><em>${labels[t] || t}</em></button>`;
+    const btn = (t, extra) => `<button data-act="tab" data-t="${t}" data-quiet="1" aria-label="${labels[t] || t}" class="${extra || ''}"${extra === 'navx' ? ' tabindex="-1" aria-hidden="true"' : ''}><span class="nic">${NAV_IC[t] || '·'}</span><em>${labels[t] || t}</em></button>`;
     const primary = NAV_PRIMARY.map((t) => btn(t)).join('');
     const more = `<button data-act="navMore" data-quiet="1" aria-label="Ещё" class="nav-more"><span class="nic">${NAV_IC.more}</span><em>Ещё</em></button>`;
     const ghost = UI.TABS.filter(([t]) => !NAV_PRIMARY.includes(t)).map(([t]) => btn(t, 'navx')).join('');

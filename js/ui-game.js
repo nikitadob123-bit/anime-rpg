@@ -80,7 +80,9 @@
     const sp = E.sp(h), up = E.up(h);
     main.innerHTML = `<div class="gtop"><div class="gh">${UI.por(h.portrait, 'xs avring', false)}<div class="grow tl"><b>${esc(h.name)}</b><div class="xpb"><small>Ур. ${h.level}</small>${bar(h.level >= D.LEVEL_CAP ? 1 : h.xp, h.level >= D.LEVEL_CAP ? 1 : need, 'xp')}</div></div><div class="gold">🪙 ${fmt(s.gold)}</div><i id="saveDot" class="sdot" title="Сохранено"></i></div></div>
       <div class="content tab-${UI.tab}">${(UI.tabs[UI.tab])(s)}</div>`;
-    $$('#nav button').forEach((b) => { const t = b.dataset.t; b.classList.toggle('on', t === UI.tab); const badge = b.querySelector('.nb'); if (badge) badge.remove(); const n = t === 'skills' ? sp + up : 0; if (n > 0) b.insertAdjacentHTML('beforeend', `<span class="nb">${n}</span>`); if (t === 'city') { const ns = UI.nextStory(s); if (ns && ns.ok && !s.run) b.insertAdjacentHTML('beforeend', '<span class="nb dot">!</span>'); } });
+    $$('#nav button').forEach((b) => { const t = b.dataset.t; b.classList.toggle('on', t === UI.tab); if (t === UI.tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); const badge = b.querySelector('.nb'); if (badge) badge.remove(); const n = t === 'skills' ? sp + up : 0; if (n > 0) b.insertAdjacentHTML('beforeend', `<span class="nb">${n}</span>`); if (t === 'city') { const ns = UI.nextStory(s); if (ns && ns.ok && !s.run) b.insertAdjacentHTML('beforeend', '<span class="nb dot">!</span>'); } });
+    const more = $('#nav .nav-more'), secondary = !!$('#nav .navx.on');
+    if (more) { more.classList.toggle('on', secondary); if (secondary) more.setAttribute('aria-current', 'page'); else more.removeAttribute('aria-current'); }
     if (UI.tab === 'city') try { RPG.F.setMode(UI.p.settings.particles ? 'embers' : 'none'); } catch (e) { /* ignore */ }
   };
   UI.act.tab = (el) => { UI.tab = el.dataset.t; UI.sfx('tab'); UI.renderGame(); const c = $('.content'); if (c) { c.scrollTop = 0; c.classList.add('tin'); } };   // плавный вход вкладки — только при переключении, не при каждом refresh
@@ -104,11 +106,11 @@
       ['tavern', 'Костёр', 'Отдых и разговоры', 'fire'],
       ['altar', 'Алтарь троп', 'Сброс Сил', 'altar']
     ].map(([act, n, d, img]) => `<button class="bld" data-act="${act}" data-quiet="1"><img class="bldimg" src="assets/ui/tile_${img}.webp" alt="" loading="lazy" decoding="async" width="360" height="480"><span class="bldtxt"><b>${n}</b><small>${d}</small></span></button>`).join('');
-    return `<div class="hub"><img class="hubart" src="assets/ui/banner.webp" alt="" loading="lazy" decoding="async" width="900" height="988"><div class="hubtxt"><h2>Лагерь у руин Хельмора</h2><i class="huborn" aria-hidden="true"></i></div></div>
+    return `<div class="hub"><img class="hubart" src="assets/ui/banner.webp" alt="" loading="lazy" decoding="async" width="900" height="988"><div class="hubtxt"><span class="royal-kicker">Владения Короля Демонов</span><h2>Лагерь у руин Хельмора</h2><i class="huborn" aria-hidden="true"></i></div></div>
       ${story}${run}
       ${sp ? `<button class="card tap hint ptsrow" data-act="tab" data-t="hero"><span class="ptsic" aria-hidden="true">✦</span><span class="grow tl">Доступно очков: <b>${sp}</b></span><span class="chev">›</span></button>` : ''}
       ${rp ? `<button class="card tap hint" data-act="tab" data-t="hearts">💞 Новых сцен с героинями: <b>${rp}</b></button>` : ''}
-      <div class="bgrid bcity">${tiles}</div>${party}
+      <h3 class="royal-section">Лагерь и подготовка</h3><div class="bgrid bcity">${tiles}</div>${party}
       <div class="card tipday"><div class="tiph"><span aria-hidden="true">📖</span><b>ПОДСКАЗКА ДНЯ</b></div><i class="huborn" aria-hidden="true"></i><div class="dim">${tip()}</div><button class="btn ghost small" data-act="tutorial">📘 Обучение</button></div>`;
   };
   const TIPS = ['Враги показывают намерение значком над собой. ⚠️ — готовится мощный удар: прикройтесь щитом или оглушите врага.', 'Стихии складываются: «Промокший» + молния = разряд; «Промокший» + лёд = заморозка; «Охлаждённый» + огонь = паровой взрыв.', 'Профессия «Травник/Шахтёр/Охотник/Рыбак» даёт больше добычи в событиях подземелий и позволяет ходить на промысел.', 'Еда и эликсиры действуют до конца вылазки — принимайте их перед входом.', 'Легендарные предметы выпадают с боссов на высоких сложностях. Лёд, молния и огонь — у каждого босса свои слабости.', 'Сложность растёт: пройдите подземелье на «Обычном», чтобы открыть «Героический», и дальше.', 'Мантра Силы: каждый ход боя удваивает атаку и защиту по значениям до боя — но только на этот бой.', 'Дуэли с героиней Света: победа открывает выбор — пощадить или убить. Пощажённая может присоединиться.', 'Верность Свиты растёт от решений в сюжете и подарков. Низкая верность — шанс, что подчинённый не послушается.', 'Свидания в «Сердцах» — тёплые и безопасные; они дают постоянные бонусы.'];

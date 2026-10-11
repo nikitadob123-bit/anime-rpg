@@ -70,7 +70,8 @@
   UI.tabs.city = function (s) {
     const h = city(s), n = M.count(s); if (!n) return h;
     const card = `<button class="card tap hint mailhint" data-act="tab" data-t="mail" data-quiet="1"><span class="mhic">${ENV}</span><span class="grow tl">Новые письма: <b>${n}</b>${M.ensure(s).list.some((x) => M.canClaim(s, x)) ? ' <span class="gold">· есть подарки 🎁</span>' : ''}</span><span class="chev">›</span></button>`;
-    const i = h.indexOf('<div class="bgrid bcity">'); return i < 0 ? h + card : h.slice(0, i) + card + h.slice(i);
+    const section = h.indexOf('<h3 class="royal-section">');
+    const i = section >= 0 ? section : h.indexOf('<div class="bgrid bcity">'); return i < 0 ? h + card : h.slice(0, i) + card + h.slice(i);
   };
   const tab0 = UI.act.tab;
   UI.act.tab = function (el) { const isMail = el && el.dataset.t === 'mail'; if (isMail) deliver(false); const r = tab0.apply(this, arguments); if (isMail) UI.mailFetch(); return r; };
