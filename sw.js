@@ -1,5 +1,5 @@
 /* Service worker: офлайн-режим. Ядро — в прекеше; CG и нейтральные портреты берутся из assets/vn/manifest.json, остальные настроения кэшируются при первом показе. */
-const VERSION = 'arpg-v2.14.1';
+const VERSION = 'arpg-v2.14.2';
 const CORE = `${VERSION}-core`, RUNTIME = `${VERSION}-rt`;
 const ASSETS = [
   './', 'index.html', 'manifest.json', 'css/style.css', 'css/vn.css', 'css/demon.css', 'css/mail.css', 'css/gear.css', 'css/crown.css', 'assets/vn/hero_demon_neutral.webp', 'fonts/ruslan.woff2', 'fonts/philosopher.woff2',
@@ -14,6 +14,11 @@ const ASSETS = [
   'assets/gear/first_division_128.webp', 'assets/gear/first_division_256.webp', 'assets/gear/first_division_art.webp',
   'assets/gear/null_possibility_128.webp', 'assets/gear/null_possibility_256.webp', 'assets/gear/null_possibility_art.webp',
   'assets/gear/abyss_dark_128.webp', 'assets/gear/abyss_dark_256.webp', 'assets/gear/abyss_dark_art.webp', 'assets/gear/hell_heart_128.webp', 'assets/gear/hell_heart_256.webp', 'assets/gear/hell_heart_art.webp', 'assets/gear/first_flame_128.webp', 'assets/gear/first_flame_256.webp', 'assets/gear/first_flame_art.webp', 'assets/gear/boundless_source_128.webp', 'assets/gear/boundless_source_256.webp', 'assets/gear/boundless_source_art.webp', 'assets/gear/chronos_128.webp', 'assets/gear/chronos_256.webp', 'assets/gear/chronos_art.webp', 'assets/gear/end_of_all_128.webp', 'assets/gear/end_of_all_256.webp', 'assets/gear/end_of_all_art.webp',
+  'assets/ui/locations/mill.webp', 'assets/ui/locations/wood.webp', 'assets/ui/locations/mines.webp', 'assets/ui/locations/swamp.webp',
+  'assets/ui/locations/spire.webp', 'assets/ui/locations/cathedral.webp', 'assets/ui/locations/chapel.webp', 'assets/ui/locations/ossuary.webp',
+  'assets/ui/locations/crater.webp', 'assets/ui/locations/tempest.webp', 'assets/ui/locations/sunken.webp', 'assets/ui/locations/garden.webp',
+  'assets/ui/locations/citadel.webp', 'assets/ui/locations/abyss.webp',
+  'assets/ui/locations/nowhere.webp', 'assets/ui/locations/stairs.webp', 'assets/ui/locations/gallery_kings.webp', 'assets/ui/locations/choir_hall.webp', 'assets/ui/locations/threshold.webp',
   'assets/vn/manifest.json'
 ];
 

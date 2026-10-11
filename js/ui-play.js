@@ -21,7 +21,7 @@
       const open = E.dungeonUnlocked(s, d.id), cl = s.prog.cleared[d.id] || 0;
       const tiers = D.TIERS.map((t, i) => `<i class="td ${cl > i ? 'on' : ''}" title="${t.n}">${t.ic}</i>`).join('');
       const reason = !open ? (d.lockHint ? d.lockHint : d.id === 'cathedral' && s.prog.cleared.spire ? 'Сначала прочтите главу «У врат собора».' : d.need === 'ch1' ? 'Завершите пролог.' : 'Сначала пройдите «' + D.DUN[d.need].n + '».') : '';
-      return `<button class="card dcard ${open ? '' : 'lockd'}" style="--dc:${d.col}" data-act="dunOpen" data-id="${d.id}" ${open ? '' : 'data-quiet="1"'}><div class="dic">${d.ic}</div><div class="grow tl"><b>${d.n}</b><div class="dim small">ур. ${d.lv}–${d.lv + d.floors + 1} · этажей: ${d.floors}</div><div class="small tl dim">${open ? d.d : reason}</div>${eraseBadge(s, d.id)}${denyBadge(s, d.id)}</div><div class="tiers">${open ? tiers : '🔒'}</div></button>`;
+      return `<button class="card dcard ${open ? '' : 'lockd'}" style="--dc:${d.col}" data-act="dunOpen" data-id="${d.id}" ${open ? '' : 'data-quiet="1"'}><div class="dic"><img src="assets/ui/locations/${d.id}.webp" alt="" width="280" height="280" loading="lazy" decoding="async"></div><div class="grow tl"><b>${d.n}</b><div class="dim small">ур. ${d.lv}–${d.lv + d.floors + 1} · этажей: ${d.floors}</div><div class="small tl dim">${open ? d.d : reason}</div>${eraseBadge(s, d.id)}${denyBadge(s, d.id)}</div><div class="tiers">${open ? tiers : '🔒'}</div></button>`;
     }).join('');
     return `<h2>Подземелья</h2><div class="small dim tl">Выберите место для вылазки. Сложность растёт после первой победы. Рекомендуемый уровень указан для «Обычного».</div>${cards}`;
   };

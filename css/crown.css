@@ -140,13 +140,53 @@ body[data-view="title"] #view { background: linear-gradient(#100d18e8, #0e0d16f5
 .bt-top .mini { width: 40px; height: 40px; }
 .toast { font-family: var(--sans); box-shadow: 0 6px 20px #0008; }
 .content, .crbody, .mbox { scrollbar-width: thin; scrollbar-color: #65506c #13101b; }
+/* Королевская отделка: статичный свет, плавные переходы без тяжёлых фильтров. */
+:root { --gold: #e2bd7b; --gold2: #ffe4ad; --line: #584052; }
+#app { border-inline: 1px solid #d9b57524; }
+.gtop { background: linear-gradient(110deg, #241322, #12101b 65%); border-bottom-color: #b68a5366; }
+.card, .pcard, .pf, .ccard {
+  background: linear-gradient(135deg, #302030, #18131f 70%);
+  border-color: #76526566;
+  box-shadow: inset 0 1px 0 #f9dba510, 0 5px 16px #0003;
+}
+.royal-section { color: var(--gold2); letter-spacing: .025em; }
+.royal-section::after { background: linear-gradient(90deg, #bd935b80, transparent); }
+.hub { border-color: #c3945c99; box-shadow: 0 8px 24px #0004, inset 0 0 0 1px #e2bd7b20; }
+.hub .hubart { object-position: 50% 48%; }
+.hub::after { background: linear-gradient(180deg, transparent 25%, #100b17e8); }
+.hub .hubtxt h2 { color: #ffeac6; }
+.bgrid.bcity { gap: 12px; }
+.bgrid.bcity .bld { height: 152px; border: 1px solid #bb8a5977; border-radius: 14px; box-shadow: inset 0 1px 0 #ffe4ad20, 0 5px 16px #0004; }
+.bld .bldimg { opacity: 1; object-position: center; }
+.bld .bldtxt { padding: 42px 12px 10px; background: linear-gradient(transparent, #110c18dc 55%, #110c18f5); gap: 2px; }
+.bld .bldtxt b { font-family: var(--serif); font-size: 14px; color: #ffe4ad; letter-spacing: .025em; }
+.bld .bldtxt small { font-size: 10px; color: #e4d4e9; line-height: 1.4; }
+.btn.primary { background: linear-gradient(120deg, #ffe5ae, #d5a65e); box-shadow: inset 0 1px 0 #fff7, 0 4px 18px #d9b57525; }
+.btn, .bld, .moreitem, .seg button, #nav button {
+  transition: transform .18s cubic-bezier(.2,.7,.2,1), background-color .2s ease, border-color .2s ease, color .2s ease;
+}
+.btn:active, .bld:active { transform: translateY(1px); }
+.content.tin { animation: royal-enter .3s cubic-bezier(.2,.7,.2,1); }
+@keyframes royal-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.dcard { position: relative; display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 10px 12px; padding: 12px; text-align: left; border-left-width: 3px; }
+.dcard .dic { width: 82px; height: 94px; grid-row: 1 / 3; overflow: hidden; border-radius: 9px; border: 1px solid #e2bd7b66; background: #120d1b; }
+.dcard .dic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.dcard .grow { min-width: 0; }
+.dcard .grow > b { display: block; font-family: var(--serif); font-size: 17px; line-height: 1.25; color: #ffe4ad; margin-bottom: 5px; }
+.dcard .grow > .small { font-size: 11px; line-height: 1.45; }
+.dcard .tiers { grid-column: 2; align-self: end; gap: 6px; }
+.dcard.lockd { opacity: .78; }
+.dcard.lockd .dic img { filter: saturate(.55); }
+#nav button.on { background: linear-gradient(180deg, #66413266, #38213655); }
+#nav button.on::before { left: 25%; right: 25%; }
+.title-sigil { border-color: #e2bd7b80; box-shadow: 0 0 0 12px #a23b5710, 0 0 0 13px #b45b7740; }
 @media (hover: hover) {
-  .btn:not(:disabled):hover, .bld:hover, button.card:hover { border-color: var(--gold); filter: brightness(1.08); }
+  .btn:not(:disabled):hover, .bld:hover, button.card:hover { border-color: var(--gold); }
 }
 @media (max-width: 360px) {
   .content { padding: 12px; }
   .hub .hubtxt h2 { font-size: 20px; }
-  .bgrid.bcity .bld { height: 128px; }
+  .bgrid.bcity .bld { height: 144px; }
   .bld .bldtxt { padding: 28px 10px 10px; }
   .title { padding-inline: 16px; }
 }
@@ -154,4 +194,6 @@ body[data-view="title"] #view { background: linear-gradient(#100d18e8, #0e0d16f5
   *, *::before, *::after { scroll-behavior: auto !important; }
   .btn, .bar i, #nav button, #nav button span { transition: none; }
   .card.story.glow, .node.can, .nd.cur { animation: none; }
+  .content.tin { animation: none; }
+  .btn, .bld, .moreitem, .seg button, #nav button { transition: none; }
 }
