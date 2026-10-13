@@ -1,5 +1,5 @@
 /* v2.15 — Ремесло творца (пользовательское снаряжение). Открывается, если у героя ОБЕ профессии: Кузнец и Зачарователь.
-   3 материала → редкость (по САМОМУ НИЗКОМУ качеству, не выше Божественного = 7) → конструктор: основа (любое оружие/броня/украшение),
+   3 материала → редкость (СРЕДНЕЕ качество, вниз, не выше Божественного = 7) → конструктор: основа (любое оружие/броня/украшение),
    имя, бюджет очков на линии характеристик и аффиксов (лимиты числа линий и значения линии — как у случайных вещей этой редкости),
    особые свойства (по одному на каждый тип u/m/d, который даёт редкость), навыки (пул «Отголосков Нимба»), иконка из 200 (≤ редкости),
    для Божественного из 3 божественных материалов — своя PNG. Всё значимое пересчитывается из it.cu при загрузке (защита от подмены). Логика без DOM. */
@@ -39,7 +39,8 @@
   E.craftUnlocked = (slot) => { const h = slot && slot.hero; if (!h) return false; const p = [h.prof1, h.prof2]; return p.includes('smith') && p.includes('ench'); };
   E.craftLockWhy = (slot) => { const h = slot.hero, p = [h.prof1, h.prof2], miss = ['smith', 'ench'].filter((x) => !p.includes(x)).map((x) => D.PROFS[x].n); return miss.length ? 'Нужны обе профессии: Кузнец и Зачарователь (нет: ' + miss.join(', ') + ')' : ''; };
   D.CRAFT_MAX_R = Math.min(7, D.RARITY_OPEN);     // никогда выше Божественного
-  E.craftRarity = (mats) => (Array.isArray(mats) && mats.length === 3 && mats.every((id) => D.MATS[id]) ? Math.min(D.CRAFT_MAX_R, ...mats.map(E.matQ)) : -1);
+  // v2.16: редкость = СРЕДНЕЕ качество трёх материалов, округление вниз, не выше 7
+  E.craftRarity = (mats) => (Array.isArray(mats) && mats.length === 3 && mats.every((id) => D.MATS[id]) ? Math.min(D.CRAFT_MAX_R, Math.floor(mats.map(E.matQ).reduce((a, b) => a + b, 0) / 3)) : -1);
   E.craftDivine = (mats) => Array.isArray(mats) && mats.length === 3 && mats.every((id) => E.matQ(id) >= 7);
 
   // ───── Правила редкости ─────
@@ -74,6 +75,9 @@
   D.CRAFT_NAME_MAX = 28; D.CRAFT_IMG_MAX = 60 * 1024;   // лимит на ОБЕ картинки вместе (символы data URL)
   E.craftImgOk = (u) => typeof u === 'string' && /^data:image\/(png|webp|jpeg);base64,[A-Za-z0-9+/=]+$/.test(u) && u.length <= D.CRAFT_IMG_MAX;
   E.craftCanUpload = (r, mats) => (r | 0) === 7 && E.craftDivine(mats);
+  // v2.16: полноразмерная картинка (до 1024 px) лежит в IndexedDB по ключу; в сейве — только ключ и превью 128
+  E.craftKeyOk = (k) => typeof k === 'string' && /^ci_[a-z0-9]{6,32}$/.test(k);
+  D.CRAFT_UP_MAX = 15 * 1024 * 1024; D.CRAFT_HD_PX = 1024; D.CRAFT_HD_MAX = 8 * 1024 * 1024;
 
   // ───── Проверка и сборка (одна функция и для создания, и для перепроверки сохранения) ─────
   // spec: { base, mats[3], nm, a:{ключ: очки}, fx:{u,m,d: id}, sk:[id], ic: номер иконки, img?, img2? }; il — уровень предмета
@@ -106,7 +110,7 @@
       const okU = E.craftCanUpload(r, spec.mats), tot2 = String(spec.img || '').length + String(spec.img2 || '').length;
       if (!okU) err.push('своя иконка — только Божественный из 3 божественных материалов');
       else if (!E.craftImgOk(spec.img) || (spec.img2 != null && !E.craftImgOk(spec.img2)) || tot2 > D.CRAFT_IMG_MAX) err.push('картинка не прошла проверку');
-      else { out.img = spec.img; if (spec.img2) out.img2 = spec.img2; }
+      else { out.img = spec.img; if (spec.img2) out.img2 = spec.img2; if (spec.imgKey != null) { if (E.craftKeyOk(spec.imgKey)) out.imgKey = spec.imgKey; else err.push('ключ картинки не прошёл проверку'); } }
     }
     return { err, spec: out, rules: R, spent: tot };
   };
@@ -116,7 +120,7 @@
     for (const k in B.p) it.st[k] = Math.max(1, Math.round(B.p[k] * p * Rr.mul * 1.02));   // основа: чуть выше среднего броска
     for (const k in cs.a) it.st[k] = E.craftLineVal(k, il, r, cs.a[k]);
     ['u', 'm', 'd'].forEach((t) => { const f = D.GEAR_FX_BY[cs.fx[t]]; if (f) { it.st[f.k] = E.craftFxVal(f, il, r); it.fx.push(f.id); } });
-    if (cs.img) { it.cu.img = cs.img; if (cs.img2) it.cu.img2 = cs.img2; }
+    if (cs.img) { it.cu.img = cs.img; if (cs.img2) it.cu.img2 = cs.img2; if (cs.imgKey) it.cu.imgKey = cs.imgKey; }
     return it;
   };
   // предпросмотр без траты
@@ -136,11 +140,12 @@
     ['smith', 'ench'].forEach((p) => E.profXp(slot, p, 20 + c.spec.r * 15));
     return { item: it };
   };
-  E.craftGold = (r) => Math.round(40 * Math.pow(2, clamp(r | 0, 0, 7)));
+  // v2.16: ×3 для 0…6 (120·2^r), ×7 для Божественного (35 840)
+  E.craftGold = (r) => { r = clamp(r | 0, 0, 7); return r === 7 ? 40 * 128 * 7 : 120 * Math.pow(2, r); };
   // перепроверка вещи из сохранения: статы пересобираются из it.cu, всё сверх правил режется; up/en/lock/id сохраняются
   E.craftSanitize = function (it) {
     if (!it || typeof it !== 'object' || !it.cu || typeof it.cu !== 'object') return it;
-    const cu = it.cu, spec = { base: it.k, mats: Array.isArray(cu.mats) ? cu.mats.slice(0, 3) : [], nm: it.nm, a: cu.a, fx: cu.fx, sk: cu.sk, ic: cu.ic, img: cu.img, img2: cu.img2 };
+    const cu = it.cu, spec = { base: it.k, mats: Array.isArray(cu.mats) ? cu.mats.slice(0, 3) : [], nm: it.nm, a: cu.a, fx: cu.fx, sk: cu.sk, ic: cu.ic, img: cu.img, img2: cu.img2, imgKey: cu.imgKey };
     let c = E.craftCheck(spec, { fix: true, r: it.r });
     if (!c.spec) { c = E.craftCheck(Object.assign(spec, { base: 'sword' }), { fix: true, r: 0 }); }
     const il = clamp(it.il | 0 || 1, 1, 100), fresh = E.craftBuild(c.spec, il, String(cu.by || '').slice(0, 16));
@@ -149,6 +154,26 @@
     fresh.up = clamp(fresh.up | 0, 0, 20);
     Object.keys(it).forEach((k) => delete it[k]); Object.assign(it, fresh); return it;
   };
+  // ───── v2.16: смена профессий за золото ─────
+  // Основную и/или дополнительную можно сменить за 50 000 🪙 каждую смену. Прогресс (ур./опыт) каждой профессии хранится в slot.profs
+  // и не стирается: вернувшись к ней, герой продолжает с того же места (уровень выше потолка новой роли ограничен потолком — 20 / 10).
+  // Выбор текущей второй профессии основной (и наоборот) меняет их местами — это одна смена.
+  D.PROF_CHANGE_COST = 50000;
+  E.profChange = function (slot, which, pid) {
+    const h = slot.hero; if (slot.run) return 'Не во время вылазки';
+    if (!D.PROFS[pid]) return 'Нет такой профессии'; if (which !== 'main' && which !== 'sub') return 'Неверный выбор';
+    const cur = which === 'main' ? h.prof1 : h.prof2, other = which === 'main' ? h.prof2 : h.prof1;
+    if (cur === pid) return 'Это уже ваша профессия';
+    if ((slot.gold | 0) < D.PROF_CHANGE_COST) return 'Нужно 🪙' + D.PROF_CHANGE_COST;
+    slot.gold -= D.PROF_CHANGE_COST;
+    if (pid === other) { const t = h.prof1; h.prof1 = h.prof2; h.prof2 = t; }
+    else if (which === 'main') h.prof1 = pid; else h.prof2 = pid;
+    slot.profs[pid] = slot.profs[pid] || { lv: 1, xp: 0 }; h.profLocked = true; slot.stats = slot.stats || {}; slot.stats.profChanges = (slot.stats.profChanges || 0) + 1;
+    return '';
+  };
+  // уровень с учётом потолка текущей роли (сохранённый прогресс не трогаем)
+  const _plv = E.profLv;
+  E.profLv = (slot, pid) => { const lv = _plv(slot, pid), cap = E.profCap(slot.hero, pid); return cap ? Math.min(lv, cap) : lv; };
   // навыки вещи
   const _gs = E.gearSkills;
   E.gearSkills = function (eq) { const out = _gs(eq); Object.values(eq || {}).forEach((it) => { if (it && it.cu && Array.isArray(it.cu.sk)) it.cu.sk.forEach((id) => { if (D.CRAFT_SK_POOL.includes(id) && !out.includes(id)) out.push(id); }); }); return out; };

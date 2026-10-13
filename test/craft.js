@@ -30,9 +30,11 @@ t('у каждого материала качество 0…7; есть мат�
   roll('boss', 20, 400); assert(got.star_ore > 0 && !got.phoenix_f && !got.myth_blood && !got.nimbus_shard, 'ур. 20 — только эпические');
   roll('brute', 70, 400); assert(!got.star_ore && !got.nimbus_shard, 'обычные враги не дают');
 });
-t('редкость = качество САМОГО СЛАБОГО из 3 материалов, никогда выше 7; ровно 3 материала', () => {
-  assert.strictEqual(E.craftRarity([MQ(7)[0], MQ(7)[0], MQ(2)[0]]), 2);
-  assert.strictEqual(E.craftRarity([MQ(5)[0], MQ(6)[0], MQ(7)[0]]), 5);
+t('редкость = СРЕДНЕЕ качество 3 материалов, вниз, никогда выше 7; ровно 3 материала', () => {
+  assert.strictEqual(E.craftRarity([MQ(7)[0], MQ(7)[0], MQ(2)[0]]), 5);   // 16/3 = 5.33 → 5
+  assert.strictEqual(E.craftRarity([MQ(5)[0], MQ(6)[0], MQ(7)[0]]), 6);
+  assert.strictEqual(E.craftRarity([MQ(7)[0], MQ(7)[0], MQ(6)[0]]), 6);   // 20/3 = 6.67 → 6
+  assert.strictEqual(E.craftRarity([MQ(0)[0], MQ(0)[0], MQ(2)[0]]), 0);
   assert.strictEqual(E.craftRarity(m3(7)), 7); assert.strictEqual(E.craftRarity(m3(0)), 0);
   assert.strictEqual(E.craftRarity([MQ(7)[0], MQ(7)[0]]), -1); assert.strictEqual(E.craftRarity(['nope', MQ(7)[0], MQ(7)[0]]), -1);
   D.MATS.__hack = { n: 'x', ic: 'x', v: 1, q: 99 }; assert.strictEqual(E.craftRarity(['__hack', '__hack', '__hack']), 7, 'даже с подменённым качеством — максимум 7'); delete D.MATS.__hack;
@@ -125,7 +127,9 @@ t('имя: без HTML/управляющих символов, до 28 знак
 t('200 иконок, все группы основ; в выборе только своя группа и редкость ≤ вещи', () => {
   assert.strictEqual(D.CRAFT_ICONS.length, 200); const g = {}; D.CRAFT_ICONS.forEach((ic) => { g[ic.g] = (g[ic.g] || 0) + 1; assert(ic.r >= 0 && ic.r <= 7); });
   D.CRAFT_BASES.forEach((b) => { for (let r = 0; r <= 7; r++) { const l = E.craftIcons(b, r); assert(l.length >= 1, b + ' r' + r); assert(l.every((x) => x.r <= r && x.g === E.craftIconGroup(b))); } });
-  assert(fs.existsSync(path.join(__dirname, '../assets/craft/icons.webp'))); assert(fs.statSync(path.join(__dirname, '../assets/craft/icons.webp')).size < 3 * 1024 * 1024);
+  const dir = path.join(__dirname, '../assets/craft/icons'); let tot = 0;
+  D.CRAFT_ICONS.forEach((ic) => { assert(fs.existsSync(path.join(dir, ic.f)), ic.f); assert(fs.existsSync(path.join(dir, 't', ic.f)), 't/' + ic.f); tot += fs.statSync(path.join(dir, ic.f)).size + fs.statSync(path.join(dir, 't', ic.f)).size; });
+  assert(tot < 12 * 1024 * 1024, 'всего ' + tot); assert(!fs.existsSync(path.join(__dirname, '../assets/craft/icons.webp')), 'старый атлас удалён');
 });
 t('своя PNG: только Божественный из 3 божественных материалов; формат и размер data URL проверяются; иначе — иконка из атласа', () => {
   assert(E.craftCanUpload(7, m3(7))); assert(!E.craftCanUpload(7, [MQ(7)[0], MQ(7)[0], MQ(6)[0]])); assert(!E.craftCanUpload(6, m3(7)));
@@ -142,7 +146,30 @@ t('своя PNG: только Божественный из 3 божествен
 t('подключение: index.html и sw.js содержат craft.js, ui-craft.js, атлас иконок и css', () => {
   const ix = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8'), sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8');
   ['js/data-craft-icons.js', 'js/craft.js', 'js/ui-craft.js', 'css/craft.css'].forEach((f) => { assert(ix.includes(f), 'index: ' + f); assert(sw.includes("'" + f + "'"), 'sw: ' + f); });
-  assert(sw.includes("'assets/craft/icons.webp'"));
+  assert(!sw.includes("icons.webp'"), 'атласа нет'); assert(/assets\/craft\/icons\/t\//.test(sw), 'превью 128 в прекэше'); assert(/\\\/assets\\\/craft\\\/icons\\\//.test(sw), '512 — в кэше выполнения');
+});
+console.log('Ремесло творца: цены, смена профессий, HD-картинка');
+t('цена создания: 120·2^r для 0…6, 35 840 для Божественного (×3 и ×7 от v2.15)', () => {
+  assert.deepStrictEqual([0, 1, 2, 3, 4, 5, 6, 7].map(E.craftGold), [120, 240, 480, 960, 1920, 3840, 7680, 35840]);
+  for (let r = 0; r < 7; r++) assert.strictEqual(E.craftGold(r), 3 * 40 * 2 ** r); assert.strictEqual(E.craftGold(7), 7 * 40 * 2 ** 7);
+});
+t('смена профессии: 50 000 🪙 за смену, основная и/или доп., прогресс старой хранится и возвращается', () => {
+  const s = mk('smith', 'miner'); s.gold = 120000; s.profs.smith = { lv: 17, xp: 33 }; s.profs.miner = { lv: 9, xp: 5 };
+  assert.strictEqual(E.profChange(s, 'sub', 'ench'), ''); assert.strictEqual(s.gold, 70000); assert.deepStrictEqual([s.hero.prof1, s.hero.prof2], ['smith', 'ench']);
+  assert(E.craftUnlocked(s), 'Кузнец + Зачарователь → мастерская'); assert.deepStrictEqual(s.profs.miner, { lv: 9, xp: 5 }, 'шахтёр сохранён'); assert.deepStrictEqual(s.profs.ench, { lv: 1, xp: 0 });
+  s.profs.ench.lv = 4; assert.strictEqual(E.profChange(s, 'sub', 'miner'), ''); assert.strictEqual(E.profLv(s, 'miner'), 9, 'вернулся с ур. 9'); assert.deepStrictEqual(s.profs.ench, { lv: 4, xp: 0 }, 'зачарователь сохранён');
+  assert(/50000/.test(E.profChange(s, 'main', 'alch')), 'не хватает золота'); assert.deepStrictEqual([s.hero.prof1, s.hero.prof2], ['smith', 'miner']);
+  s.gold = 50000; assert.strictEqual(E.profChange(s, 'main', 'miner'), '', 'доп. → основная = обмен'); assert.deepStrictEqual([s.hero.prof1, s.hero.prof2], ['miner', 'smith']); assert.strictEqual(s.gold, 0);
+  assert.strictEqual(E.profLv(s, 'smith'), 10, 'ур. 17 ограничен потолком доп. профессии'); assert.strictEqual(s.profs.smith.lv, 17, 'сохранённый уровень не потерян');
+  s.gold = 1e6; assert(E.profChange(s, 'main', 'miner')); assert(E.profChange(s, 'main', 'nope')); s.run = { x: 1 }; assert(/вылазк/.test(E.profChange(s, 'main', 'cook'))); assert.strictEqual(s.gold, 1e6);
+});
+t('HD-картинка: в сейве только ключ IndexedDB (ci_…) и превью 128; ключ проверяется; без права загрузки — отклоняется', () => {
+  const K = 'ci_abc123def'; assert(E.craftKeyOk(K)); ['ci_', 'x_abcdefg', 'ci_ABC<>12', 123, null].forEach((k) => assert(!E.craftKeyOk(k)));
+  assert.deepStrictEqual(E.craftCheck(spec({ img: IMG, imgKey: K })).err, []);
+  assert(E.craftCheck(spec({ img: IMG, imgKey: 'bad key' })).err.length);
+  const s = mk(); give(s, m3(7)); const it = E.craftCustom(s, spec({ img: IMG, imgKey: K })).item; assert.strictEqual(it.cu.imgKey, K);
+  const p = JSON.parse(JSON.stringify({ v: S.VERSION, slots: [s] })); p.slots[0].inv.find((q) => q.id === it.id).cu.imgKey = '../../etc'; const y = S.migrate(p).slots[0].inv.find((q) => q.id === it.id); assert(!y.cu.imgKey && y.cu.fixed);
+  assert(D.CRAFT_UP_MAX >= 15 * 1024 * 1024 && D.CRAFT_HD_PX === 1024);
 });
 console.log(`Ремесло творца: ${pass} ✓, ${fail} ✗`);
 process.exit(fail ? 1 : 0);
