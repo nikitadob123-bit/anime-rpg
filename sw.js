@@ -2,7 +2,7 @@
 const VERSION = 'arpg-v2.15.0';
 const CORE = `${VERSION}-core`, RUNTIME = `${VERSION}-rt`;
 const ASSETS = [
-  './', 'index.html', 'manifest.json', 'css/style.css', 'css/vn.css', 'css/demon.css', 'css/mail.css', 'css/gear.css', 'css/craft.css', 'assets/craft/icons.webp', 'css/crown.css', 'assets/vn/hero_demon_neutral.webp', 'fonts/ruslan.woff2', 'fonts/philosopher.woff2',
+  './', 'index.html', 'manifest.json', 'css/style.css', 'css/vn.css', 'css/demon.css', 'css/mail.css', 'css/gear.css', 'css/craft.css', 'css/crown.css', 'assets/vn/hero_demon_neutral.webp', 'fonts/ruslan.woff2', 'fonts/philosopher.woff2',
   'js/data-core.js', 'js/data-stats.js', 'js/data-maou.js', 'js/data-maou2.js', 'js/data-prof.js', 'js/data-world.js', 'js/data-world2.js', 'js/data-crew.js', 'js/data-theme.js', 'js/data-story.js', 'js/data-story2.js', 'js/data-story3.js', 'js/data-romance.js',
   'js/portrait.js', 'js/engine.js', 'js/stats.js', 'js/gear.js', 'js/combat.js', 'js/crew.js', 'js/save.js', 'js/data-craft-icons.js', 'js/craft.js', 'js/mail.js', 'js/audio.js', 'js/fx.js', 'js/ui.js', 'js/ui-vn.js', 'js/ui-game.js', 'js/ui-hero.js', 'js/ui-crew.js', 'js/ui-skills.js', 'js/ui-play.js', 'js/ui-mail.js', 'js/ui-craft.js', 'js/main.js',
   'js/story/cast.js', 'js/story/core.js', 'js/story/enemies.js', 'js/story/ui-story.js', 'js/story/outline.js', 'js/story/arc01.js',
@@ -20,7 +20,7 @@ const ASSETS = [
   'assets/ui/locations/citadel.webp', 'assets/ui/locations/abyss.webp',
   'assets/ui/locations/nowhere.webp', 'assets/ui/locations/stairs.webp', 'assets/ui/locations/gallery_kings.webp', 'assets/ui/locations/choir_hall.webp', 'assets/ui/locations/threshold.webp',
   'assets/vn/manifest.json'
-];
+].concat(Array.from({ length: 200 }, (_, i) => 'assets/craft/icons/t/' + String(i).padStart(3, '0') + '.webp'));   // v2.16: превью иконок ремесла 128 px — в прекэше; 512 px — лениво, в кэше выполнения
 
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
@@ -45,7 +45,7 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(caches.match(req, { ignoreSearch: true }).then((hit) => {
     if (hit) return hit;
     return fetch(req).then((res) => {
-      if (res && res.ok && (/\/assets\/vn\//.test(url.pathname) || /\/js\/story\/arc\d+\.js$/.test(url.pathname))) { const cp = res.clone(); caches.open(RUNTIME).then((c) => c.put(req, cp)); }
+      if (res && res.ok && (/\/assets\/vn\//.test(url.pathname) || /\/assets\/craft\/icons\//.test(url.pathname) || /\/js\/story\/arc\d+\.js$/.test(url.pathname))) { const cp = res.clone(); caches.open(RUNTIME).then((c) => c.put(req, cp)); }
       return res;
     }).catch(() => (req.mode === 'navigate' ? caches.match('index.html') : Response.error()));
   }));
