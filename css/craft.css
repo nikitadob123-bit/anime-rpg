@@ -1,0 +1,39 @@
+/* v2.15 — Мастерская творца */
+.cic{display:inline-block;width:1.6em;height:1.6em;border-radius:18%;background-repeat:no-repeat;vertical-align:middle}
+.ico .cic{width:36px;height:36px}.big-ic .cic.big,.eqs .cic.big{width:56px;height:56px}.eqs .cic.big{width:44px;height:44px}
+.cuimg{display:inline-block;width:1.6em;height:1.6em;vertical-align:middle}.cuimg img{width:100%;height:100%;object-fit:contain;border-radius:18%}
+.ico .cuimg{width:36px;height:36px}.big-ic .cuimg.big{width:56px;height:56px}.eqs .cuimg.big{width:44px;height:44px}
+.craftcard.on{border-color:rgba(255,214,110,.55);box-shadow:0 0 14px rgba(255,214,110,.18)}
+.craftcard.lockd{opacity:.85}
+.cslots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0}
+.cslot{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border-radius:12px;border:1px dashed rgba(255,255,255,.25);background:rgba(255,255,255,.04);min-height:78px}
+.cslot span{font-size:24px}.cslot small{font-size:10.5px;line-height:1.1;text-align:center}.cslot i{font-style:normal;font-size:10px;color:var(--qc,#aaa)}
+.cslot:not(.empty){border-style:solid;border-color:var(--qc);box-shadow:inset 0 0 12px color-mix(in srgb,var(--qc) 30%,transparent)}
+.cmgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:6px 0 8px;max-height:300px;overflow-y:auto}
+.cmt{position:relative;display:flex;flex-direction:column;align-items:center;padding:6px 2px 4px;border-radius:10px;border:1px solid var(--qc);background:rgba(255,255,255,.04)}
+.cmt span{font-size:20px}.cmt b{position:absolute;top:2px;right:5px;font-size:10.5px}.cmt small{font-size:9.5px;line-height:1.05;text-align:center;min-height:2.1em}.cmt i{font-style:normal;font-size:9px;color:var(--qc)}
+.cmt:disabled{opacity:.35}
+.q0{--qc:#b8bcc8}.q1{--qc:#6ee08a}.q2{--qc:#5aa8ff}.q3{--qc:#3fe6d2}.q4{--qc:#c27aff}.q5{--qc:#ffb23a}.q6{--qc:#ff3b5c}.q7{--qc:#ffe9a8}
+.cmat{display:inline-block;margin:2px 4px 0 0;padding:1px 6px;border-radius:8px;border:1px solid var(--qc);font-size:11px}
+.cfsum{margin:6px 0;padding:8px 10px;border-radius:12px;border:1px solid var(--rc,#555);background:rgba(255,255,255,.04);text-align:left}
+.cfsum b{color:var(--rc)}.cfsum .ok{color:#ffe08a}
+.cfprev{position:sticky;top:-12px;z-index:2;background:linear-gradient(180deg,#1b1230,#140d24);border-radius:12px;padding:8px;margin:6px 0 4px}
+.cfprev .ils{display:flex;flex-wrap:wrap;gap:2px 8px;font-size:11px;margin-top:3px}
+.cfpts{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;font-size:12px;margin:2px 0 6px}
+.cfpts .ok{color:#7dffa8}
+.cftabs button{padding:6px 2px}
+.cfbody{min-height:200px;text-align:left}
+.cfchips{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 6px}
+.cfrow{display:flex;align-items:center;gap:6px;padding:4px 2px;border-bottom:1px solid rgba(255,255,255,.06)}
+.cfrow small{display:block;font-size:10.5px}.cfrow.on b{color:#ffe08a}.cfrow .cfp{min-width:20px;text-align:center}
+.cfopt{display:block;width:100%;text-align:left;margin:3px 0;padding:7px 9px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04)}
+.cfopt small{display:block;font-size:10.5px;opacity:.8}.cfopt.on{border-color:#ffd66e;background:rgba(255,214,110,.12)}.cfopt:disabled{opacity:.4}
+.cficons{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin:6px 0}
+.cfic{position:relative;padding:2px;border-radius:12px;border:2px solid transparent;background:none}
+.cfic .cic{width:100%;height:auto;aspect-ratio:1}.cfic.on{border-color:#ffd66e;box-shadow:0 0 10px rgba(255,214,110,.5)}
+.cfic i{position:absolute;right:3px;bottom:3px;width:7px;height:7px;border-radius:50%;background:var(--rc)}
+.cfup{margin:6px 0;padding:8px;border-radius:12px;border:1px solid rgba(255,214,110,.5);background:rgba(255,214,110,.06);text-align:left}
+.cfup.lockd{border-color:rgba(255,255,255,.12);background:none}
+.cfgo{position:sticky;bottom:-12px;background:linear-gradient(180deg,transparent,#140d24 30%);padding-top:10px;margin-top:6px}
+.cxbox.cu{border-color:rgba(255,214,110,.4)}.cxbox.cu .cuh{font-weight:700;color:#ffe08a;margin-bottom:3px}
+.inp{width:100%;box-sizing:border-box;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.3);color:inherit;font:inherit;margin:3px 0 6px}

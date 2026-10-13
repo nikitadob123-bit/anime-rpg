@@ -14,6 +14,7 @@
     "stats:story": "node tools/story-stats.js",
     "e2e:story": "node tools/e2e-story.js",
     "e2e:mail": "node tools/e2e-mail.js",
+    "e2e:craft": "node tools/craft-shots.js",
     "mail": "node tools/mail.js"
   },
   "devDependencies": {
