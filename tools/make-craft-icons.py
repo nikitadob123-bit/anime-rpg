@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Процедурные иконки пользовательского ремесла (v2.15): 200 штук, аниме-стиль игровых иконок —
 чистый силуэт, цел-шейдинг (свет/тень полутонами), тёмный контур, свечение и рамка по редкости 0…7.
-Выход: assets/craft/icons.webp (атлас 20×10 по 128 px) и js/data-craft-icons.js (группа/редкость/имя каждой иконки).
+Выход: assets/craft/icons/NNN.webp (512 px) + icons/t/NNN.webp (128 px) и js/data-craft-icons.js (группа/редкость/имя каждой иконки).
 Детерминированно (seed по индексу). Без внешних API.  python3 tools/make-craft-icons.py [--sheet out.jpg]"""
 import math, random, sys, json, os
 import numpy as np
@@ -422,7 +422,7 @@ def render(group, r, idx):
             a = rnd.uniform(0, 2 * math.pi); d = rnd.uniform(150, 200); sparkle(L2, 256 + d * math.cos(a), 250 + d * math.sin(a), rnd.uniform(10, 18) + r, (255, 255, 255, 255) if r == 7 else hx(RAR_GLOW[r]))
         canvas.alpha_composite(L2.img)
     m = mask_rect(8, 8, S - 8, S - 8, 64); out = Image.new('RGBA', (S, S), (0, 0, 0, 0)); out.paste(canvas, (0, 0), m)
-    return out.resize((OUT, OUT), Image.LANCZOS)
+    return out
 
 def ImageOps_pad(im, n):
     o = (S - n) // 2; c = Image.new(im.mode, (S, S), 0); c.paste(im, (o, o)); return c
@@ -433,21 +433,25 @@ def main():
         for j in range(n):
             r = (j * 8) // n          # равномерно по редкостям 0…7
             icons.append({'g': g, 'r': r, 'n': NAMES[g] + ' ' + str(j + 1)}); i += 1
-    cols = 20; rows = (len(icons) + cols - 1) // cols
-    atlas = Image.new('RGBA', (cols * OUT, rows * OUT), (0, 0, 0, 0))
+    d = os.path.join(ROOT, 'assets/craft/icons'); os.makedirs(os.path.join(d, 't'), exist_ok=True)
+    only = set(int(x) for x in os.environ.get('ONLY', '').split(',') if x)
     for k, ic in enumerate(icons):
-        im = render(ic['g'], ic['r'], k); atlas.paste(im, ((k % cols) * OUT, (k // cols) * OUT))
+        if only and k not in only: continue
+        im = render(ic['g'], ic['r'], k)
+        im.save(os.path.join(d, '%03d.webp' % k), 'WEBP', quality=80, method=6)
+        im.resize((128, 128), Image.LANCZOS).save(os.path.join(d, 't', '%03d.webp' % k), 'WEBP', quality=85, method=6)
         if k % 20 == 19: print('…', k + 1, flush=True)
-    os.makedirs(os.path.join(ROOT, 'assets/craft'), exist_ok=True)
-    atlas.save(os.path.join(ROOT, 'assets/craft/icons.webp'), 'WEBP', quality=86, method=6)
-    js = '/* Сгенерировано tools/make-craft-icons.py — не править руками. 200 иконок ремесла: атлас assets/craft/icons.webp, ' + str(cols) + ' столбцов по ' + str(OUT) + ' px. */\n'
-    js += '(function () {\n  const D = globalThis.RPG.D;\n  D.CRAFT_ICON_COLS = ' + str(cols) + '; D.CRAFT_ICON_PX = ' + str(OUT) + '; D.CRAFT_ICON_ATLAS = \'assets/craft/icons.webp\';\n'
-    js += '  D.CRAFT_ICONS = ' + json.dumps([[ic['g'], ic['r'], ic['n']] for ic in icons], ensure_ascii=False) + '.map((a, i) => ({ id: i, g: a[0], r: a[1], n: a[2] }));\n})();\n'
+    js = '/* Сгенерировано tools/make-craft-icons.py — не править руками. 200 иконок ремесла: assets/craft/icons/NNN.webp (512 px, ленивая загрузка) и t/NNN.webp (128 px, в прекэше SW). */\n'
+    js += '(function () {\n  const D = globalThis.RPG.D;\n  D.CRAFT_ICON_DIR = \'assets/craft/icons/\';\n'
+    js += '  D.CRAFT_ICONS = ' + json.dumps([[ic['g'], ic['r'], ic['n']] for ic in icons], ensure_ascii=False) + '.map((a, i) => ({ id: i, g: a[0], r: a[1], n: a[2], f: String(i).padStart(3, \'0\') + \'.webp\' }));\n})();\n'
     open(os.path.join(ROOT, 'js/data-craft-icons.js'), 'w').write(js)
     if '--sheet' in sys.argv:
         out = sys.argv[sys.argv.index('--sheet') + 1]
-        sh = Image.new('RGB', atlas.size, (24, 18, 34)); sh.paste(atlas, (0, 0), atlas)
-        sh = sh.resize((1200, int(1200 * sh.size[1] / sh.size[0])), Image.LANCZOS); sh.save(out, quality=88)
-    print('icons', len(icons), 'atlas', atlas.size, os.path.getsize(os.path.join(ROOT, 'assets/craft/icons.webp')) // 1024, 'KB')
+        sh = Image.new('RGB', (1200, 600), (24, 18, 34))
+        for k in range(len(icons)):
+            t = Image.open(os.path.join(d, 't', '%03d.webp' % k)).convert('RGBA').resize((60, 60), Image.LANCZOS); sh.paste(t, ((k % 20) * 60, (k // 20) * 60), t)
+        sh.save(out, quality=88)
+    tot = sum(os.path.getsize(os.path.join(dp, f)) for dp, _, fs in os.walk(d) for f in fs)
+    print('icons', len(icons), 'total', tot // 1024, 'KB')
 
 if __name__ == '__main__': main()
