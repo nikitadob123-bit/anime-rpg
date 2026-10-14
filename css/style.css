@@ -198,3 +198,5 @@ body.noshake .shake,body.noshake .shk{animation:none!important}body.nopart #fx{d
 /* Главная: ключевая иллюстрация «Нимб над городом» (cg_halo_city) под затемнением + светящееся кольцо Нимба; без CG — прежний градиент */
 .hub .hubcg{position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,5,22,.15),rgba(12,5,22,.45) 60%,rgba(6,3,11,.88)),var(--title-cg,none) 50% 38%/cover no-repeat}
 .hub .lira{left:4%;right:4%;top:5%;height:30%}
+.updcard .ok{color:#7ee08a}.updcard .gold{color:#ffd35a}.updcard .dnz{color:#ff7a7a}
+.updban{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + var(--sab,0px));z-index:9999;padding:10px 16px;border-radius:14px;border:1px solid #ffd35a;background:#241838;color:#ffe9a8;font:inherit;box-shadow:0 6px 24px rgba(0,0,0,.6)}

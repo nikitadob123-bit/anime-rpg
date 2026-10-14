@@ -41,7 +41,7 @@
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js').then((reg) => {
-        reg.addEventListener('updatefound', () => { const nw = reg.installing; if (!nw) return; nw.addEventListener('statechange', () => { if (nw.state === 'installed' && navigator.serviceWorker.controller) UI.toast('Доступно обновление — перезапустите игру', 'gold'); }); });
+        reg.addEventListener('updatefound', () => { const nw = reg.installing; if (!nw) return; nw.addEventListener('statechange', () => { if (nw.state === 'installed' && navigator.serviceWorker.controller) (RPG.UPD ? RPG.UPD.banner() : UI.toast('Доступно обновление — перезапустите игру', 'gold')); }); });
       }).catch((e) => console.warn('sw', e));
     });
   }

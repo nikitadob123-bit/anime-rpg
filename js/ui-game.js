@@ -362,6 +362,7 @@
 
   // ═════ НАСТРОЙКИ ═════
   UI.tabs.set = function (s) {
+    if (RPG.UPD && RPG.UPD.latest == null && !RPG.UPD.status) setTimeout(() => RPG.UPD.check(), 50);
     const st = UI.p.settings;
     const tg = (k, n) => `<div class="setrow"><span>${n}</span><button class="toggle ${st[k] ? 'on' : ''}" data-act="toggle" data-k="${k}" data-quiet="1"><i></i></button></div>`;
     const sp = (k, n, vals) => `<div class="setrow"><span>${n}</span><div class="seg small mini">${vals.map(([v, l]) => `<button class="${st[k] === v ? 'on' : ''}" data-act="setVal" data-k="${k}" data-v="${v}" data-quiet="1">${l}</button>`).join('')}</div></div>`;
@@ -370,7 +371,7 @@
       <div class="card col gap"><b>Сохранения</b><div class="small dim">Профиль «${esc(UI.p.nick)}», слот ${UI.p.active + 1}. Автосохранение после каждого действия, плюс резервная копия.</div>${RPG.M ? `<div class="pcode"><span class="small dim">Код игрока</span><b id="pcodeSet">${esc(RPG.M.code(s))}</b><button class="btn ghost small" data-act="copyPcode" data-quiet="1">📋 Копировать</button></div>` : ''}
         <div class="row gap wrap"><button class="btn ghost small" data-act="exportSlot" data-i="${UI.p.active}">Экспорт героя</button><button class="btn ghost small" data-act="exportProfile">Экспорт профиля</button><button class="btn ghost small" data-act="saveNow">💾 Сохранить</button></div>
         <div class="row gap wrap"><button class="btn ghost small" data-act="tutorial">📘 Обучение</button><button class="btn ghost small" data-act="credits">О игре</button></div>
-        <div class="row gap wrap"><button class="btn ghost small" data-act="toSlots">⇄ Сменить слот</button><button class="btn ghost small" data-act="toProfiles">👤 Сменить профиль</button></div></div>`;
+        <div class="row gap wrap"><button class="btn ghost small" data-act="toSlots">⇄ Сменить слот</button><button class="btn ghost small" data-act="toProfiles">👤 Сменить профиль</button></div></div>${UI.updCard ? UI.updCard() : ''}`;
   };
   UI.act.toggle = (el) => { const st = UI.p.settings, k = el.dataset.k; st[k] = !st[k]; el.classList.toggle('on', st[k]); if (k === 'sound' || k === 'music') { A.set({ on: st.sound, music: st.music && st.sound }); if (st.sound) { A.resume(); UI.sfx('click'); } } UI.applySettings(); UI.save(true); };
   UI.act.setVal = (el) => { UI.p.settings[el.dataset.k] = +el.dataset.v; UI.save(true); UI.refresh(); };
