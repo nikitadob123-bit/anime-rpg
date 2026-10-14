@@ -92,6 +92,25 @@
           "lantern"
         ]
       }
+    },
+    {
+      "id": "world_test_5dzsub",
+      "from": "Автор",
+      "title": "Мировые артефакты для теста",
+      "body": "Все пять Мировых артефактов для тестирования.",
+      "date": "2026-10-14",
+      "to": [
+        "NM-5DZSUB"
+      ],
+      "gifts": {
+        "artifacts": [
+          "supernova_heart",
+          "hoard_key",
+          "world_seed",
+          "first_clock",
+          "first_spark"
+        ]
+      }
     }
   ]
 }
