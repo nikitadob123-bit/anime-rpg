@@ -1,7 +1,7 @@
 /* Тесты почты (node, без зависимостей): разбор ленты, валидация подарков, выдача один раз, миграция, срок, условия. Запуск: npm test */
 const fs = require('fs'), path = require('path'), assert = require('assert');
 const RPG = require('../js/data-core.js');
-['data-stats', 'data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'mail'].forEach((f) => require('../js/' + f + '.js'));
+['data-stats', 'data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'mail'].forEach((f) => require('../js/' + f + '.js'));
 const { D, E, S, M } = RPG;
 let pass = 0, fail = 0; const failed = [];
 const t = (name, fn) => { try { fn(); pass++; } catch (e) { fail++; failed.push(name + ': ' + e.message); console.log('  ✗', name, '\n     ', e.message); } };
@@ -38,7 +38,7 @@ t('giftErrors: все типы подарков проверяются по да
   assert(M.giftErrors({ gear: [{ base: 'sword', rarity: 9 }] }).length === 1);
   assert(M.giftErrors({ cons: { pot_hp1: 1.5 } }).length === 1);
   assert(M.giftErrors({ gold: '100' }).length === 1);
-  Object.keys(M.GIFT_TYPES).forEach((k) => assert(['gold', 'xp', 'sp', 'cons', 'mats', 'presents', 'gear', 'unique'].includes(k)));
+  Object.keys(M.GIFT_TYPES).forEach((k) => assert(['gold', 'xp', 'sp', 'cons', 'mats', 'presents', 'gear', 'unique', 'artifacts'].includes(k)));
 });
 
 console.log('Почта: доставка и подарки');
@@ -164,6 +164,22 @@ t('tools/mail.js: --unique и --to; --gear с редкостью 8 отклон�
   run(['add', '--title', 'Дар', '--unique', 'eden_light', '--to', 'nm-ab2cd3', '--id', 'eden-x']);
   const a = JSON.parse(fs.readFileSync(f, 'utf8')).letters[0]; assert.deepStrictEqual(a.gifts, { unique: ['eden_light'] }); assert.deepStrictEqual(a.to, ['NM-AB2CD3']);
   assert.throws(() => run(['add', '--title', 'x', '--gear', 'sword:8'])); assert.throws(() => run(['add', '--title', 'x', '--gear', 'sword:concept'])); assert.throws(() => run(['add', '--title', 'x', '--unique', 'nope'])); assert.throws(() => run(['add', '--title', 'x', '--to', 'BAD']));
+  fs.unlinkSync(f);
+});
+
+t('подарок-артефакт: валидация, показ, выдача как выпадение (новый → +звезда), Мировой — один; tools/mail.js --artifact', () => {
+  assert.deepStrictEqual(M.giftErrors({ gold: 500, artifacts: ['lantern'] }), []); assert(M.giftErrors({ artifacts: ['nope'] }).length === 1); assert(M.giftErrors({ artifacts: [5] }).length === 1);
+  assert(M.hasGifts({ artifacts: ['lantern'] })); assert.deepStrictEqual(M.normGifts([{ artifacts: 'lantern' }, { artifacts: ['ember'] }]).artifacts, ['lantern', 'ember']);
+  const gl = M.giftList({ artifacts: ['lantern'] })[0]; assert.strictEqual(gl.n, 'Фонарь Путника'); assert(gl.img && /lantern/.test(gl.img) && /Обычный/.test(gl.r));
+  const s = mk(); let g = M.apply(s, { artifacts: ['lantern'] }, 'a1'); assert(g.arts[0].isNew && s.arts.lantern === 0);
+  g = M.apply(s, { artifacts: ['lantern'] }, 'a2'); assert.strictEqual(s.arts.lantern, 1); assert.strictEqual(g.arts[0].star, 1);
+  const w = D.ART_WORLD_IDS[0]; M.apply(s, { artifacts: [w] }, 'w1'); g = M.apply(s, { artifacts: [w] }, 'w2'); assert(g.refused && g.refused.length === 1 && s.arts[w] === 0);
+  const s2 = mk(); const r = M.parseFeed({ letters: [L({ id: 'art-1', gifts: { gold: 500, artifacts: ['lantern'] } })] }); assert.deepStrictEqual(r.errors, []);
+  const g0 = s2.gold; M.deliver(s2, r.letters, NOW); const c = M.claim(s2, 'art-1', NOW); assert(c.ok && s2.arts.lantern === 0 && s2.gold === g0 + 500); assert(!M.claim(s2, 'art-1', NOW).ok);
+  const { execFileSync } = require('child_process'), os = require('os'); const f = path.join(os.tmpdir(), 'inbox-a-' + process.pid + '.json');
+  fs.writeFileSync(f, JSON.stringify({ letters: [] })); const run = (args) => execFileSync('node', [path.join(__dirname, '../tools/mail.js')].concat(args), { env: Object.assign({}, process.env, { MAIL_FILE: f }), encoding: 'utf8', stdio: 'pipe' });
+  run(['add', '--title', 'Арт', '--gold', '500', '--artifact', 'lantern', '--to', 'nm-ab2cd3', '--id', 'art-x']);
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(f, 'utf8')).letters[0].gifts, { gold: 500, artifacts: ['lantern'] }); assert.throws(() => run(['add', '--title', 'x', '--artifact', 'nope']));
   fs.unlinkSync(f);
 });
 
