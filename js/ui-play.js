@@ -17,13 +17,13 @@
   UI.tabs.dun = function (s) {
     if (s.run) return runView(s);
     const h = s.hero;
-    const cards = D.DUNGEONS.filter((d) => !E.dungeonVisible || E.dungeonVisible(s, d.id)).map((d) => {
+    const cards = D.DUNGEONS.filter((d) => !d.hidden && (!E.dungeonVisible || E.dungeonVisible(s, d.id))).map((d) => {
       const open = E.dungeonUnlocked(s, d.id), cl = s.prog.cleared[d.id] || 0;
       const tiers = D.TIERS.map((t, i) => `<i class="td ${cl > i ? 'on' : ''}" title="${t.n}">${t.ic}</i>`).join('');
       const reason = !open ? (d.lockHint ? d.lockHint : d.id === 'cathedral' && s.prog.cleared.spire ? 'Сначала прочтите главу «У врат собора».' : d.need === 'ch1' ? 'Завершите пролог.' : 'Сначала пройдите «' + D.DUN[d.need].n + '».') : '';
       return `<button class="card dcard ${open ? '' : 'lockd'}" style="--dc:${d.col}" data-act="dunOpen" data-id="${d.id}" ${open ? '' : 'data-quiet="1"'}><div class="dic"><img src="assets/ui/locations/${d.id}.webp" alt="" width="280" height="280" loading="lazy" decoding="async"></div><div class="grow tl"><b>${d.n}</b><div class="dim small">ур. ${d.lv}–${d.lv + d.floors + 1} · этажей: ${d.floors}</div><div class="small tl dim">${open ? d.d : reason}</div>${eraseBadge(s, d.id)}${denyBadge(s, d.id)}</div><div class="tiers">${open ? tiers : '🔒'}</div></button>`;
     }).join('');
-    return `<h2>Подземелья</h2><div class="small dim tl">Выберите место для вылазки. Сложность растёт после первой победы. Рекомендуемый уровень указан для «Обычного».</div>${cards}`;
+    return `<h2>Подземелья</h2><div class="small dim tl">Выберите место для вылазки. Сложность растёт после первой победы. Рекомендуемый уровень указан для «Обычного».</div>${UI.artDunCard ? UI.artDunCard(s) : ''}${cards}`;
   };
   UI.act.dunOpen = (el) => {
     const s = UI.slot(), d = D.DUN[el.dataset.id];
@@ -33,7 +33,7 @@
   UI.prepModal = function () {
     const s = UI.slot(), P = UI.prep, d = D.DUN[P.did], T = D.TIERS[P.tier], un = E.recruited(s);
     const lv0 = d.lv + T.lv, power = E.power(s);
-    const tiers = D.TIERS.map((t, i) => { const ok = E.tierUnlocked(s, d.id, i); return `<button class="tchip ${P.tier === i ? 'on' : ''} ${ok ? '' : 'lockd'}" data-act="prepTier" data-i="${i}" data-quiet="1">${ok ? t.ic : '🔒'}<b>${t.n}</b><small>ур. ${d.lv + t.lv}+</small></button>`; }).join('');
+    const tiers = d.art && UI.artPrepNote ? UI.artPrepNote(s, d) : D.TIERS.map((t, i) => { const ok = E.tierUnlocked(s, d.id, i); return `<button class="tchip ${P.tier === i ? 'on' : ''} ${ok ? '' : 'lockd'}" data-act="prepTier" data-i="${i}" data-quiet="1">${ok ? t.ic : '🔒'}<b>${t.n}</b><small>ур. ${d.lv + t.lv}+</small></button>`; }).join('');
     const comps = un.length ? un.filter((id) => !E.onMission(s, id)).map((id) => { const c = D.CREW[id], st = s.crew[id], on = s.party.includes(id); return `<button class="item ${on ? 'selitem' : ''}" data-act="prepComp" data-id="${id}" data-quiet="1">${UI.por(c.art, 'xs', false)}<span class="grow tl"><b>${c.n}</b> <small>${D.ARCH_N[c.arch]} · ур. ${st.lv} · ${D.loyTier(st.loy).n}</small></span>${on ? '<span class="ok">✔</span>' : ''}</button>`; }).join('') : '<div class="small dim">Подчинённые присоединятся по ходу сюжета.</div>';
     const buffs = Object.keys(s.cons).filter((k) => s.cons[k] > 0 && D.CONS[k] && D.CONS[k].buff);
     const bh = buffs.length ? buffs.map((k) => `<button class="chip btn-chip ${P.buffs[k] ? 'on' : ''}" data-act="prepBuff" data-id="${k}" data-quiet="1">${D.CONS[k].ic} ${D.CONS[k].n} ×${s.cons[k]}</button>`).join('') : '<span class="dim small">Нет (готовьте еду у повара, эликсиры — у алхимика)</span>';
@@ -295,7 +295,7 @@
       let body;
       if (rep.result === 'win') {
         UI.sfx(rep.lvUp ? 'level' : 'win'); const mats = Object.keys(rep.mats).map((k) => `${D.MATS[k].ic}${rep.mats[k]}`).join(' ');
-        body = `<div class="big-ic xl center">${rep.bossDown ? '👑' : '⚔️'}</div><h3 class="center">${rep.bossDown ? 'Босс повержен!' : 'Победа!'}</h3><div class="card"><div>✨ +${fmt(rep.xp)} опыта · 🪙 +${fmt(rep.gold)}</div>${mats ? `<div class="small">${mats}</div>` : ''}${rep.items.map((it) => `<div>${rarSpan(it)}</div>`).join('')}</div>${rep.lvUp ? `<div class="lvup">🌟 Новый уровень: <b>${s.hero.level}</b>! Очко навыков получено${s.hero.level % 3 === 0 ? ' + искра Эха' : ''}.</div>` : ''}${rep.firstClear ? '<div class="lvup">🔥 Первая победа над боссом — искра Эха!</div>' : ''}${rep.denied ? `<div class="dnz">⚫ Существование отрицается: ${rep.denied} (без добычи за них)</div>` : ''}`;
+        body = `<div class="big-ic xl center">${rep.bossDown ? '👑' : '⚔️'}</div><h3 class="center">${rep.bossDown ? 'Босс повержен!' : 'Победа!'}</h3><div class="card"><div>✨ +${fmt(rep.xp)} опыта · 🪙 +${fmt(rep.gold)}</div>${mats ? `<div class="small">${mats}</div>` : ''}${rep.items.map((it) => `<div>${rarSpan(it)}</div>`).join('')}</div>${rep.lvUp ? `<div class="lvup">🌟 Новый уровень: <b>${s.hero.level}</b>! Очко навыков получено${s.hero.level % 3 === 0 ? ' + искра Эха' : ''}.</div>` : ''}${rep.firstClear ? '<div class="lvup">🔥 Первая победа над боссом — искра Эха!</div>' : ''}${rep.denied ? `<div class="dnz">⚫ Существование отрицается: ${rep.denied} (без добычи за них)</div>` : ''}${UI.artDropHtml ? UI.artDropHtml(rep) : ''}`;
       } else if (rep.result === 'lose') { UI.sfx('lose'); body = `<div class="big-ic xl center">💀</div><h3 class="center">Поражение</h3><div class="mtext tl dim center">Отряд пал. Тьма отступает не сразу — но Лира ещё поёт.</div>`; }
       else body = `<div class="big-ic xl center">🏃</div><h3 class="center">Отступление</h3>`;
       UI.modal(body + `<button class="btn primary wide" id="btnBtDone" data-act="btDone">Продолжить</button>`, { lock: true, cls: 'btsum' });
