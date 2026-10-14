@@ -64,7 +64,7 @@
   UI.cfRender = function (first) {
     const cf = UI.cf; if (!cf) return; const html = cf.step === 'mats' ? matsHtml() : makeHtml();
     const box = $('#modal .mbox.cfm');
-    if (!first && box) { const st = box.scrollTop; box.innerHTML = html; box.scrollTop = st; } else UI.modal(html, { cls: 'tall cfm', lock: true });
+    if (!first && box) { const sc = box.querySelector('.cfscroll') || box, st = sc.scrollTop, same = box.classList.contains('cfmake') === (cf.step !== 'mats'); box.classList.toggle('cfmake', cf.step !== 'mats'); box.innerHTML = html; const sc2 = box.querySelector('.cfscroll') || box; if (same) sc2.scrollTop = st; } else { UI.modal(html, { cls: 'tall cfm' + (cf.step !== 'mats' ? ' cfmake' : ''), lock: true }); }
     bind();
   };
 
@@ -129,8 +129,8 @@
           : `<div class="cfup lockd small dim">☀ Своя PNG-иконка — только для «Божественного» из трёх божественных материалов (💫 Осколок Нимба).</div>`);
     }
     const cost = E.craftGold(R.r), errs = pv.err.filter((e) => !/иконка/.test(e));
-    return `<div class="row between center-v"><h3 class="m0">🛠️ Конструктор</h3><button class="btn ghost small" data-act="cfClose" data-quiet="1">✕</button></div>${card}${tabs}<div class="cfbody">${body}</div>
-      ${errs.length ? `<div class="warnbox small">${errs.map(esc).join('<br>')}</div>` : ''}
+    return `<div class="cfhead"><div class="row between center-v"><h3 class="m0">🛠️ Конструктор</h3><button class="btn ghost small" data-act="cfClose" data-quiet="1">✕</button></div>${card}${tabs}</div><div class="cfscroll"><div class="cfbody">${body}</div>
+      ${errs.length ? `<div class="warnbox small">${errs.map(esc).join('<br>')}</div>` : ''}</div>
       <div class="row gap cfgo"><button class="btn ghost" data-act="cfBack">← Материалы</button><button class="btn primary grow" data-act="cfMake" ${errs.length || s.gold < cost ? 'disabled' : ''}>Создать · 🪙${fmt(cost)} + 3 материала</button></div>`;
   }
   UI.act.cfTab = (el) => { UI.cf.tab = el.dataset.k; UI.cfRender(); };
