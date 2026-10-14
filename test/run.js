@@ -282,6 +282,7 @@ t('миграция сохранения со старыми узлами дер
 
 console.log('v2.8.0: Силы без Отголоска, снаряжение героя');
 t('sw.js: версия кэша совпадает с версией игры', () => { const sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8'); const version = require('../package.json').version; assert(sw.includes(`VERSION = 'arpg-v${version}'`)); assert(sw.includes("'assets/gear/null_possibility_art.webp'"), 'арт меча в кэше SW'); assert(sw.includes("'js/gear.js'") && sw.includes("'css/gear.css'"), 'gear в кэше SW'); });
+t('js/update.js: RPG.VERSION = package.json; SKIP_WAITING в sw.js; сохранения не очищаются', () => { const u = fs.readFileSync(path.join(__dirname, '../js/update.js'), 'utf8'), sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8'); assert(u.includes("RPG.VERSION = '" + require('../package.json').version + "'")); assert(sw.includes("'SKIP_WAITING'") && sw.includes("'js/update.js'")); assert(!/localStorage\.(clear|removeItem)|indexedDB\.deleteDatabase/.test(u)); });
 t('ui-skills: нет кнопки Отголосок, есть Концепты и Приёмы', () => {
   const src = fs.readFileSync(path.join(__dirname, '../js/ui-skills.js'), 'utf8');
   assert(!src.includes('>🔆 Отголосок</button>'));
