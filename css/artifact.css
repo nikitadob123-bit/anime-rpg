@@ -36,3 +36,6 @@
 .crewx .btn{margin:4px 0}.crewx b{font-size:13px}
 img.artpor{object-fit:cover;object-position:50% 20%}
 .tiers4 .artprep{grid-column:1/-1}
+.spdun.sp-gold{border-color:#d8a83a!important;background:linear-gradient(135deg,rgba(110,80,20,.55),rgba(15,10,30,.85))!important}
+.spdun.sp-mats{border-color:#4ac89a!important;background:linear-gradient(135deg,rgba(30,90,70,.55),rgba(15,10,30,.85))!important}
+.sp-gold .adic{background:radial-gradient(circle,rgba(255,200,80,.35),rgba(0,0,0,.6) 70%)}.sp-mats .adic{background:radial-gradient(circle,rgba(100,230,170,.3),rgba(0,0,0,.6) 70%)}
