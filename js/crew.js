@@ -8,8 +8,8 @@
   E.crewState = (slot, id) => slot.crew[id];
   E.recruit = function (slot, id) {
     const c = D.CREW[id]; if (!c || slot.crew[id]) return false;
-    slot.crew[id] = { lv: Math.max(1, slot.hero.level - 1), xp: 0, loy: c.loy0 || 50, eq: {}, t: 0 };
-    if (c.t !== 'sub') slot.rom[id] = slot.rom[id] || { aff: 0, seen: [], dates: 0, gifts: 0 };
+    slot.crew[id] = { lv: Math.max(1, slot.hero.level - 1), xp: 0, loy: c.loy0 || 50, eq: {}, t: 0, star: 0, skl: 0, bxp: 0 };
+    if (c.t === 'gen' || c.t === 'her') slot.rom[id] = slot.rom[id] || { aff: 0, seen: [], dates: 0, gifts: 0 };
     if (slot.party.length < 2 && !slot.party.includes(id)) slot.party.push(id);
     slot.rev++; return true;
   };
