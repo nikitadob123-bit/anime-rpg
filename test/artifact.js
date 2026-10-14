@@ -88,4 +88,5 @@ t('миграция v6 → v7: старые слоты получают арте
   // сохранение/загрузка с надетым артефактом
   E.artGain(sl, 'lantern'); sl.artEq = 'lantern'; const back = S.migrate(JSON.parse(JSON.stringify(m))); assert.strictEqual(back.slots[0].artEq, 'lantern');
 });
+t('иконки 512/128 есть для всех артефактов и превью — в прекэше sw.js', () => { const fs = require('fs'), path = require('path'), sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8'); D.ARTIFACTS.forEach((a) => { assert(fs.existsSync(path.join(__dirname, '..', a.icon)), a.icon); assert(fs.existsSync(path.join(__dirname, '..', a.icon128)), a.icon128); assert(sw.includes("'" + a.id + "'"), 'sw ' + a.id); }); });
 console.log(`Артефакты: ${pass} ✓, ${fail} ✗`); if (fail) process.exit(1);
