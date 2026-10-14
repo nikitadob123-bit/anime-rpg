@@ -1,7 +1,7 @@
 /* v2.17 «Артефакты»: данные, статы (полы по редкости), выпадение (этапы, уникальность Мировых), спутницы, Свита, миграция. node test/artifact.js */
 const assert = require('assert');
 const RPG = require('../js/data-core.js'); require('../js/data-stats.js');
-['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'data-craft-icons', 'craft'].forEach((f) => require('../js/' + f + '.js'));
+['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'data-craft-icons', 'craft'].forEach((f) => require('../js/' + f + '.js'));
 const { D, E, C, S } = RPG;
 let pass = 0, fail = 0; const t = (n, f) => { try { f(); pass++; } catch (e) { fail++; console.log('  ✗', n, '\n     ', e.message); } };
 const mk = (L) => { const s = E.newSlot({ name: 'Арт', race: 'o_street', uniq: 'phoenix', prof1: 'smith', prof2: 'miner' }); s.hero.level = L || 30; s.story.flags.prologue_done = 1; return s; };

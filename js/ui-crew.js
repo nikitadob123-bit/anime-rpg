@@ -101,7 +101,7 @@
   UI.act.crewPut = (el) => { const r = E.crewEquip(UI.slot(), UI.sub.crewId, el.dataset.k, +el.dataset.i); if (r) { UI.toast(r, 'bad'); UI.sfx('err'); return; } UI.sfx('forge'); UI.save(true); UI.crewModal(); UI.refresh(); };
   UI.act.crewUneq = (el) => { E.crewUnequip(UI.slot(), UI.sub.crewId, el.dataset.k); UI.save(true); UI.crewModal(); UI.refresh(); };
   UI.act.crewMis = (el) => {
-    const s = UI.slot(), id = el.dataset.id; const ds = D.DUNGEONS.filter((d) => !d.art).map((d) => d.id).filter((d) => E.dungeonUnlocked(s, d));
+    const s = UI.slot(), id = el.dataset.id; const ds = D.DUNGEONS.filter((d) => !d.hidden).map((d) => d.id).filter((d) => E.dungeonUnlocked(s, d));
     UI.sub.misId = id;
     UI.modal(`<h3>🧭 ${esc(D.CREW[id].n)}: задание</h3><div class="small dim tl">Идёт в реальном времени (даже когда игра закрыта). Шанс успеха зависит от уровня и верности. До трёх заданий одновременно.</div><div class="mlist">${ds.map((d) => `<div class="card"><b>${D.DUN[d].ic} ${D.DUN[d].n}</b> <small class="dim">ур. ${D.DUN[d].lv}</small><div class="row gap">${E.MISSION_DUR.map((m, i) => `<button class="btn ghost small grow" data-act="missionGo" data-d="${d}" data-m="${i}" data-quiet="1">${m.n}<br><small>${m.min} мин · ${Math.round(E.missionChance(s, { cid: id, did: d }) * 100)}%</small></button>`).join('')}</div></div>`).join('')}</div><button class="btn ghost wide" data-act="crewBack">Назад</button>`);
   };

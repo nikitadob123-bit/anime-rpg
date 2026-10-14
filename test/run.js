@@ -2,7 +2,7 @@
 const fs = require('fs'), path = require('path'), assert = require('assert');
 const RPG = require('../js/data-core.js');
 require('../js/data-stats.js');
-['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'data-craft-icons', 'craft'].forEach((f) => require('../js/' + f + '.js'));
+['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'data-craft-icons', 'craft'].forEach((f) => require('../js/' + f + '.js'));
 const { D, E, C, S } = RPG;
 let pass = 0, fail = 0; const failed = [];
 const t = (name, fn) => { try { fn(); pass++; } catch (e) { fail++; failed.push(name + ': ' + e.message); console.log('  ✗', name, '\n     ', e.message); } };
@@ -165,7 +165,7 @@ t('сюжет линейно открывается: пролог → ch1_a → 
 t('дуэли и пред-босс: сцены существуют и привязаны к врагам', () => { Object.keys(D.DUEL_SCENE).forEach((e) => { assert(D.ENEMIES[e] && D.ENEMIES[e].duel, e); assert(D.SCENES[D.DUEL_SCENE[e]], e); }); assert(D.SCENES[D.PRE_BOSS.cathedral]); assert(D.ENEMIES.lumiel && D.ENEMIES.lumiel.role === 'boss'); ['h_fiora', 'h_elvira', 'h_selestina'].forEach((e) => assert(D.DUEL_SCENE[e])); });
 t('директивы сюжета: rec/loy/aff применяются через флаги и выдачу (E.recruit/addLoy)', () => { const s = mk(); const lines = []; walk(D.SCENES.ch1_a.lines, (l) => lines.push(l)); assert(lines.some((l) => l[0] === 'rec' && l[1] === 'gen1')); });
 t('Кафедрал закрыт, пока не прочитана «У врат собора» (ch3_d)', () => { const s = mk(); s.story.flags.prologue_done = 1; s.prog.cleared.spire = 1; assert(!E.dungeonUnlocked(s, 'cathedral')); s.story.done.push('ch3_d'); assert(E.dungeonUnlocked(s, 'cathedral')); });
-t('подземелья: 6 штук с новыми названиями', () => { assert.strictEqual(D.DUNGEONS.filter((d) => !d.art).length, 15); assert.strictEqual(D.DUN.cathedral.n, 'Собор Пяти Богов'); assert.strictEqual(D.DUN.mill.n, 'Руины Хельмора'); });
+t('подземелья: 6 штук с новыми названиями', () => { assert.strictEqual(D.DUNGEONS.filter((d) => !d.hidden).length, 15); assert.strictEqual(D.DUN.cathedral.n, 'Собор Пяти Богов'); assert.strictEqual(D.DUN.mill.n, 'Руины Хельмора'); });
 
 console.log('Арт и настроения');
 t('манифест арта: 69 портретов (22 персонажа), 2 CG, размеры и предзагрузка', () => { const n = Object.values(MAN.portraits).reduce((a, m) => a + Object.keys(m).length, 0); assert.strictEqual(n, 69); assert.strictEqual(Object.keys(MAN.portraits).length, 22); assert.strictEqual(Object.keys(MAN.cg).length, 2); Object.values(MAN.portraits).forEach((m) => Object.values(m).forEach((f) => assert(fs.existsSync(path.join(__dirname, '../assets/vn', f)), f))); Object.values(MAN.cg).forEach((f) => assert(fs.existsSync(path.join(__dirname, '../assets/vn', f)))); assert(MAN.pre.length >= 23); MAN.pre.forEach((f) => assert(fs.existsSync(path.join(__dirname, '../assets/vn', f)))); });
