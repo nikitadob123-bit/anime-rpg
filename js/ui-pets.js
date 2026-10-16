@@ -21,16 +21,19 @@
     return `<div class="card artcard petcard"><div class="row between center-v"><b>🐾 Питомец</b><span class="row gap"><button class="btn ghost small" data-act="hatchery" data-quiet="1">🥚 ${hatch || (eggs ? 'Яйца ' + eggs : 'Инкубатор')}</button><button class="btn ghost small" data-act="petList" data-quiet="1">Коллекция ${n}/${D.PETS.length}</button></span></div>${cell}</div>`;
   };
   UI.act.petList = () => UI.petListModal();
-  UI.petFlt = { r: -1, own: false };   // фильтр коллекции: редкость (-1 — все) и «только полученные»
+  UI.petFlt = { r: -1, own: false, q: '' };   // фильтр коллекции: редкость (-1 — все) и «только полученные»
   UI.act.petFlt = (el) => { if (el.dataset.k === 'own') UI.petFlt.own = !UI.petFlt.own; else UI.petFlt.r = +el.dataset.r; UI.petListModal(); };
-  UI.petListModal = function () {
+  UI.act.petSearch = () => { const el = document.getElementById('petQ'); UI.petFlt.q = el ? el.value : ''; UI.petListModal(true); const n = document.getElementById('petQ'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } };
+  document.addEventListener('input', (e) => { if (e.target.id === 'petQ') { clearTimeout(UI._pq); UI._pq = setTimeout(() => UI.act.petSearch(), 250); } });
+  UI.petListModal = function (keep) {
     const s = UI.slot(), F = UI.petFlt; E.petEnsure(s); const m0 = document.querySelector('.mbox'), top = m0 && m0.scrollTop;
     const have = (r) => E.petsOf(r).filter((p) => s.pets[p.id]).length, all = D.PETS.length, got = Object.keys(s.pets).length;
-    const chips = `<div class="pfilt"><button class="${F.r < 0 ? 'on' : ''}" data-act="petFlt" data-r="-1" data-quiet="1">Все ${got}/${all}</button>${D.PET_RAR.filter((x) => x.open).map((x, r) => `<button class="${F.r === r ? 'on' : ''}" style="--ac:${x.c}" data-act="petFlt" data-r="${r}" data-quiet="1">${x.n.slice(0, 4)}. ${have(r)}/${E.petsOf(r).length}</button>`).join('')}<button class="${F.own ? 'on' : ''}" data-act="petFlt" data-k="own" data-quiet="1">✔ Мои</button></div>`;
+    const chips = `<div class="pfilt"><button class="${F.r < 0 ? 'on' : ''}" data-act="petFlt" data-r="-1" data-quiet="1">Все ${got}/${all}</button>${D.PET_RAR.filter((x) => x.open).map((x, r) => `<button class="${F.r === r ? 'on' : ''}" style="--ac:${x.c}" data-act="petFlt" data-r="${r}" data-quiet="1">${x.n.slice(0, 4)}. ${have(r)}/${E.petsOf(r).length}</button>`).join('')}<button class="${F.own ? 'on' : ''}" data-act="petFlt" data-k="own" data-quiet="1">✔ Мои</button></div><input id="petQ" class="petq" type="search" placeholder="🔍 Поиск по имени" value="${esc(F.q || '')}" autocomplete="off">`;
     const rows = D.PET_RAR.filter((x) => x.open && (F.r < 0 || F.r === D.PET_RAR.indexOf(x))).map((rr) => { const r = D.PET_RAR.indexOf(rr);
-      const list = E.petsOf(r).filter((p) => !F.own || s.pets[p.id]).map((p) => { const own = s.pets[p.id], eq = s.petEq === p.id;
+      const list = E.petsOf(r).filter((p) => (!F.own || s.pets[p.id]) && (!F.q || (s.pets[p.id] ? p.n : '').toLowerCase().includes(F.q.trim().toLowerCase()))).map((p) => { const own = s.pets[p.id], eq = s.petEq === p.id;
         return own ? `<button class="aitem ${eq ? 'eq' : ''}" style="--ac:${rr.c};--ag:${rr.g}" data-act="petOpen" data-id="${p.id}" data-quiet="1">${UI.petIc(p)}<small>${esc(p.n)}</small>${stars(own.star)}<small class="dim">ур. ${own.lv}</small>${eq ? '<em>с вами</em>' : ''}</button>`
           : `<div class="aitem lock" style="--ac:${rr.c}"><span class="aic"><i>❔</i></span><small>???</small></div>`; }).join('');
+      if (!list && (F.q || F.own) && F.r < 0) return '';
       return `<div class="arow"><div class="arh" style="color:${rr.c}">${rr.n} <span class="dim small">${have(r)}/${E.petsOf(r).length}</span></div>${list ? `<div class="agrid">${list}</div>` : '<div class="small dim">Здесь пока никого.</div>'}</div>`;
     }).join('');
     const soon = F.r < 0 ? `<div class="small dim tl petsoon">${D.PET_RAR.filter((x) => !x.open).map((x) => x.n).join(' · ')} — появятся в следующих обновлениях.</div>` : '';
