@@ -1,0 +1,49 @@
+/* E2E + снимки v2.19 «Питомцы»: слот, коллекция, карточка, инкубатор, кормление. node tools/pet-shots.js [url] → /workspace/shots-pets/ */
+const { chromium } = require('playwright-core');
+const fs = require('fs'), path = require('path'), { execFileSync } = require('child_process');
+const { serve } = require('./serve.js');
+const outDir = process.env.SHOTS || '/workspace/shots-pets'; fs.mkdirSync(outDir, { recursive: true });
+let ok = 0, bad = 0; const check = (n, c, x) => { if (c) { ok++; console.log('  ✓', n, x || ''); } else { bad++; console.log('  ✗', n, x || ''); } };
+(async () => {
+  let srv = null, url = process.argv[2];
+  if (!url) { srv = await serve(0); url = 'http://127.0.0.1:' + srv.address().port + '/'; }
+  const exe = process.env.CHROME_PATH || ['/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'].find((p) => fs.existsSync(p));
+  const browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
+  const ctx = await browser.newContext({ viewport: { width: 444, height: 986 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true, locale: 'ru-RU', timezoneId: 'Europe/Minsk' });
+  const page = await ctx.newPage(); const errors = [];
+  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_/.test(m.text())) errors.push(m.text()); });
+  page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
+  const shot = async (n) => { const raw = path.join(outDir, '.raw-' + n + '.png'), out = path.join(outDir, 'pet-' + n + '.jpg'); await page.screenshot({ path: raw });
+    execFileSync('python3', ['-c', `from PIL import Image\nim=Image.open(${JSON.stringify(raw)}).convert('RGB')\nim.save(${JSON.stringify(out)},quality=82)`]); fs.unlinkSync(raw); console.log('  📷', out, Math.round(fs.statSync(out).size / 1024) + ' КБ'); };
+  const ev = (f, a) => page.evaluate(f, a);
+  await page.route(/\/mail\/inbox\.json/, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ letters: [] }) }));
+  await page.goto(url, { waitUntil: 'load' }); await page.waitForTimeout(1200);
+  await ev(() => {
+    const { UI, S, E, D, story: ST } = __RPG;
+    const p = S.newProfile('Артефакт', '🏺'); const s = E.newSlot({ name: 'Кайрон', race: 'o_street', uniq: 'shadowdance', prof1: 'smith', prof2: 'miner', now: Date.now() }); s.hero.profLocked = true; s.tut = { guide: 1, bt: 1 };
+    p.slots[0] = s; ['prologue'].concat(ST.sceneIds(1), ST.sceneIds(2)).forEach((id) => E.finishScene(s, id)); s.story.flags.prologue_done = 1; ['mill', 'wood'].forEach((d) => { s.prog.cleared[d] = 1; s.prog.boss[d] = true; });
+    s.hero.level = 100; ['stray_cat','red_fox','storm_hawk','ember_dragon','ember_dragon','nimbus_kitsune','uncommon_a','divine_dragon'].forEach((id) => E.petGain(s, id)); s.petFood = 60; s.eggs = { 0: 2, 2: 1, 4: 1 }; s.hatch = { r: 3, end: Date.now() + 25 * 60000 }; s.pets.ember_dragon.lv = 32; s.pets.ember_dragon.bxp = 30; s.petEq = 'ember_dragon'; s.gold = 500000; s.mats.asc_sigil = 30;
+    const rng = E.rng(5); ['sword', 'head_h', 'body_h'].forEach((b) => { const it = E.genItem(rng, { base: b, il: 100, rarity: 7 }); E.addItem(s, it); E.equip(s, it.id); });
+    ['lantern', 'lucky_coin', 'moon_fang', 'moon_fang', 'first_banner', 'dragon_eye', 'dawn_lance', 'halo_shard', 'supernova_heart', 'hoard_key'].forEach((id) => E.artGain(s, id));
+    s.artEq = 'supernova_heart'; ['gen1', 'gen6', 'grak'].forEach((id) => E.recruit(s, id)); s.party = ['gen1', 'gen6', 'asteria'];
+    for (let i = 1; i <= 9; i++) s.prog.cleared['artd' + i] = 1; s.artProg.best = 9;
+    s.crew.grimhild.lv = 60; s.crew.grimhild.star = 2; s.crew.grimhild.skl = 1; s.crew.grimhild.bxp = 260; s.support = 'grimhild';
+    S.save(p); UI.p = p; p.active = 0; UI.enterGame();
+  });
+  await page.waitForTimeout(1500); await ev(() => __RPG.UI.closeModal && __RPG.UI.closeModal());
+  await ev(() => { __RPG.UI.tab = 'hero'; __RPG.UI.refresh(); }); await page.waitForTimeout(500);
+  check('карточка питомца на вкладке «Герой»', await page.locator('.petcard').count() === 1);
+  await ev(() => document.querySelector('.petcard').scrollIntoView({ block: 'center' })); await page.waitForTimeout(300); await shot('1-hero-slot');
+  await page.locator('.petcard .artslot.on').click(); await page.waitForTimeout(400); check('карточка питомца', await page.locator('.petmodal').count() === 1); await shot('2-detail');
+  await page.locator('[data-act="petFeed"][data-n="10"]').click(); await page.waitForTimeout(400); check('кормление списало корм и дало опыт', await ev(() => __RPG.UI.slot().petFood === 50 && __RPG.UI.slot().pets.ember_dragon.xp > 0));
+  await ev(() => { const m = document.querySelector('.mbox'); if (m) m.scrollTop = m.scrollHeight; }); await page.waitForTimeout(200); await shot('3-detail-bottom');
+  await ev(() => __RPG.UI.petListModal()); await page.waitForTimeout(400); check('коллекция: 9 рядов редкостей', await page.locator('.arow').count() === 9); await shot('4-collection');
+  await ev(() => { const m = document.querySelector('.alist') || document.querySelector('.mbox'); if (m) m.scrollTop = m.scrollHeight; }); await page.waitForTimeout(200); await shot('5-collection-end');
+  await ev(() => __RPG.UI.hatchModal()); await page.waitForTimeout(400); check('инкубатор открыт', await page.locator('.hcur').count() === 1); await shot('6-hatchery');
+  await ev(() => { const m = document.querySelector('.mbox'); if (m) m.scrollTop = m.scrollHeight; }); await page.waitForTimeout(200); await shot('7-shop');
+  await ev(() => { const s = __RPG.UI.slot(); s.hatch.end = Date.now() - 1; __RPG.UI.hatchModal(); }); await page.waitForTimeout(300);
+  await page.locator('[data-act="hatchClaim"]').click(); await page.waitForTimeout(400); check('вылупление', await ev(() => !__RPG.UI.slot().hatch)); await shot('8-hatched');
+  await ev(() => { __RPG.UI.closeModal(); __RPG.UI.petModal('uncommon_a'); }); await page.waitForTimeout(300); check('заглушка без арта: эмодзи и пометка', await page.locator('.petph').count() === 1 && await page.locator('.petmodal .pic i').count() === 1);
+  check('нет ошибок JS', errors.length === 0, errors.join(' | '));
+  await browser.close(); if (srv) srv.close(); console.log(`\npet-shots: ${ok} ✓, ${bad} ✗`); process.exit(bad ? 1 : 0);
+})();
