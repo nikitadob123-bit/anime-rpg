@@ -276,7 +276,7 @@
       { dragon: 1, vp: 'a standing black dragon with galaxy-pattern wings and gold-veined scales holding a glowing cosmic orb in its raised hand' }),
     // ── До существования: один дракон (v2.24) ──
     PET('preexist_dragon_void', 8, 'Дракон До Начала', '🌑', 'hyb', 'dark', 'Когда ещё не было ни света, ни тьмы, ни самого «до», он уже лежал в пустоте и смотрел сквозь неё. Перламутровые крылья — не перья и не кожа, а память о временах, которых не случилось. Каждый его вдох отматывает миг назад. Говорят, мир — это то, что ему приснилось.', [['Выдох пустоты', '🌑', 'spell', 'dark'], ['Разворот времени', '⏳', 'burst', 'dark'], ['Крыло забвения', '🪽', 'guard', 'dark']], [P('Тень без источника', { dmg_dark: 48, dmg: 24 }), P('Память несбывшегося', { bossDmg: 34, crit: 18, critDmg: 0.55, cdr: 16 }), P('Сон мироздания', { allStat: 11, statRes: 30, taken: -18 })],
-      { dragon: 1, ph: 1, vp: 'a huge black dragon lying in a horizontal pose with pearly iridescent violet-white wings' })
+      { dragon: 1, vp: 'a huge black dragon lying in a horizontal pose with pearly iridescent violet-white wings' })
   ];
   D.PET = {}; D.PETS.forEach((p) => { D.PET[p.id] = p; });
   D.PET_IDS = D.PETS.map((p) => p.id);
