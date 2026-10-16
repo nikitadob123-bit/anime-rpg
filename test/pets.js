@@ -11,15 +11,17 @@ t('9 редкостей с названиями и цветами; наполн�
   assert.deepStrictEqual(D.PET_RAR.map((r) => r.n), ['Обычный', 'Необычный', 'Редкий', 'Эпический', 'Легендарный', 'Божественный', 'Концептуальный', 'Исток', 'До существования']);
   D.PET_RAR.forEach((r, i) => { assert(/^#/.test(r.c) && r.g, r.id); assert.strictEqual(r.open, i <= 5); assert.strictEqual(E.petsOf(i).length > 0, i <= 5, r.id); });
 });
-t('состав: по 3 питомца на редкость 0…5, ≥2 дракона среди Легендарных, божественный дракон-заглушка, драконы только Легендарные+', () => {
-  for (let r = 0; r <= 5; r++) assert.strictEqual(E.petsOf(r).length, 3, 'r' + r);
-  assert(E.petsOf(4).filter((p) => p.dragon).length >= 2); assert(D.PET.divine_dragon && D.PET.divine_dragon.dragon && D.PETS.every((p) => !p.ph));
+t('состав: по 8 питомцев на редкость 0…5 (48), ≥4 дракона среди Легендарных и ≥3 разных стихий среди Божественных, божественный дракон-заглушка, драконы только Легендарные+', () => {
+  for (let r = 0; r <= 5; r++) assert.strictEqual(E.petsOf(r).length, 8, 'r' + r); assert.strictEqual(D.PETS.length, 48); assert.strictEqual(new Set(D.PET_IDS).size, 48);
+  assert(E.petsOf(4).filter((p) => p.dragon).length >= 4); { const dv = E.petsOf(5).filter((p) => p.dragon); assert(dv.length >= 3 && new Set(dv.map((p) => p.el)).size === dv.length); } for (let r = 0; r < 4; r++) assert(!E.petsOf(r).some((p) => p.dragon));
+  ['stray_cat','field_dog','jelly_slime','red_fox','river_otter','night_owl','storm_hawk','frost_wolf','crystal_slime','ember_dragon','glacier_dragon','phoenix_fledgling','nimbus_kitsune','astral_kirin','uncommon_a','uncommon_b','uncommon_c','divine_dragon'].forEach((id) => assert(D.PET[id], id));
+  { const roles = new Set(D.PETS.map((p) => p.foc)); assert(roles.size === 4); assert(new Set(D.PETS.map((p) => p.el)).size >= 9); } assert(D.PET.divine_dragon && D.PET.divine_dragon.dragon && D.PETS.every((p) => !p.ph));
   const fs = require('fs'), path = require('path'); ['uncommon_a', 'uncommon_b', 'uncommon_c', 'divine_dragon'].forEach((id) => { assert.strictEqual(D.PET[id].r, id === 'divine_dragon' ? 5 : 1); ['assets/pets/' + id + '.webp', 'assets/pets/t/' + id + '.webp'].forEach((f) => assert(fs.existsSync(path.join(__dirname, '..', f)), f)); });
   D.PETS.forEach((p) => { if (p.dragon || /дракон/i.test(p.n)) assert(p.r >= 4, p.id); assert(p.n && p.lore && p.pas.length && p.sk.length && D.ELEMS[p.el], p.id); assert.strictEqual(p.art, 'assets/pets/' + p.id + '.webp'); assert.strictEqual(p.thumb, 'assets/pets/t/' + p.id + '.webp'); p.sk.forEach((k) => assert(D.SKILLS[k] && D.SKILLS[k].fx.length)); });
   assert(D.PET.divine_dragon.r === 5 && /дракон/i.test(D.PET.divine_dragon.n));
 });
 t('перки растут с редкостью: больше навыков/пассивов у старших', () => {
-  const avg = (r, f) => E.petsOf(r).reduce((a, p) => a + f(p), 0) / 3; assert(avg(5, (p) => p.sk.length) > avg(0, (p) => p.sk.length)); assert(avg(5, (p) => p.pas.length) > avg(0, (p) => p.pas.length));
+  const avg = (r, f) => E.petsOf(r).reduce((a, p) => a + f(p), 0) / E.petsOf(r).length; assert(avg(5, (p) => p.sk.length) > avg(0, (p) => p.sk.length)); assert(avg(5, (p) => p.pas.length) > avg(0, (p) => p.pas.length));
 });
 t('статы ≈ снаряжению той же редкости (ур. питомца → уровень вещи) и растут с редкостью, уровнем, звёздами, узами', () => {
   const sw = (il, r) => E.genItem(E.rng(7), { base: 'sword', il, rarity: r }).st.atk;
@@ -75,5 +77,10 @@ t('почта: подарок-питомец (проверка id, показ, �
   const fs = require('fs'), path = require('path'), os = require('os'), { execFileSync } = require('child_process'); const f = path.join(os.tmpdir(), 'inbox-p-' + process.pid + '.json'); fs.writeFileSync(f, '{"letters":[]}');
   const run = (a) => execFileSync('node', [path.join(__dirname, '../tools/mail.js')].concat(a), { env: Object.assign({}, process.env, { MAIL_FILE: f }), encoding: 'utf8', stdio: 'pipe' });
   run(['add', '--title', 'П', '--pet', 'stray_cat', '--id', 'pet-x', '--to', 'nm-ab2cd3']); assert.deepStrictEqual(JSON.parse(fs.readFileSync(f, 'utf8')).letters[0].gifts, { pets: ['stray_cat'] }); assert.throws(() => run(['add', '--title', 'x', '--pet', 'nope'])); fs.unlinkSync(f);
+});
+t('баланс расширенного состава: средняя сила растёт с редкостью; все ключи пассивов известны игре; у новых питомцев нет арта — только путь assets/pets/<id>.webp', () => {
+  const tot = (id) => { const x = E.petStats(id, 50, 0, 0); return (x.atk || 0) + (x.mag || 0) + (x.def || 0); }, mean = (r) => E.petsOf(r).reduce((a, p) => a + tot(p.id), 0) / E.petsOf(r).length;
+  for (let r = 1; r <= 5; r++) assert(mean(r) > mean(r - 1), 'r' + r);
+  D.PETS.forEach((p) => { p.pas.forEach((x) => Object.keys(x.m).forEach((k) => assert(D.GEAR_LBL[k] || D.MODN[k] || D.STAT_N[k], p.id + ':' + k))); assert(p.pas.length >= (p.r >= 5 ? 3 : p.r === 0 ? 1 : 2) || p.r === 4 || p.r === 1 || p.r === 3, p.id); assert(/^assets\/pets\/[a-z_]+\.webp$/.test(p.art)); });
 });
 console.log(`\nПитомцы: ${pass} ✓, ${fail} ✗`); if (fail) process.exit(1);
