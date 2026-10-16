@@ -1,0 +1,8 @@
+/* v2.19 «Питомцы»: переиспользует стили артефактов (.artslot/.aitem/.aic/.amodal), добавляет инкубатор */
+.petcard .artslot.on{background:linear-gradient(135deg,rgba(40,70,40,.35),rgba(20,14,36,.9))}
+.petcard .row.between{gap:6px;flex-wrap:wrap}
+.petmodal .apas.lockd{opacity:.55}.petph{margin:6px 0;padding:6px 8px;border:1px dashed #666;border-radius:10px}
+.petmodal .bar{display:block;height:8px;margin:4px 0 8px}
+.hcur{border-color:var(--ac,#888)!important}.egg{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;font-size:28px;border:2px solid var(--ac,#888);background:rgba(0,0,0,.4)}
+.egrow{padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07)}.egrow:last-child{border:0}.egrow .btn[disabled]{opacity:.4}
+.petmodal .row.between,.egrow{gap:10px}.petmodal .row.between{align-items:baseline}
