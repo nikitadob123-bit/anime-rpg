@@ -13,8 +13,8 @@ t('9 редкостей с названиями и цветами; наполн�
 });
 t('состав: по 3 питомца на редкость 0…5, ≥2 дракона среди Легендарных, божественный дракон-заглушка, драконы только Легендарные+', () => {
   for (let r = 0; r <= 5; r++) assert.strictEqual(E.petsOf(r).length, 3, 'r' + r);
-  assert(E.petsOf(4).filter((p) => p.dragon).length >= 2); assert(D.PET.divine_dragon && D.PET.divine_dragon.ph && D.PET.divine_dragon.dragon !== 0);
-  ['uncommon_a', 'uncommon_b', 'uncommon_c'].forEach((id) => assert(D.PET[id].ph && D.PET[id].r === 1));
+  assert(E.petsOf(4).filter((p) => p.dragon).length >= 2); assert(D.PET.divine_dragon && D.PET.divine_dragon.dragon && D.PETS.every((p) => !p.ph));
+  const fs = require('fs'), path = require('path'); ['uncommon_a', 'uncommon_b', 'uncommon_c', 'divine_dragon'].forEach((id) => { assert.strictEqual(D.PET[id].r, id === 'divine_dragon' ? 5 : 1); ['assets/pets/' + id + '.webp', 'assets/pets/t/' + id + '.webp'].forEach((f) => assert(fs.existsSync(path.join(__dirname, '..', f)), f)); });
   D.PETS.forEach((p) => { if (p.dragon || /дракон/i.test(p.n)) assert(p.r >= 4, p.id); assert(p.n && p.lore && p.pas.length && p.sk.length && D.ELEMS[p.el], p.id); assert.strictEqual(p.art, 'assets/pets/' + p.id + '.webp'); assert.strictEqual(p.thumb, 'assets/pets/t/' + p.id + '.webp'); p.sk.forEach((k) => assert(D.SKILLS[k] && D.SKILLS[k].fx.length)); });
   assert(D.PET.divine_dragon.r === 5 && /дракон/i.test(D.PET.divine_dragon.n));
 });
