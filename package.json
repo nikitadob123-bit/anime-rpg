@@ -1,10 +1,10 @@
 {
   "name": "anime-rpg",
-  "version": "2.23.0",
+  "version": "2.24.0",
   "private": true,
   "description": "Нимб Мира — RPG-PWA без сборки",
   "scripts": {
-    "test": "node test/run.js && node test/story.js && node test/mail.js && node test/concept.js && node test/origin.js && node test/preexist.js && node test/craft.js && node test/artifact.js && node test/dungeons.js && node test/pets.js",
+    "test": "node test/run.js && node test/story.js && node test/mail.js && node test/concept.js && node test/origin.js && node test/preexist.js && node test/craft.js && node test/artifact.js && node test/dungeons.js && node test/pets.js && node test/allies.js",
     "sim": "node tools/sim.js",
     "icons": "node tools/make-icons.js",
     "e2e": "node tools/e2e.js",
