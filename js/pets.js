@@ -10,14 +10,14 @@
   const PR = [['common', 'Обычный', 0, 1], ['uncommon', 'Необычный', 1, 1], ['rare', 'Редкий', 2, 1], ['epic', 'Эпический', 4, 1], ['legend', 'Легендарный', 5, 1], ['divine', 'Божественный', 7, 1],
     ['concept', 'Концептуальный', 7, 1.22], ['origin', 'Исток', 7, 1.5], ['prexist', 'До существования', 7, 1.85]];
   const RC = [0, 1, 2, 4, 5, 7, 8, 9, 10];   // цвета — из лестницы редкостей снаряжения
-  D.PET_RAR = PR.map(([id, n, gr, k], i) => ({ id, n, gr, k, c: D.RARITY[RC[i]].c, g: D.RARITY[RC[i]].g, open: i <= 6 }));
-  D.PET_OPEN = 6;                        // наполнены редкости 0…6 (до Концептуального; Исток и До существования пусты)
+  D.PET_RAR = PR.map(([id, n, gr, k], i) => ({ id, n, gr, k, c: D.RARITY[RC[i]].c, g: D.RARITY[RC[i]].g, open: i <= 7 }));
+  D.PET_OPEN = 7;                        // наполнены редкости 0…7 (до Истока; «До существования» пусто)
   D.PET_LV_MAX = 50; D.PET_STAR_MAX = 5; D.PET_STAR_K = 0.08; D.PET_BOND_K = 0.03;
   D.PET_BOND_AT = [0, 8, 24, 50, 90, 150];   // порог очков уз для уровней уз 0…5
   D.PET_SK_LV = [1, 15, 30];                 // уровень питомца для 1-го, 2-го, 3-го навыка
   D.PET_FOOD_XP = 30; D.PET_FOOD_PRICE = 120;
   D.EGG_PRICE = [1500, 6000, 24000];         // лавка: яйца Обычное … Редкое (цены ×3 к экономике)
-  D.EGG_MIN = [1, 5, 15, 45, 180, 480, 1440];      // минут инкубации
+  D.EGG_MIN = [1, 5, 15, 45, 180, 480, 1440, 4320];      // минут инкубации
   D.EGG_NAME = ['обычное', 'необычное', 'редкое', 'эпическое', 'легендарное', 'божественное', 'концептуальное', 'яйцо Истока', 'яйцо До существования'].map((n, i) => (i < 7 ? 'Яйцо: ' + n : n[0].toUpperCase() + n.slice(1)));
 
   // ───── Навыки питомцев: генерируются по виду и стихии, сила растёт с редкостью ─────
@@ -270,7 +270,10 @@
     PET('concept_light_dragon', 6, 'Дракон Первозданного Света', '✨', 'hyb', 'light', 'Перья на его крыльях — застывшие лучи самого первого рассвета, переливающиеся всеми цветами. Говорят, где он пролетел, ночь больше не наступает — только затихает.', [['Лучи рассвета', '✨', 'heal', 'light'], ['Хрустальное крыло', '🪽', 'spell', 'light'], ['Благословение зари', '🌅', 'rally', 'light']], [P('Свет начала', { dmg_light: 30, heal: 30 }), P('Радужные перья', { hpRegen: 6, cdr: 12, xp: 18 }), P('Утро мира', { allStat: 6, ccRes: 24 })],
       { dragon: 1, vp: 'a majestic white-and-gold dragon with iridescent crystal feathered wings, pearly scales and golden horns' }),
     PET('concept_astral_dragon', 6, 'Астральный Дракон-Странник', '🌠', 'mag', 'arcane', 'Серебристо-чёрный, с крыльями из жемчужного стекла. Странствует между мирами, оставляя в небе тонкие следы — их потом называют созвездиями.', [['Звёздная пыль', '🌠', 'burst', 'arcane'], ['Жемчужный разлом', '🔮', 'spell', 'arcane'], ['Тихий переход', '🪐', 'heal', 'arcane']], [P('Астральная власть', { dmg_arcane: 30, penMag: 14 }), P('Дорога между мирами', { cdr: 14, manaEff: 14, mpRegen: 5 }), P('Жемчужная защита', { allStat: 6, taken: -12 })],
-      { dragon: 1, vp: 'a sleek silver-and-black dragon with pearly translucent glass-like wings, elegant long tail with flowing fin, mid-flight' })
+      { dragon: 1, vp: 'a sleek silver-and-black dragon with pearly translucent glass-like wings, elegant long tail with flowing fin, mid-flight' }),
+    // ── Исток: один дракон (v2.23) ──
+    PET('origin_dragon_cosmos', 7, 'Дракон Хранитель Космоса', '🌌', 'hyb', 'dark', 'Он стоит у начала всего и держит на ладони маленькую вселенную — так бережно, будто это птенец. Золотые жилы на его чешуе — трещины, из которых когда-то пролился первый свет. Он не требует поклонения: он просто не позволит сфере упасть.', [['Сфера пустоты', '🔮', 'spell', 'dark'], ['Падение звезды', '☄️', 'burst', 'dark'], ['Покров космоса', '🌌', 'guard', 'dark']], [P('Хранитель начала', { dmg_dark: 38, dmg: 18 }), P('Золотые жилы', { bossDmg: 26, crit: 14, critDmg: 0.4, cdr: 12 }), P('Колыбель вселенной', { allStat: 8, statRes: 24, taken: -14 })],
+      { dragon: 1, vp: 'a standing black dragon with galaxy-pattern wings and gold-veined scales holding a glowing cosmic orb in its raised hand' })
   ];
   D.PET = {}; D.PETS.forEach((p) => { D.PET[p.id] = p; });
   D.PET_IDS = D.PETS.map((p) => p.id);
@@ -377,11 +380,11 @@
     let c = 0; LV_STEP.forEach((t, i) => { if ((d.lv | 0) >= t) c = i; }); return c;
   };
   // Концептуальное яйцо — крошечный шанс только на 10-м этапе Подземелья Артефактов / Материалов; в лавке не продаётся
-  D.EGG_CONCEPT = 6; D.EGG_CONCEPT_CHANCE = 0.015;
+  D.EGG_CONCEPT = 6; D.EGG_CONCEPT_CHANCE = 0.015; D.EGG_ORIGIN = 7; D.EGG_ORIGIN_CHANCE = 0.003;   // Исток — ещё реже
   E.eggConceptOk = (d) => !!d && ((d.art === 10) || (d.sp === 'mats' && d.i === 9));
   E.eggChance = (d) => (d && d.art ? 0.3 : d && d.sp ? 0.2 : 0.14);
   E.rollEgg = function (d, rng) {
-    if (E.eggConceptOk(d) && rng() < D.EGG_CONCEPT_CHANCE) return D.EGG_CONCEPT;
+    if (E.eggConceptOk(d)) { const u = rng(); if (u < D.EGG_ORIGIN_CHANCE) return D.EGG_ORIGIN; if (u < D.EGG_ORIGIN_CHANCE + D.EGG_CONCEPT_CHANCE) return D.EGG_CONCEPT; }
     const c = E.eggCeil(d); if (c < 0 || rng() >= E.eggChance(d)) return -1;
     const w = []; for (let t = 0; t <= c; t++) w.push(t === 5 ? 0.15 : Math.pow(0.42, c - t)); let u = rng() * w.reduce((a, b) => a + b, 0);
     for (let t = 0; t <= c; t++) { if (u < w[t]) return t; u -= w[t]; } return c;
