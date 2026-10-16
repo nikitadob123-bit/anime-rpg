@@ -22,7 +22,7 @@ let ok = 0, bad = 0; const check = (n, c, x) => { if (c) { ok++; console.log('  
     const { UI, S, E, D, story: ST } = __RPG;
     const p = S.newProfile('Артефакт', '🏺'); const s = E.newSlot({ name: 'Кайрон', race: 'o_street', uniq: 'shadowdance', prof1: 'smith', prof2: 'miner', now: Date.now() }); s.hero.profLocked = true; s.tut = { guide: 1, bt: 1 };
     p.slots[0] = s; ['prologue'].concat(ST.sceneIds(1), ST.sceneIds(2)).forEach((id) => E.finishScene(s, id)); s.story.flags.prologue_done = 1; ['mill', 'wood'].forEach((d) => { s.prog.cleared[d] = 1; s.prog.boss[d] = true; });
-    s.hero.level = 100; ['stray_cat','red_fox','storm_hawk','ember_dragon','ember_dragon','nimbus_kitsune','uncommon_a','divine_dragon'].forEach((id) => E.petGain(s, id)); s.petFood = 60; s.eggs = { 0: 2, 2: 1, 4: 1 }; s.hatch = { r: 3, end: Date.now() + 25 * 60000 }; s.pets.ember_dragon.lv = 32; s.pets.ember_dragon.bxp = 30; s.petEq = 'ember_dragon'; s.gold = 500000; s.mats.asc_sigil = 30;
+    s.hero.level = 100; ['stray_cat','red_fox','storm_hawk','ember_dragon','ember_dragon','nimbus_kitsune','uncommon_a','uncommon_b','uncommon_c','divine_dragon'].forEach((id) => E.petGain(s, id)); s.petFood = 60; s.pets.divine_dragon.lv = 40; s.eggs = { 0: 2, 2: 1, 4: 1 }; s.hatch = { r: 3, end: Date.now() + 25 * 60000 }; s.pets.ember_dragon.lv = 32; s.pets.ember_dragon.bxp = 30; s.petEq = 'ember_dragon'; s.gold = 500000; s.mats.asc_sigil = 30;
     const rng = E.rng(5); ['sword', 'head_h', 'body_h'].forEach((b) => { const it = E.genItem(rng, { base: b, il: 100, rarity: 7 }); E.addItem(s, it); E.equip(s, it.id); });
     ['lantern', 'lucky_coin', 'moon_fang', 'moon_fang', 'first_banner', 'dragon_eye', 'dawn_lance', 'halo_shard', 'supernova_heart', 'hoard_key'].forEach((id) => E.artGain(s, id));
     s.artEq = 'supernova_heart'; ['gen1', 'gen6', 'grak'].forEach((id) => E.recruit(s, id)); s.party = ['gen1', 'gen6', 'asteria'];
@@ -43,7 +43,9 @@ let ok = 0, bad = 0; const check = (n, c, x) => { if (c) { ok++; console.log('  
   await ev(() => { const m = document.querySelector('.mbox'); if (m) m.scrollTop = m.scrollHeight; }); await page.waitForTimeout(200); await shot('7-shop');
   await ev(() => { const s = __RPG.UI.slot(); s.hatch.end = Date.now() - 1; __RPG.UI.hatchModal(); }); await page.waitForTimeout(300);
   await page.locator('[data-act="hatchClaim"]').click(); await page.waitForTimeout(400); check('вылупление', await ev(() => !__RPG.UI.slot().hatch)); await shot('8-hatched');
-  await ev(() => { __RPG.UI.closeModal(); __RPG.UI.petModal('uncommon_a'); }); await page.waitForTimeout(300); check('заглушка без арта: эмодзи и пометка', await page.locator('.petph').count() === 1 && await page.locator('.petmodal .pic i').count() === 1);
+  await ev(() => { __RPG.UI.closeModal(); __RPG.UI.petModal('uncommon_a'); }); await page.waitForTimeout(300); check('арт питомца загружен', await ev(() => { const i = document.querySelector('.petmodal .pic img'); return !!i && i.naturalWidth > 100; })); await shot('9-uncommon-art');
+  await ev(() => __RPG.UI.petModal('divine_dragon')); await page.waitForTimeout(400); await shot('10-divine-dragon');
+  await ev(() => { const p = __RPG.D.PET.stray_cat; p.art = 'assets/pets/none.webp'; p.thumb = 'assets/pets/t/none.webp'; __RPG.UI.petModal('stray_cat'); }); await page.waitForTimeout(400); check('нет файла арта — эмодзи-запас', await page.locator('.petmodal .pic i').count() === 1 && await page.locator('.petmodal .pic img').count() === 0);
   check('нет ошибок JS', errors.length === 0, errors.join(' | '));
   await browser.close(); if (srv) srv.close(); console.log(`\npet-shots: ${ok} ✓, ${bad} ✗`); process.exit(bad ? 1 : 0);
 })();

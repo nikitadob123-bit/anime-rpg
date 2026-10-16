@@ -20,7 +20,8 @@ const ASSETS = [
   'assets/ui/locations/citadel.webp', 'assets/ui/locations/abyss.webp',
   'assets/ui/locations/nowhere.webp', 'assets/ui/locations/stairs.webp', 'assets/ui/locations/gallery_kings.webp', 'assets/ui/locations/choir_hall.webp', 'assets/ui/locations/threshold.webp',
   'assets/artifacts/comp/asteria.webp', 'assets/artifacts/comp/asteria_av.webp', 'assets/artifacts/comp/grimhild.webp', 'assets/artifacts/comp/grimhild_av.webp',   // v2.17: спутницы Мировых артефактов; иконки артефактов — лениво (рантайм-кэш), UI откатывается на эмодзи
-  'assets/vn/manifest.json'
+  'assets/vn/manifest.json',
+  'assets/pets/t/uncommon_a.webp', 'assets/pets/t/uncommon_b.webp', 'assets/pets/t/uncommon_c.webp', 'assets/pets/t/divine_dragon.webp'   // v2.19: превью питомцев; полный арт — лениво
 ].concat(Array.from({ length: 200 }, (_, i) => 'assets/craft/icons/t/' + String(i).padStart(3, '0') + '.webp'))
   .concat(['lantern',  'lucky_coin',  'cracked_bell',  'raven_feather',  'ember',  'surf_shell',  'lost_compass',  'moon_fang',  'witch_mirror',  'hourglass',  'first_banner',  'golem_heart',  'thorn_crown',  'thunder_horn',  'quiet_chalice',  'dragon_eye',  'titan_chain',  'fate_quill',  'dawn_lance',  'seven_seas',  'undying_rose',  'halo_shard',  'last_scales',  'creator_tear',  'supernova_heart',  'hoard_key',  'world_seed',  'first_clock',  'first_spark'].map((id) => 'assets/artifacts/icons/t/' + id + '.webp'));   // v2.17.1: превью иконок артефактов 128 px; 512 px — лениво   // v2.16: превью иконок ремесла 128 px — в прекэше; 512 px — лениво, в кэше выполнения
 
