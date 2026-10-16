@@ -224,7 +224,7 @@
   D.CREW_STAR_MAX = 5; D.CREW_SKL_MAX = 5; D.CREW_BOND_MAX = 10;
   E.crewEnsure = function (st) { if (!st) return st; st.star = clamp(st.star | 0, 0, D.CREW_STAR_MAX); st.skl = clamp(st.skl | 0, 0, D.CREW_SKL_MAX); st.bxp = Math.max(0, +st.bxp || 0); return st; };
   // потолок уровня: от уровня героя (+2), каждая звезда — ещё +10 (выше 100)
-  E.crewCap = function (slot, id) { const base = Math.min(D.LEVEL_CAP, slot.hero.level + 2), st = id && slot.crew && slot.crew[id]; return base + 10 * ((st && st.star) | 0); };
+  E.crewCap = function (slot, id) { const base = Math.min(D.LEVEL_CAP, slot.hero.level + 2), st = id && slot.crew && slot.crew[id]; return Math.max(base, (E.allyFloor && E.allyFloor(slot, id)) || 0) + 10 * (E.crewStars ? E.crewStars(slot, id) : ((st && st.star) | 0)); };
   E.crewAddXp = function (slot, id, xp) {
     const s = slot.crew[id]; if (!s) return 0; let up = 0; const cap = E.crewCap(slot, id);
     if (s.lv >= cap) return 0; s.xp += xp;
@@ -238,7 +238,7 @@
   E.crewAscend = function (slot, id) { const w = E.crewAscendWhy(slot, id); if (w) return w; const st = slot.crew[id], c = E.ascCost(st); slot.gold -= c.gold; slot.mats.asc_sigil -= c.sig; st.star++; slot.rev++; return ''; };
   // мастерство навыков: +10% силы всех навыков подчинённого за ступень
   E.sklCost = (st) => { const n = (st.skl | 0) + 1; return { gold: 600 * n * n, sig: n }; };
-  E.crewSkillUpWhy = function (slot, id) { const st = slot.crew[id]; if (!st) return 'Нет такого члена Свиты'; E.crewEnsure(st); if (st.skl >= D.CREW_SKL_MAX) return 'Мастерство на максимуме'; const c = E.sklCost(st); if (st.skl >= (st.star | 0) + 1) return 'Нужна звезда возвышения'; if (slot.gold < c.gold) return 'Не хватает золота'; if ((slot.mats.asc_sigil || 0) < c.sig) return 'Нужно знаков: ' + c.sig; return ''; };
+  E.crewSkillUpWhy = function (slot, id) { const st = slot.crew[id]; if (!st) return 'Нет такого члена Свиты'; E.crewEnsure(st); if (st.skl >= D.CREW_SKL_MAX) return 'Мастерство на максимуме'; const c = E.sklCost(st); if (st.skl >= (E.crewStars ? E.crewStars(slot, id) : (st.star | 0)) + 1) return 'Нужна звезда возвышения'; if (slot.gold < c.gold) return 'Не хватает золота'; if ((slot.mats.asc_sigil || 0) < c.sig) return 'Нужно знаков: ' + c.sig; return ''; };
   E.crewSkillUp = function (slot, id) { const w = E.crewSkillUpWhy(slot, id); if (w) return w; const st = slot.crew[id], c = E.sklCost(st); slot.gold -= c.gold; slot.mats.asc_sigil -= c.sig; st.skl++; slot.rev++; return ''; };
   // узы: опыт уз за бои, разговоры, подарки, задания; уровень = √(bxp/10), до 10
   E.bondLv = (st) => clamp(Math.floor(Math.sqrt(((st && st.bxp) || 0) / 10)), 0, D.CREW_BOND_MAX);
@@ -251,7 +251,7 @@
   // боевой юнит: звёзды +12%, узы +2% за уровень, мастерство — к силе навыков
   const _ufc = C.unitFromCrew;
   C.unitFromCrew = function (slot, id, hpFrac) {
-    const u = _ufc(slot, id, hpFrac), st = E.crewEnsure(slot.crew[id]), k = (1 + 0.12 * st.star) * (1 + 0.02 * E.bondLv(st));
+    const u = _ufc(slot, id, hpFrac), st = E.crewEnsure(slot.crew[id]), k = (E.crewK ? E.crewK(slot, id, st) : 1 + 0.12 * st.star) * (1 + 0.02 * E.bondLv(st));
     if (k !== 1) { const f = u.hp / Math.max(1, u.maxHp); ['maxHp', 'atk', 'mag', 'hpow', 'def', 'res'].forEach((x) => { u[x] = Math.round(u[x] * k); }); u.hp = Math.round(u.maxHp * f); }
     if (st.skl) { u.skb = Object.assign({}, u.skb); u.sk.forEach((sk) => { u.skb[sk] = (u.skb[sk] || 0) + st.skl * 10; }); }
     return u;
@@ -278,7 +278,7 @@
   sup('shield', { n: 'Заслон соратника', ic: '🛡️', mp: 14, cd: 4, tgt: 'allies', d: 'Поддержка: «Крепость» отряду.', fx: [{ k: 'st', id: 'defUp', dur: 3 }] });
   E.supportOk = function (slot, id) { if (!id) return ''; if (!slot.crew[id]) return 'Не в Свите'; if (slot.party.includes(id)) return 'Уже в отряде'; if (E.onMission(slot, id)) return 'На задании'; return ''; };
   E.setSupport = function (slot, id) { if (slot.run) return 'Во время вылазки поддержка не меняется'; const w = E.supportOk(slot, id); if (w) return w; slot.support = id || null; slot.rev++; return ''; };
-  E.supportSkill = function (slot) { const id = slot && slot.support; if (!id || !slot.crew || !slot.crew[id] || E.supportOk(slot, id)) return null; const c = D.CREW[id], st = E.crewEnsure(slot.crew[id]); return { id: 'sup_' + c.arch, cid: id, bonus: Math.round(st.lv * 0.6 + st.star * 12 + st.skl * 5) }; };
+  E.supportSkill = function (slot) { const id = slot && slot.support; if (!id || !slot.crew || !slot.crew[id] || E.supportOk(slot, id)) return null; const c = D.CREW[id], st = E.crewEnsure(slot.crew[id]); return { id: 'sup_' + c.arch, cid: id, bonus: Math.round(st.lv * 0.6 + (E.crewStars ? E.crewStars(slot, id) : st.star) * 12 + st.skl * 5) }; };
   const _setParty = E.setParty; E.setParty = function (slot, ids) { _setParty(slot, ids); if (slot.support && slot.party.includes(slot.support)) slot.support = null; };
 
   // ───── Новые профили / сохранения: миграция v6 → v7 ─────

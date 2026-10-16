@@ -10,3 +10,9 @@
 .pfilt{display:flex;gap:6px;overflow-x:auto;padding:8px 0 4px;margin:0 -2px;scrollbar-width:none}.pfilt::-webkit-scrollbar{display:none}.pfilt button{flex:none;padding:6px 10px;border-radius:999px;border:1px solid var(--ac,#555);background:rgba(255,255,255,.04);color:inherit;font:inherit;font-size:12px}.pfilt button.on{background:var(--ac,#ffd35a);color:#140d24;font-weight:700;border-color:transparent}.petsoon{padding:8px 0}
 .pfilt{flex:none;min-height:42px;overflow-y:hidden}
 .petq{width:100%;box-sizing:border-box;margin:2px 0 6px;padding:9px 12px;border-radius:12px;border:1px solid #555;background:rgba(255,255,255,.05);color:inherit;font:inherit;font-size:14px}
+/* ───── Союзники (v2.24) ───── */
+.allyb{padding:10px 0;border-top:1px solid rgba(180,140,255,.18)}.allyb:first-of-type{border-top:0}
+.alstats{display:flex;gap:12px;flex-wrap:wrap;margin:6px 0}
+.alperk{font-size:12px;text-align:left;opacity:.55;margin:2px 0}.alperk.on{opacity:1;color:#ffe08a}
+.alcost{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;margin-top:6px}.alcost .ok{color:#9fe8b0}.alcost .no{color:#ff8e8e}
+.alevo{margin-top:6px}

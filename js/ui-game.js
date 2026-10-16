@@ -198,6 +198,7 @@
       <div class="card gearcard"><div class="row between center-v"><b>Снаряжение</b><span class="row gap"><button class="btn ghost small qbtn" data-act="rarInfo" data-quiet="1" aria-label="Редкости">?</button><button class="btn ghost small" data-act="forge" data-quiet="1">⚒️ Кузница</button></span></div><div class="eqgrid">${eq}</div><div class="small dim tl">Нажмите слот: надеть, сравнить, улучшить или снять.</div></div>
       ${UI.artSlotCard ? UI.artSlotCard(s) : ''}
       ${UI.petSlotCard ? UI.petSlotCard(s) : ''}
+      ${UI.allyCard ? UI.allyCard(s) : ''}
       <div class="card"><b>${race.ic} ${race.pn}</b> <span class="dim small">(прошлое: ${race.n})</span><div class="small tl dim">${race.pd}</div><b>${cls.ic} Перки класса</b><ul class="perks small">${cls.perks.map((p) => `<li><b>${p.n}</b> — ${p.d}</li>`).join('')}</ul><div class="small tl dim"><b>${cls.rc.n}:</b> копится в бою и усиливает навыки.</div></div>
       <div class="card"><b>Все бонусы</b><div class="chips">${mods || '<span class="dim">нет</span>'}</div></div>
       <div class="card small"><b>Путь</b><div class="dim">Вылазок: ${st.runs} · побед над боссами: ${st.wins} · поражений: ${st.deaths}<br>Врагов повержено: ${fmt(st.kills)} · создано: ${st.crafted} · добыто: ${st.gathered}<br>Заработано золота: ${fmt(st.goldEarned)} · время: ${Math.round((s.played || 0) / 60)} мин · мощь ${fmt(E.power(s))}</div></div>`;
