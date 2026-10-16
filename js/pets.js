@@ -18,7 +18,7 @@
   D.PET_FOOD_XP = 30; D.PET_FOOD_PRICE = 120;
   D.EGG_PRICE = [1500, 6000, 24000];         // лавка: яйца Обычное … Редкое (цены ×3 к экономике)
   D.EGG_MIN = [1, 5, 15, 45, 180, 480];      // минут инкубации
-  D.EGG_NAME = PR.map((r) => 'Яйцо: ' + r[1].toLowerCase());
+  D.EGG_NAME = ['обычное', 'необычное', 'редкое', 'эпическое', 'легендарное', 'божественное', 'концептуальное', 'яйцо Истока', 'яйцо До существования'].map((n, i) => (i < 7 ? 'Яйцо: ' + n : n[0].toUpperCase() + n.slice(1)));
 
   // ───── Навыки питомцев: генерируются по виду и стихии, сила растёт с редкостью ─────
   const STS = { fire: 'burn', ice: 'chill', bolt: 'stun', dark: 'poison', light: 'weak', arcane: 'vuln', phys: 'bleed', earth: 'weak', wind: 'chill', water: 'wet', div: 'weak', origin: 'vuln' };
