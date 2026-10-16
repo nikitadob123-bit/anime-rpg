@@ -5,7 +5,7 @@
    Подробно — docs/MAIL.md. После изменения: git commit + git push, через ~1 минуту письмо увидят игроки. */
 const fs = require('fs'), path = require('path');
 const RPG = require('../js/data-core.js');
-['data-stats', 'data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'data-craft-icons', 'craft', 'mail'].forEach((f) => require('../js/' + f + '.js'));
+['data-stats', 'data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'data-craft-icons', 'craft', 'mail'].forEach((f) => require('../js/' + f + '.js'));
 const { D, M } = RPG;
 const FILE = process.env.MAIL_FILE || path.join(__dirname, '..', 'mail', 'inbox.json');
 
@@ -17,13 +17,13 @@ const giftTxt = (g) => M.giftList(g).map((x) => `${x.ic} ${x.n}${x.q > 1 || !x.r
 
 // разбор аргументов: --key value, повторяемые --item/--gear
 function parseArgs(argv) {
-  const o = { _: [], item: [], gear: [], unique: [], artifact: [], to: [] };
+  const o = { _: [], item: [], gear: [], unique: [], artifact: [], pet: [], to: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (!a.startsWith('--')) { o._.push(a); continue; }
     const k = a.slice(2); const flag = ['new-players', 'dry-run', 'yes'].includes(k);
     const v = flag ? true : argv[++i]; if (v === undefined) die(`после ${a} нужно значение`);
-    if (k === 'item' || k === 'gear' || k === 'unique' || k === 'artifact' || k === 'to') o[k].push(...String(v).split(',').map((x) => x.trim()).filter(Boolean)); else o[k] = v;
+    if (k === 'item' || k === 'gear' || k === 'unique' || k === 'artifact' || k === 'pet' || k === 'to') o[k].push(...String(v).split(',').map((x) => x.trim()).filter(Boolean)); else o[k] = v;
   }
   return o;
 }
@@ -51,6 +51,7 @@ function buildLetter(o, existing) {
   });
   o.unique.forEach((u) => { if (!D.UNIQUE_ITEMS[u]) die(`--unique: неизвестный уникальный предмет «${u}» (есть: ${D.UNIQUE_IDS.join(', ')})`); (g.unique = g.unique || []).includes(u) || g.unique.push(u); });
   o.artifact.forEach((a) => { if (!D.ART || !D.ART[a]) die(`--artifact: неизвестный артефакт «${a}» (есть: ${D.ARTIFACTS.map((x) => x.id).join(', ')})`); (g.artifacts = g.artifacts || []).push(a); });
+  o.pet.forEach((a) => { if (!D.PET || !D.PET[a]) die(`--pet: неизвестный питомец «${a}» (есть: ${D.PETS.map((x) => x.id).join(', ')})`); (g.pets = g.pets || []).push(a); });
   const L = { id, from: o.from || 'Администрация', title: String(o.title), body: String(o.body || '').replace(/\\n/g, '\n'), date: o.date || day(now) };
   if (o.days) L.expires = day(Date.parse(L.date) + num(o.days, '--days') * 864e5);   // дата включительно
   if (o.expires) L.expires = o.expires;
@@ -100,7 +101,7 @@ if (cmd === 'add') {
   console.log(`Почта «Нимба Мира» — mail/inbox.json
 
   node tools/mail.js add --title "Заголовок" --body "Текст письма" [подарки] [срок] [условия]
-      подарки:  --gold 500  --xp 200  --sp 1  --item pot_hp2:3 (можно несколько)  --gear sword:rare[:уровень] [--gear-name "Имя"]  --artifact lantern (артефакт по id, можно несколько)
+      подарки:  --gold 500  --xp 200  --sp 1  --item pot_hp2:3 (можно несколько)  --gear sword:rare[:уровень] [--gear-name "Имя"]  --artifact lantern (артефакт по id, можно несколько)  --pet stray_cat (питомец по id)
                 редкость 0…7: common uncommon rare unique epic legend mythic divine (8+ через --gear запрещены)
                 --unique eden_light — уникальный предмет (только так выдаётся «Концептуальный»):
                   eden_light abyss_dark hell_heart first_flame boundless_source chronos end_of_all

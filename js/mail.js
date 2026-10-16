@@ -18,6 +18,7 @@
     mats: 'материалы: { id: количество } — руда, травы, слитки, эссенции',
     presents: 'подарки для Свиты: { id: количество }',
     unique: 'уникальный предмет по id (например eden_light — «Свет Эдема», Концептуальный; prime_cause, zero_law, first_division — Исток; null_possibility — До существования, только один экземпляр на сохранение: второй подарок отклоняется); строка или массив id. Единственный способ получить такие вещи',
+    pets: 'питомец по id (например stray_cat — «Уличная кошка», Обычный); строка или массив. Выдаётся как находка из яйца: новый или +звезда; на максимуме звёзд — корм',
     artifacts: 'артефакт по id (например lantern — «Фонарь Путника», Обычный); строка или массив id. Выдаётся как выпадение в Подземелье Артефактов: новый или +звезда; Мировой — только один экземпляр',
     gear: 'снаряжение: [{ base, rarity, il?, nm? }] — base из списка, rarity 0–7 или common/uncommon/rare/unique/epic/legend/mythic/divine, il — уровень (по умолчанию = уровень героя)'
   };
@@ -57,6 +58,7 @@
         if (k === 'gold' || k === 'xp' || k === 'sp') out[k] = (out[k] || 0) + v;
         else if (k === 'gear') out.gear = (out.gear || []).concat(Array.isArray(v) ? v : [v]);
         else if (k === 'item' && v === 'tear') out.item = 'tear';
+        else if (k === 'pets' || k === 'pet') { (Array.isArray(v) ? v : [v]).forEach((id) => { (out.pets = out.pets || []).push(id); }); }
         else if (k === 'artifacts' || k === 'artifact') { (Array.isArray(v) ? v : [v]).forEach((id) => { (out.artifacts = out.artifacts || []).push(id); }); }
         else if (k === 'unique') { (Array.isArray(v) ? v : [v]).forEach((id) => { out.unique = out.unique || []; if (!out.unique.includes(id)) out.unique.push(id); }); }
         else if (v && typeof v === 'object') { out[k] = out[k] || {}; for (const id in v) out[k][id] = (out[k][id] || 0) + v[id]; }
@@ -85,6 +87,7 @@
         });
       }
       else if (k === 'item' && v === 'tear') { /* сюжетный артефакт */ }
+      else if (k === 'pets') { if (v.length > 5) err.push('pets: не больше 5 питомцев'); v.forEach((id) => { if (typeof id !== 'string' || !D.PET || !D.PET[id]) err.push(`pets: неизвестный питомец «${id}»${D.PETS ? ' (есть: ' + D.PETS.map((a) => a.id).join(', ') + ')' : ''}`); }); }
       else if (k === 'artifacts') { if (v.length > 5) err.push('artifacts: не больше 5 артефактов'); v.forEach((id) => { if (typeof id !== 'string' || !D.ART || !D.ART[id]) err.push(`artifacts: неизвестный артефакт «${id}»${D.ARTIFACTS ? ' (есть: ' + D.ARTIFACTS.map((a) => a.id).join(', ') + ')' : ''}`); }); }
       else if (k === 'unique') { if (v.length > 5) err.push('unique: не больше 5 предметов'); v.forEach((id) => { if (typeof id !== 'string' || !D.UNIQUE_ITEMS || !D.UNIQUE_ITEMS[id]) err.push(`unique: неизвестный уникальный предмет «${id}» (есть: ${(D.UNIQUE_IDS || []).join(', ')})`); }); }
       else err.push(`неизвестный тип подарка «${k}» (можно: ${Object.keys(M.GIFT_TYPES).join(', ')})`);
@@ -103,6 +106,7 @@
     for (const id in (g.presents || {})) if (D.GIFTS[id]) out.push({ ic: D.GIFTS[id].ic, n: D.GIFTS[id].n, q: g.presents[id] });
     (g.gear || []).forEach((it) => { const B = D.BASES[it.base]; if (B) { const ri = rarIdx(it.rarity || 0), r = D.RARITY[ri] || D.RARITY[0]; out.push({ ic: B.ic, n: it.nm || B.n, q: 1, c: r.c, r: r.n, ri: D.RARITY[ri] ? ri : 0 }); } });
     (g.unique || []).forEach((id) => { const U = D.UNIQUE_ITEMS && D.UNIQUE_ITEMS[id]; if (U) { const r = D.RARITY[U.r]; out.push({ ic: D.BASES[U.base].ic, img: U.img128 || U.img, n: U.nm, q: 1, c: r.c, r: r.n, ri: U.r, uq: id }); } });
+    (g.pets || []).forEach((id) => { const a = D.PET && D.PET[id]; if (a) { const pr = D.PET_RAR[a.r]; out.push({ ic: a.ic, img: a.thumb, n: a.n, q: 1, c: pr.c, r: 'Питомец · ' + pr.n, ri: Math.min(a.r, 7), pet: id }); } });
     (g.artifacts || []).forEach((id) => { const a = D.ART && D.ART[id]; if (a) { const ar = D.ART_RAR[a.r], ri = Math.min(a.r, 7); out.push({ ic: a.ic || '🏺', img: a.icon128, n: a.n, q: 1, c: ar.c || D.RARITY[ri].c, r: 'Артефакт · ' + ar.n, ri, art: id }); } });
     if (g.item === 'tear') out.push({ ic: '📿', n: 'Слеза Осколка', q: 1, c: D.RARITY[5].c, r: D.RARITY[5].n, ri: 5 });
     return out;
@@ -125,6 +129,9 @@
     (g.unique || []).forEach((id) => {   // ⊘ «Не может существовать более чем в одном экземпляре»: второй такой предмет не создаётся — отказ с пометкой
       if (E.uniqueRefused && E.uniqueRefused(slot, id)) { (got.refused = got.refused || []).push({ id, n: D.UNIQUE_ITEMS[id].nm, why: 'уже существует — второй экземпляр невозможен' }); return; }
       const it = E.makeUnique && E.makeUnique(id); if (it) { const a = E.addItem(slot, it); if (a) got.items.push(a); }
+    });
+    (g.pets || []).forEach((id) => {   // как находка из яйца: новый или +звезда (на максимуме — корм)
+      const r = D.PET && D.PET[id] && E.petGain ? E.petGain(slot, id) : null; if (r) (got.pets = got.pets || []).push(r);
     });
     (g.artifacts || []).forEach((id) => {   // как выпадение в Подземелье Артефактов: новый или +звезда; Мировой — только один
       const r = D.ART && D.ART[id] && E.artGain ? E.artGain(slot, id) : null; if (!r) return;

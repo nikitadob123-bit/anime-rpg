@@ -1,7 +1,7 @@
 /* v2.17 «Артефакты»: данные, статы (полы по редкости), выпадение (этапы, уникальность Мировых), спутницы, Свита, миграция. node test/artifact.js */
 const assert = require('assert');
 const RPG = require('../js/data-core.js'); require('../js/data-stats.js');
-['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'data-craft-icons', 'craft'].forEach((f) => require('../js/' + f + '.js'));
+['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'data-craft-icons', 'craft'].forEach((f) => require('../js/' + f + '.js'));
 const { D, E, C, S } = RPG;
 let pass = 0, fail = 0; const t = (n, f) => { try { f(); pass++; } catch (e) { fail++; console.log('  ✗', n, '\n     ', e.message); } };
 const mk = (L) => { const s = E.newSlot({ name: 'Арт', race: 'o_street', uniq: 'phoenix', prof1: 'smith', prof2: 'miner' }); s.hero.level = L || 30; s.story.flags.prologue_done = 1; return s; };
@@ -82,7 +82,7 @@ t('Свита: возвышение, мастерство, узы, экспед�
 t('миграция v6 → v7: старые слоты получают артефакты/Свиту без потерь', () => {
   const s = mk(40); E.recruit(s, 'grak'); delete s.arts; delete s.artEq; delete s.artProg; delete s.support; delete s.crew.grak.star; delete s.crew.grak.skl; delete s.crew.grak.bxp;
   const p = { v: 6, id: 'p1', nick: 'X', settings: S.defaultSettings(), slots: [s, null, null], active: 0, seenIntro: {} };
-  const m = S.migrate(JSON.parse(JSON.stringify(p))); assert.strictEqual(m.v, S.VERSION); assert.strictEqual(S.VERSION, 7); const sl = m.slots[0];
+  const m = S.migrate(JSON.parse(JSON.stringify(p))); assert.strictEqual(m.v, S.VERSION); assert(S.VERSION >= 7); const sl = m.slots[0];
   assert.deepStrictEqual(sl.arts, {}); assert.strictEqual(sl.artEq, null); assert.strictEqual(sl.support, null); assert.strictEqual(sl.crew.grak.star, 0); assert.strictEqual(sl.crew.grak.lv, s.crew.grak.lv);
   assert(E.derive(sl).maxHp > 0);
   // сохранение/загрузка с надетым артефактом
