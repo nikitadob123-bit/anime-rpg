@@ -1,5 +1,5 @@
 /* Service worker: офлайн-режим. Ядро — в прекеше; CG и нейтральные портреты берутся из assets/vn/manifest.json, остальные настроения кэшируются при первом показе. */
-const VERSION = 'arpg-v2.20.1';
+const VERSION = 'arpg-v2.21.0';
 const CORE = `${VERSION}-core`, RUNTIME = `${VERSION}-rt`;
 const ASSETS = [
   './', 'index.html', 'manifest.json', 'css/style.css', 'css/vn.css', 'css/demon.css', 'css/mail.css', 'css/gear.css', 'css/craft.css', 'css/crown.css', 'css/artifact.css', 'css/pets.css', 'assets/vn/hero_demon_neutral.webp', 'fonts/ruslan.woff2', 'fonts/philosopher.woff2',
