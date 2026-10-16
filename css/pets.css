@@ -6,3 +6,4 @@
 .hcur{border-color:var(--ac,#888)!important}.egg{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;font-size:28px;border:2px solid var(--ac,#888);background:rgba(0,0,0,.4)}
 .egrow{padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07)}.egrow:last-child{border:0}.egrow .btn[disabled]{opacity:.4}
 .petmodal .row.between,.egrow{gap:10px}.petmodal .row.between{align-items:baseline}
+.petart{display:grid;place-items:center;width:min(100%,260px);aspect-ratio:1;margin:10px auto 4px;border-radius:18px;border:1.5px solid var(--ac,#888);background:radial-gradient(circle at 50% 40%,var(--ag,rgba(255,255,255,.1)),rgba(8,10,24,.95) 75%);box-shadow:0 0 22px var(--ag,transparent);overflow:hidden}.petart img{width:100%;height:100%;object-fit:contain}.petart i{display:none;font-style:normal;font-size:80px}.petart.noimg i{display:block}
