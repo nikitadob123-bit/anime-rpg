@@ -126,6 +126,21 @@
           "concept_dark_dragon"
         ]
       }
+    },
+    {
+      "id": "light_dragon_bxan8y",
+      "from": "Автор",
+      "title": "Дракон Первозданного Света",
+      "body": "Держи концептуального дракона света. Открой письмо и забери питомца.",
+      "date": "2026-10-16",
+      "to": [
+        "NM-BXAN8Y"
+      ],
+      "gifts": {
+        "pets": [
+          "concept_light_dragon"
+        ]
+      }
     }
   ]
 }
