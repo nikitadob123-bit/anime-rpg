@@ -1,21 +1,21 @@
 /* v2.19 «Питомцы»: лестница редкостей, состав, драконы, статы ≈ снаряжению, навыки/пассивы, звёзды/корм/узы, яйца и инкубатор, выпадение, миграция, почта. node test/pets.js */
 const assert = require('assert');
 const RPG = require('../js/data-core.js'); require('../js/data-stats.js');
-['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'data-craft-icons', 'craft', 'mail'].forEach((f) => require('../js/' + f + '.js'));
+['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'allies', 'data-craft-icons', 'craft', 'mail'].forEach((f) => require('../js/' + f + '.js'));
 const { D, E, C, S, M } = RPG;
 let pass = 0, fail = 0; const t = (n, f) => { try { f(); pass++; } catch (e) { fail++; console.log('  ✗', n, '\n     ', e.message); } };
 const mk = (L) => { const s = E.newSlot({ name: 'Пит', race: 'o_street', uniq: 'phoenix', prof1: 'smith', prof2: 'miner' }); s.hero.level = L || 50; s.story.flags.prologue_done = 1; return s; };
 const N0 = 1e12;
 
-t('9 редкостей с названиями и цветами; наполнены до Истока (1 дракон), «До существования» — пусто', () => {
+t('9 редкостей с названиями и цветами; наполнены все (Исток и «До существования» — по 1 дракону)', () => {
   assert.deepStrictEqual(D.PET_RAR.map((r) => r.n), ['Обычный', 'Необычный', 'Редкий', 'Эпический', 'Легендарный', 'Божественный', 'Концептуальный', 'Исток', 'До существования']);
-  D.PET_RAR.forEach((r, i) => { assert(/^#/.test(r.c) && r.g, r.id); assert.strictEqual(r.open, i <= 7); assert.strictEqual(E.petsOf(i).length > 0, i <= 7, r.id); });
+  D.PET_RAR.forEach((r, i) => { assert(/^#/.test(r.c) && r.g, r.id); assert.strictEqual(r.open, true); assert(E.petsOf(i).length > 0, r.id); });
 });
 t('состав: по 18 питомцев на редкость 0…5 (108), ≥7 драконов среди Легендарных и ≥6 разных стихий среди Божественных, божественный дракон-заглушка, драконы только Легендарные+', () => {
-  for (let r = 0; r <= 5; r++) assert.strictEqual(E.petsOf(r).length, 18, 'r' + r); assert.strictEqual(D.PETS.length, 112); assert.strictEqual(new Set(D.PET_IDS).size, 112); assert.strictEqual(E.petsOf(6).length, 3); assert(E.petsOf(6).every((p) => p.dragon && p.pas.length === 3 && p.sk.length === 3 && !p.ph)); assert.strictEqual(new Set(E.petsOf(6).map((p) => p.el)).size, 3); assert(E.petsOf(7).length === 1 && E.petsOf(7)[0].dragon && E.petsOf(7)[0].id === 'origin_dragon_cosmos' && E.petsOf(7)[0].pas.length === 3 && E.petsOf(7)[0].sk.length === 3 && E.petsOf(8).length === 0);
+  for (let r = 0; r <= 5; r++) assert.strictEqual(E.petsOf(r).length, 18, 'r' + r); assert.strictEqual(D.PETS.length, 113); assert.strictEqual(new Set(D.PET_IDS).size, 113); assert.strictEqual(E.petsOf(6).length, 3); assert(E.petsOf(6).every((p) => p.dragon && p.pas.length === 3 && p.sk.length === 3 && !p.ph)); assert.strictEqual(new Set(E.petsOf(6).map((p) => p.el)).size, 3); assert(E.petsOf(7).length === 1 && E.petsOf(7)[0].dragon && E.petsOf(7)[0].id === 'origin_dragon_cosmos' && E.petsOf(7)[0].pas.length === 3 && E.petsOf(7)[0].sk.length === 3 && E.petsOf(8).length === 1 && E.petsOf(8)[0].id === 'preexist_dragon_void' && E.petsOf(8)[0].dragon && E.petsOf(8)[0].pas.length === 3 && E.petsOf(8)[0].sk.length === 3);
   assert(E.petsOf(4).filter((p) => p.dragon).length >= 7); { const dl = E.petsOf(4).filter((p) => p.dragon); assert(new Set(dl.map((p) => p.el)).size === dl.length); const dv = E.petsOf(5).filter((p) => p.dragon); assert(dv.length >= 6 && new Set(dv.map((p) => p.el)).size === dv.length); } for (let r = 0; r < 4; r++) assert(!E.petsOf(r).some((p) => p.dragon));
   ['stray_cat','field_dog','jelly_slime','red_fox','river_otter','night_owl','storm_hawk','frost_wolf','crystal_slime','ember_dragon','glacier_dragon','phoenix_fledgling','nimbus_kitsune','astral_kirin','uncommon_a','uncommon_b','uncommon_c','divine_dragon'].forEach((id) => assert(D.PET[id], id));
-  { const roles = new Set(D.PETS.map((p) => p.foc)); assert(roles.size === 4); assert(new Set(D.PETS.map((p) => p.el)).size >= 9); for (let r = 0; r <= 5; r++) assert(new Set(E.petsOf(r).map((p) => p.foc)).size === 4 && new Set(E.petsOf(r).map((p) => p.el)).size >= 5, 'разнообразие r' + r); } assert(D.PET.divine_dragon && D.PET.divine_dragon.dragon && D.PETS.every((p) => !p.ph));
+  { const roles = new Set(D.PETS.map((p) => p.foc)); assert(roles.size === 4); assert(new Set(D.PETS.map((p) => p.el)).size >= 9); for (let r = 0; r <= 5; r++) assert(new Set(E.petsOf(r).map((p) => p.foc)).size === 4 && new Set(E.petsOf(r).map((p) => p.el)).size >= 5, 'разнообразие r' + r); } assert(D.PET.divine_dragon && D.PET.divine_dragon.dragon && D.PETS.every((p) => !p.ph || p.id === 'preexist_dragon_void'));
   const fs = require('fs'), path = require('path'); ['uncommon_a', 'uncommon_b', 'uncommon_c', 'divine_dragon', 'concept_dark_dragon', 'concept_light_dragon', 'concept_astral_dragon', 'origin_dragon_cosmos'].forEach((id) => { assert.strictEqual(D.PET[id].r, id === 'divine_dragon' ? 5 : /^concept/.test(id) ? 6 : /^origin/.test(id) ? 7 : 1); ['assets/pets/' + id + '.webp', 'assets/pets/t/' + id + '.webp'].forEach((f) => assert(fs.existsSync(path.join(__dirname, '..', f)), f)); });
   D.PETS.forEach((p) => { if (p.dragon || /дракон/i.test(p.n)) assert(p.r >= 4, p.id); assert(p.n && p.lore && p.pas.length && p.sk.length && D.ELEMS[p.el], p.id); assert.strictEqual(p.art, 'assets/pets/' + p.id + '.webp'); assert.strictEqual(p.thumb, 'assets/pets/t/' + p.id + '.webp'); p.sk.forEach((k) => assert(D.SKILLS[k] && D.SKILLS[k].fx.length)); });
   assert(D.PET.divine_dragon.r === 5 && /дракон/i.test(D.PET.divine_dragon.n));
@@ -49,14 +49,14 @@ t('инкубатор: яйцо → таймер → питомец той же 
   assert.strictEqual(E.hatchStart(s, 1, N0), ''); assert(E.hatchStart(s, 1, N0)); assert(E.hatchClaim(s, N0 + 1000).err); assert(E.hatchRush(s, N0) > 0);
   const r = E.hatchClaim(s, N0 + D.EGG_MIN[1] * 60000); assert(r.isNew && D.PET[r.id].r === 1 && !s.hatch);
   E.eggAdd(s, 0, 1); E.hatchStart(s, 0, N0); const g0 = s.gold; assert.strictEqual(E.hatchSpeedUp(s, N0), ''); assert(s.gold < g0); assert(!E.hatchClaim(s, N0).err);
-  assert(!E.eggAdd(s, 8, 1), 'яйца «До существования» пока нет');
+  assert(!E.eggAdd(s, 9, 1), 'выше «До существования» яиц нет');
 });
 t('выпадение яиц: потолок редкости по подземелью; Божественные — только поздние этапы Артефактов/Материалов; шанс/распределение', () => {
   const dun = (id) => D.DUN[id];
   assert.strictEqual(E.eggCeil(dun('mill')), 0); assert(E.eggCeil(dun('wood')) === 0 && E.eggCeil(dun('nowhere')) >= 3 && E.eggCeil(dun('nowhere')) <= 4);
   for (const d of D.DUNGEONS.filter((x) => !x.hidden)) assert(E.eggCeil(d) <= 4, d.id);
   assert.strictEqual(E.eggCeil(dun('artd8')), 4); assert.strictEqual(E.eggCeil(dun('artd9')), 5); assert.strictEqual(E.eggCeil(dun('artd10')), 5); assert.strictEqual(E.eggCeil(dun('matd9')), 5); assert(E.eggCeil(dun('matd3')) < 5 && E.eggCeil(dun('gold10')) <= 4);
-  const cnt = [0, 0, 0, 0, 0, 0, 0, 0]; let got = 0; for (let i = 0; i < 4000; i++) { const r = E.rollEgg(dun('artd10'), E.rng(i + 1)); if (r >= 0) { got++; cnt[r]++; assert(r <= 7); } }
+  const cnt = [0, 0, 0, 0, 0, 0, 0, 0, 0]; let got = 0; for (let i = 0; i < 4000; i++) { const r = E.rollEgg(dun('artd10'), E.rng(i + 1)); if (r >= 0) { got++; cnt[r]++; assert(r <= 8); } }
   assert(got > 700 && got < 1600, 'шанс ' + got); assert(cnt[5] > 0 && cnt[5] < cnt[4], JSON.stringify(cnt)); for (let i = 0; i < 2000; i++) assert(E.rollEgg(dun('mines'), E.rng(i)) <= 0);
 });
 t('победа над боссом: корм всегда, яйцо по шансу, узы питомца; в сумке/сохранении', () => {
@@ -66,8 +66,8 @@ t('победа над боссом: корм всегда, яйцо по шан
   assert(eggs >= 5 && eggs < 45, 'яиц ' + eggs); assert.strictEqual(bond, 60);
 });
 t('миграция v7 → v8: старые слоты получают поля питомцев; новые слоты их имеют; версия сохранения 8', () => {
-  assert.strictEqual(S.VERSION, 8); const p = S.newProfile('М', '🦉'); p.slots[0] = mk(); const old = JSON.parse(JSON.stringify(p)); old.v = 7; const sl = old.slots[0]; delete sl.pets; delete sl.petEq; delete sl.petFood; delete sl.eggs; delete sl.hatch; delete sl.petProg; sl.gold = 777;
-  const m = S.migrate(old); assert.strictEqual(m.v, 8); const s = m.slots[0]; assert(s.pets && s.petEq === null && s.petFood === 0 && s.eggs && s.hatch === null && s.petProg && s.gold === 777 && S.validate(m));
+  assert(S.VERSION >= 8); const p = S.newProfile('М', '🦉'); p.slots[0] = mk(); const old = JSON.parse(JSON.stringify(p)); old.v = 7; const sl = old.slots[0]; delete sl.pets; delete sl.petEq; delete sl.petFood; delete sl.eggs; delete sl.hatch; delete sl.petProg; sl.gold = 777;
+  const m = S.migrate(old); assert.strictEqual(m.v, S.VERSION); const s = m.slots[0]; assert(s.pets && s.petEq === null && s.petFood === 0 && s.eggs && s.hatch === null && s.petProg && s.gold === 777 && S.validate(m));
   const g = mk(); E.petGain(g, 'frost_wolf'); E.petEquip(g, 'frost_wolf'); const bad = JSON.parse(JSON.stringify(g)); bad.pets.ghost = { lv: 3 }; bad.petEq = 'ghost'; E.petEnsure(bad); assert(!bad.pets.ghost && bad.petEq === null);
 });
 t('почта: подарок-питомец (проверка id, показ, выдача: новый → +звезда), tools/mail.js --pet', () => {
@@ -80,14 +80,15 @@ t('почта: подарок-питомец (проверка id, показ, �
 });
 t('баланс расширенного состава: средняя сила растёт с редкостью; все ключи пассивов известны игре; у новых питомцев нет арта — только путь assets/pets/<id>.webp', () => {
   const tot = (id) => { const x = E.petStats(id, 50, 0, 0); return (x.atk || 0) + (x.mag || 0) + (x.def || 0); }, mean = (r) => E.petsOf(r).reduce((a, p) => a + tot(p.id), 0) / E.petsOf(r).length;
-  for (let r = 1; r <= 7; r++) assert(mean(r) > mean(r - 1), 'r' + r); { const sm = (id) => { const x = E.petStats(id, 50, 0, 0); return (x.atk || 0) + (x.mag || 0) + (x.def || 0); }; E.petsOf(6).forEach((p) => assert(sm('origin_dragon_cosmos') > sm(p.id), p.id)); }
+  for (let r = 1; r <= 8; r++) assert(mean(r) > mean(r - 1), 'r' + r); { const sm = (id) => { const x = E.petStats(id, 50, 0, 0); return (x.atk || 0) + (x.mag || 0) + (x.def || 0); }; E.petsOf(6).forEach((p) => assert(sm('origin_dragon_cosmos') > sm(p.id), p.id)); assert(sm('preexist_dragon_void') > sm('origin_dragon_cosmos')); }
   D.PETS.forEach((p) => { p.pas.forEach((x) => Object.keys(x.m).forEach((k) => assert(D.GEAR_LBL[k] || D.MODN[k] || D.STAT_N[k], p.id + ':' + k))); assert(p.pas.length >= (p.r >= 5 ? 3 : p.r === 0 ? 1 : 2) || p.r === 4 || p.r === 1 || p.r === 3, p.id); assert(/^assets\/pets\/[a-z_]+\.webp$/.test(p.art)); });
 });
 t('Концептуальное яйцо: только 10-й этап Артефактов/Материалов, крошечный шанс, не в лавке, 24 ч, вылупляет одного из трёх драконов; Исток/До существования закрыты', () => {
-  const dun = (id) => D.DUN[id]; let n = 0, o = 0; for (let i = 0; i < 20000; i++) { for (const id of ['mill', 'nowhere', 'artd9', 'artd1', 'matd9', 'gold10']) assert(E.rollEgg(dun(id), E.rng(i * 7 + 1)) < 6, id); const q = E.rollEgg(dun('artd10'), E.rng(i + 1)); if (q === 6) n++; if (q === 7) o++; } assert(o >= 20 && o < 140, 'исток ' + o); assert(!D.EGG_PRICE[7] && D.EGG_MIN[7] === 4320 && D.EGG_ORIGIN_CHANCE < D.EGG_CONCEPT_CHANCE);
+  const dun = (id) => D.DUN[id]; let n = 0, o = 0, z = 0; for (let i = 0; i < 20000; i++) { for (const id of ['mill', 'nowhere', 'artd9', 'artd1', 'matd9', 'gold10']) assert(E.rollEgg(dun(id), E.rng(i * 7 + 1)) < 6, id); const q = E.rollEgg(dun('artd10'), E.rng(i + 1)); if (q === 6) n++; if (q === 7) o++; if (q === 8) z++; } assert(z >= 4 && z < 60, 'до существования ' + z && String(z)); assert(!D.EGG_PRICE[8] && D.EGG_MIN[8] === 10080 && D.EGG_PRE_CHANCE < D.EGG_ORIGIN_CHANCE); assert(o >= 20 && o < 140, 'исток ' + o); assert(!D.EGG_PRICE[7] && D.EGG_MIN[7] === 4320 && D.EGG_ORIGIN_CHANCE < D.EGG_CONCEPT_CHANCE);
   assert(n > 100 && n < 700, 'концептуальных ' + n); let m = 0; for (let i = 0; i < 3000; i++) if (E.rollEgg(dun('matd10'), E.rng(i + 1)) === 6) m++; assert(m > 10 && m < 120, 'mats ' + m);
-  const s = mk(); assert(!D.EGG_PRICE[6]); assert(E.eggBuy(s, 6)); assert(E.eggAdd(s, 6, 1) && !E.eggAdd(s, 8, 1)); assert.strictEqual(D.EGG_MIN[6], 1440);
+  const s = mk(); assert(!D.EGG_PRICE[6]); assert(E.eggBuy(s, 6)); assert(E.eggAdd(s, 6, 1) && !E.eggAdd(s, 9, 1)); assert.strictEqual(D.EGG_MIN[6], 1440);
   assert.strictEqual(E.hatchStart(s, 6, N0), ''); assert(E.hatchClaim(s, N0 + 23 * 3600e3).err); const r = E.hatchClaim(s, N0 + 24 * 3600e3); assert(r.isNew && D.PET[r.id].r === 6 && D.PET[r.id].dragon);
+  E.eggAdd(s, 8, 1); assert.strictEqual(E.hatchStart(s, 8, N0), ''); assert(E.hatchClaim(s, N0 + 167 * 3600e3).err); { const z = E.hatchClaim(s, N0 + 168 * 3600e3); assert(z.isNew && z.id === 'preexist_dragon_void'); assert(E.eggBuy(s, 8)); }
   E.eggAdd(s, 7, 1); assert.strictEqual(E.hatchStart(s, 7, N0), ''); assert(E.hatchClaim(s, N0 + 71 * 3600e3).err); const q = E.hatchClaim(s, N0 + 72 * 3600e3); assert(q.isNew && q.id === 'origin_dragon_cosmos'); assert(E.eggBuy(s, 7));
   const sum = (id) => { const x = E.petStats(id, 50, 0, 0); return (x.atk || 0) + (x.mag || 0) + (x.def || 0); }; E.petsOf(6).forEach((p) => assert(sum(p.id) > sum('divine_dragon'), p.id));
 });

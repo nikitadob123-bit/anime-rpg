@@ -10,14 +10,14 @@
   const PR = [['common', 'Обычный', 0, 1], ['uncommon', 'Необычный', 1, 1], ['rare', 'Редкий', 2, 1], ['epic', 'Эпический', 4, 1], ['legend', 'Легендарный', 5, 1], ['divine', 'Божественный', 7, 1],
     ['concept', 'Концептуальный', 7, 1.22], ['origin', 'Исток', 7, 1.5], ['prexist', 'До существования', 7, 1.85]];
   const RC = [0, 1, 2, 4, 5, 7, 8, 9, 10];   // цвета — из лестницы редкостей снаряжения
-  D.PET_RAR = PR.map(([id, n, gr, k], i) => ({ id, n, gr, k, c: D.RARITY[RC[i]].c, g: D.RARITY[RC[i]].g, open: i <= 7 }));
-  D.PET_OPEN = 7;                        // наполнены редкости 0…7 (до Истока; «До существования» пусто)
+  D.PET_RAR = PR.map(([id, n, gr, k], i) => ({ id, n, gr, k, c: D.RARITY[RC[i]].c, g: D.RARITY[RC[i]].g, open: i <= 8 }));
+  D.PET_OPEN = 8;                        // наполнены все 9 редкостей (0…8)
   D.PET_LV_MAX = 50; D.PET_STAR_MAX = 5; D.PET_STAR_K = 0.08; D.PET_BOND_K = 0.03;
   D.PET_BOND_AT = [0, 8, 24, 50, 90, 150];   // порог очков уз для уровней уз 0…5
   D.PET_SK_LV = [1, 15, 30];                 // уровень питомца для 1-го, 2-го, 3-го навыка
   D.PET_FOOD_XP = 30; D.PET_FOOD_PRICE = 120;
   D.EGG_PRICE = [1500, 6000, 24000];         // лавка: яйца Обычное … Редкое (цены ×3 к экономике)
-  D.EGG_MIN = [1, 5, 15, 45, 180, 480, 1440, 4320];      // минут инкубации
+  D.EGG_MIN = [1, 5, 15, 45, 180, 480, 1440, 4320, 10080];      // минут инкубации
   D.EGG_NAME = ['обычное', 'необычное', 'редкое', 'эпическое', 'легендарное', 'божественное', 'концептуальное', 'яйцо Истока', 'яйцо До существования'].map((n, i) => (i < 7 ? 'Яйцо: ' + n : n[0].toUpperCase() + n.slice(1)));
 
   // ───── Навыки питомцев: генерируются по виду и стихии, сила растёт с редкостью ─────
@@ -273,7 +273,10 @@
       { dragon: 1, vp: 'a sleek silver-and-black dragon with pearly translucent glass-like wings, elegant long tail with flowing fin, mid-flight' }),
     // ── Исток: один дракон (v2.23) ──
     PET('origin_dragon_cosmos', 7, 'Дракон Хранитель Космоса', '🌌', 'hyb', 'dark', 'Он стоит у начала всего и держит на ладони маленькую вселенную — так бережно, будто это птенец. Золотые жилы на его чешуе — трещины, из которых когда-то пролился первый свет. Он не требует поклонения: он просто не позволит сфере упасть.', [['Сфера пустоты', '🔮', 'spell', 'dark'], ['Падение звезды', '☄️', 'burst', 'dark'], ['Покров космоса', '🌌', 'guard', 'dark']], [P('Хранитель начала', { dmg_dark: 38, dmg: 18 }), P('Золотые жилы', { bossDmg: 26, crit: 14, critDmg: 0.4, cdr: 12 }), P('Колыбель вселенной', { allStat: 8, statRes: 24, taken: -14 })],
-      { dragon: 1, vp: 'a standing black dragon with galaxy-pattern wings and gold-veined scales holding a glowing cosmic orb in its raised hand' })
+      { dragon: 1, vp: 'a standing black dragon with galaxy-pattern wings and gold-veined scales holding a glowing cosmic orb in its raised hand' }),
+    // ── До существования: один дракон (v2.24) ──
+    PET('preexist_dragon_void', 8, 'Дракон До Начала', '🌑', 'hyb', 'dark', 'Когда ещё не было ни света, ни тьмы, ни самого «до», он уже лежал в пустоте и смотрел сквозь неё. Перламутровые крылья — не перья и не кожа, а память о временах, которых не случилось. Каждый его вдох отматывает миг назад. Говорят, мир — это то, что ему приснилось.', [['Выдох пустоты', '🌑', 'spell', 'dark'], ['Разворот времени', '⏳', 'burst', 'dark'], ['Крыло забвения', '🪽', 'guard', 'dark']], [P('Тень без источника', { dmg_dark: 48, dmg: 24 }), P('Память несбывшегося', { bossDmg: 34, crit: 18, critDmg: 0.55, cdr: 16 }), P('Сон мироздания', { allStat: 11, statRes: 30, taken: -18 })],
+      { dragon: 1, ph: 1, vp: 'a huge black dragon lying in a horizontal pose with pearly iridescent violet-white wings' })
   ];
   D.PET = {}; D.PETS.forEach((p) => { D.PET[p.id] = p; });
   D.PET_IDS = D.PETS.map((p) => p.id);
@@ -380,11 +383,11 @@
     let c = 0; LV_STEP.forEach((t, i) => { if ((d.lv | 0) >= t) c = i; }); return c;
   };
   // Концептуальное яйцо — крошечный шанс только на 10-м этапе Подземелья Артефактов / Материалов; в лавке не продаётся
-  D.EGG_CONCEPT = 6; D.EGG_CONCEPT_CHANCE = 0.015; D.EGG_ORIGIN = 7; D.EGG_ORIGIN_CHANCE = 0.003;   // Исток — ещё реже
+  D.EGG_CONCEPT = 6; D.EGG_CONCEPT_CHANCE = 0.015; D.EGG_ORIGIN = 7; D.EGG_ORIGIN_CHANCE = 0.003; D.EGG_PRE = 8; D.EGG_PRE_CHANCE = 0.001;   // Исток — ещё реже
   E.eggConceptOk = (d) => !!d && ((d.art === 10) || (d.sp === 'mats' && d.i === 9));
   E.eggChance = (d) => (d && d.art ? 0.3 : d && d.sp ? 0.2 : 0.14);
   E.rollEgg = function (d, rng) {
-    if (E.eggConceptOk(d)) { const u = rng(); if (u < D.EGG_ORIGIN_CHANCE) return D.EGG_ORIGIN; if (u < D.EGG_ORIGIN_CHANCE + D.EGG_CONCEPT_CHANCE) return D.EGG_CONCEPT; }
+    if (E.eggConceptOk(d)) { const u = rng(); if (u < D.EGG_PRE_CHANCE) return D.EGG_PRE; if (u < D.EGG_PRE_CHANCE + D.EGG_ORIGIN_CHANCE) return D.EGG_ORIGIN; if (u < D.EGG_PRE_CHANCE + D.EGG_ORIGIN_CHANCE + D.EGG_CONCEPT_CHANCE) return D.EGG_CONCEPT; }
     const c = E.eggCeil(d); if (c < 0 || rng() >= E.eggChance(d)) return -1;
     const w = []; for (let t = 0; t <= c; t++) w.push(t === 5 ? 0.15 : Math.pow(0.42, c - t)); let u = rng() * w.reduce((a, b) => a + b, 0);
     for (let t = 0; t <= c; t++) { if (u < w[t]) return t; u -= w[t]; } return c;
