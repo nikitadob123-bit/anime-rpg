@@ -21,16 +21,22 @@
     return `<div class="card artcard petcard"><div class="row between center-v"><b>🐾 Питомец</b><span class="row gap"><button class="btn ghost small" data-act="hatchery" data-quiet="1">🥚 ${hatch || (eggs ? 'Яйца ' + eggs : 'Инкубатор')}</button><button class="btn ghost small" data-act="petList" data-quiet="1">Коллекция ${n}/${D.PETS.length}</button></span></div>${cell}</div>`;
   };
   UI.act.petList = () => UI.petListModal();
+  UI.petFlt = { r: -1, own: false };   // фильтр коллекции: редкость (-1 — все) и «только полученные»
+  UI.act.petFlt = (el) => { if (el.dataset.k === 'own') UI.petFlt.own = !UI.petFlt.own; else UI.petFlt.r = +el.dataset.r; UI.petListModal(); };
   UI.petListModal = function () {
-    const s = UI.slot(); E.petEnsure(s);
-    const rows = D.PET_RAR.map((rr, r) => {
-      const list = E.petsOf(r).map((p) => { const own = s.pets[p.id], eq = s.petEq === p.id;
+    const s = UI.slot(), F = UI.petFlt; E.petEnsure(s); const m0 = document.querySelector('.mbox'), top = m0 && m0.scrollTop;
+    const have = (r) => E.petsOf(r).filter((p) => s.pets[p.id]).length, all = D.PETS.length, got = Object.keys(s.pets).length;
+    const chips = `<div class="pfilt"><button class="${F.r < 0 ? 'on' : ''}" data-act="petFlt" data-r="-1" data-quiet="1">Все ${got}/${all}</button>${D.PET_RAR.filter((x) => x.open).map((x, r) => `<button class="${F.r === r ? 'on' : ''}" style="--ac:${x.c}" data-act="petFlt" data-r="${r}" data-quiet="1">${x.n.slice(0, 4)}. ${have(r)}/${E.petsOf(r).length}</button>`).join('')}<button class="${F.own ? 'on' : ''}" data-act="petFlt" data-k="own" data-quiet="1">✔ Мои</button></div>`;
+    const rows = D.PET_RAR.filter((x) => x.open && (F.r < 0 || F.r === D.PET_RAR.indexOf(x))).map((rr) => { const r = D.PET_RAR.indexOf(rr);
+      const list = E.petsOf(r).filter((p) => !F.own || s.pets[p.id]).map((p) => { const own = s.pets[p.id], eq = s.petEq === p.id;
         return own ? `<button class="aitem ${eq ? 'eq' : ''}" style="--ac:${rr.c};--ag:${rr.g}" data-act="petOpen" data-id="${p.id}" data-quiet="1">${UI.petIc(p)}<small>${esc(p.n)}</small>${stars(own.star)}<small class="dim">ур. ${own.lv}</small>${eq ? '<em>с вами</em>' : ''}</button>`
           : `<div class="aitem lock" style="--ac:${rr.c}"><span class="aic"><i>❔</i></span><small>???</small></div>`; }).join('');
-      return `<div class="arow"><div class="arh" style="color:${rr.c}">${rr.n}${rr.open ? '' : ' · скоро'}</div>${rr.open ? `<div class="agrid">${list}</div>` : '<div class="small dim">Эта редкость появится в одном из следующих обновлений.</div>'}</div>`;
+      return `<div class="arow"><div class="arh" style="color:${rr.c}">${rr.n} <span class="dim small">${have(r)}/${E.petsOf(r).length}</span></div>${list ? `<div class="agrid">${list}</div>` : '<div class="small dim">Здесь пока никого.</div>'}</div>`;
     }).join('');
+    const soon = F.r < 0 ? `<div class="small dim tl petsoon">${D.PET_RAR.filter((x) => !x.open).map((x) => x.n).join(' · ')} — появятся в следующих обновлениях.</div>` : '';
     UI.modal(`<h3>🐾 Питомцы</h3><div class="small dim tl">Один питомец идёт с героем: даёт характеристики как снаряжение его редкости, навыки в бою и пассивы. Повтор добавляет звезду (+${Math.round(D.PET_STAR_K * 100)}% к статам), корм поднимает уровень, а узы открывают пассивы. Драконы — только Легендарные и выше.</div>
-      <div class="row gap"><button class="btn ghost grow small" data-act="hatchery" data-quiet="1">🥚 Инкубатор и лавка</button><span class="card small center m0">🍖 Корм: <b>${fmt(s.petFood)}</b></span></div><div class="alist">${rows}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
+      <div class="row gap"><button class="btn ghost grow small" data-act="hatchery" data-quiet="1">🥚 Инкубатор и лавка</button><span class="card small center m0">🍖 Корм: <b>${fmt(s.petFood)}</b></span></div>${chips}<div class="alist">${rows}${soon}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
+    const m1 = document.querySelector('.mbox'); if (m1 && top && m0) m1.scrollTop = top;
   };
   UI.act.petOpen = (el) => UI.petModal(el.dataset.id);
   UI.petModal = function (id) {
