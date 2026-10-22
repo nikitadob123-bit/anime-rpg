@@ -1,0 +1,24 @@
+/* v2.26 Испытания и эффекты боя */
+.chgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.chb{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:inherit;font:inherit}
+.chb span{font-size:26px}.chb small{opacity:.75;font-size:11px}
+.chb.tower{background:linear-gradient(160deg,rgba(120,80,255,.22),rgba(20,14,36,.7))}.chb.arena{background:linear-gradient(160deg,rgba(255,90,90,.2),rgba(20,14,36,.7))}.chb.train{background:linear-gradient(160deg,rgba(80,220,160,.18),rgba(20,14,36,.7))}
+.tower{display:flex;flex-direction:column;gap:4px;margin:10px auto;width:70%}
+.tfl{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.tfl.done{opacity:.55}.tfl.cur{border-color:#ffd36b;box-shadow:0 0 12px rgba(255,211,107,.35);background:rgba(255,211,107,.1)}.tfl.boss b{color:#ff8e8e}.tfl.mini b{color:#d9b8ff}
+.arv,.trow{display:flex;gap:10px;align-items:center;padding:8px 10px;margin:6px 0;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.arv.d0{border-left:3px solid #7dd3a0}.arv.d1{border-left:3px solid #ffd36b}.arv.d2{border-left:3px solid #ff6a6a}.arvi{font-size:24px}
+.atiers{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0}.atier{font-size:11px;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.05);opacity:.6}.atier.on{opacity:1;background:rgba(255,211,107,.18);border:1px solid #ffd36b}
+.trow .bar{display:block;margin-top:4px}
+.battle>.skbanner{position:absolute;left:0;right:0;top:34%;display:flex;flex-direction:column;align-items:center;pointer-events:none;z-index:30;opacity:0}
+.skbanner span{font-size:30px}.skbanner b{font-size:22px;letter-spacing:1px;color:#fff3c8;text-shadow:0 0 12px rgba(255,190,80,.8),0 2px 0 #000;padding:2px 22px;background:linear-gradient(90deg,transparent,rgba(30,10,50,.85),transparent)}.skbanner small{opacity:.8;font-size:12px}
+.skbanner.on{animation:skb 1s ease-out}@keyframes skb{0%{opacity:0;transform:scale(1.4)}15%{opacity:1;transform:scale(1)}75%{opacity:1}100%{opacity:0;transform:translateY(-10px)}}
+.battle>.combo{position:absolute;right:12px;top:72px;z-index:30;display:flex;flex-direction:column;align-items:center;pointer-events:none;opacity:0;transition:opacity .3s}
+.combo.on{opacity:1}.combo b{font-size:34px;line-height:1;color:#ffd36b;text-shadow:0 0 10px rgba(255,140,40,.9),0 2px 0 #000}.combo small{font-size:10px;letter-spacing:2px;color:#ffb36b}
+.combo.pop b{animation:cpop .25s ease-out}@keyframes cpop{0%{transform:scale(1.6)}100%{transform:scale(1)}}
+.battle.slowmo{filter:saturate(1.4) contrast(1.1);transition:filter .3s}.battle.slowmo .foes,.battle.slowmo .party{animation:slw 1.1s ease-out}
+@keyframes slw{0%{transform:scale(1.06)}100%{transform:scale(1)}}
+.battle>.kobanner{position:absolute;left:0;right:0;top:28%;z-index:31;display:flex;flex-direction:column;align-items:center;pointer-events:none;opacity:0}
+.kobanner b{font-size:28px;color:#fff;letter-spacing:3px;text-shadow:0 0 18px #ff4d6d,0 0 4px #000}.kobanner small{color:#ffd36b}
+.kobanner.on{animation:kob 1.2s ease-out forwards}@keyframes kob{0%{opacity:0;transform:scale(2.2)}20%{opacity:1;transform:scale(1)}80%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.skbanner.on,.kobanner.on,.combo.pop b,.battle.slowmo .foes,.battle.slowmo .party{animation:none}.skbanner.on,.kobanner.on{opacity:1}}

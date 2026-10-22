@@ -139,11 +139,11 @@
   // ═════ БОЙ ═════
   const LV = { decay: 1, causeMark: 1 };
   const stIcons = (u) => u.st.map((s) => `<i class="si ${D.ST[s.id].k}${D.ST[s.id].item >= 9 ? ' ox9' : D.ST[s.id].fixed ? ' fx8' : ''}" title="${D.ST[s.id].n}${LV[s.id] ? ' ' + s.pow : ''}${D.ST[s.id].d ? ': ' + D.ST[s.id].d : ''}">${D.ST[s.id].ic}${LV[s.id] ? '<b>' + s.pow + '</b>' : s.id === 'mantra' ? '<b>×' + Math.pow(2, s.pow) + '</b>' : s.dur > 1 && s.dur < 90 ? '<b>' + s.dur + '</b>' : ''}</i>`).join('');
-  UI.battle = async function () {
+  UI.battle = async function (ch) {   // ch — испытание (v2.26): { B, ic, bio, title, finish }; без него — обычный бой вылазки
     const slot = UI.slot(), st = UI.p.settings;
-    const B = C.startNodeBattle(slot, { auto: !!st.auto, cmd: !!slot.cmd }); UI.B = B; B.sel = null; B.speed = st.battleSpeed || 1;
-    const run = slot.run, dng = D.DUN[run.did], node = B.node, layer = $('#layer');
-    layer.innerHTML = `<div id="battle" class="battle bio-${dng.bio}"><div class="bsky"></div><div class="bt-top"><div class="bt-title">${dng.ic} ${node.t === 'boss' ? 'БОСС' : node.t === 'mini' ? 'Мини-босс' : node.elite ? 'Элита' : 'Бой'}</div><div class="turnstrip" id="turns"></div><button class="mini" data-act="bCmd" id="bCmd" data-quiet="1" title="Командовать Свитой">👥</button><button class="mini" data-act="bAuto" id="bAuto" data-quiet="1">🤖</button><button class="mini" data-act="bSpeed" id="bSpeed" data-quiet="1">×${B.speed}</button></div>
+    const B = ch ? ch.B : C.startNodeBattle(slot, { auto: !!st.auto, cmd: !!slot.cmd }); UI.B = B; B.sel = null; B.speed = st.battleSpeed || 1;
+    const run = slot.run, dng = ch ? { ic: ch.ic, bio: ch.bio } : D.DUN[run.did], node = B.node, layer = $('#layer');
+    layer.innerHTML = `<div id="battle" class="battle bio-${dng.bio}"><div class="bsky"></div><div class="bt-top"><div class="bt-title">${dng.ic} ${ch && ch.title ? esc(ch.title) : node.t === 'boss' ? 'БОСС' : node.t === 'mini' ? 'Мини-босс' : node.elite ? 'Элита' : 'Бой'}</div><div class="turnstrip" id="turns"></div><button class="mini" data-act="bCmd" id="bCmd" data-quiet="1" title="Командовать Свитой">👥</button><button class="mini" data-act="bAuto" id="bAuto" data-quiet="1">🤖</button><button class="mini" data-act="bSpeed" id="bSpeed" data-quiet="1">×${B.speed}</button></div>
       <div class="foes" id="foes"></div><div class="bt-log" id="blog"></div><div class="party" id="party"></div><div class="bt-act" id="bact"></div><div class="bubble" id="bubble"></div></div>`;
     layer.classList.add('on'); UI.sfx('boom'); try { F.setMode('none'); } catch (e) { /* ignore */ }
     $('#bAuto').classList.toggle('on', !!B.opts.auto); $('#bCmd').classList.toggle('on', !!B.opts.cmd);
@@ -166,8 +166,8 @@
     }
     if (!B.over) B.over = 'lose';
     await UI.wait(500 / B.speed);
-    const rep = C.finishBattle(slot, B); UI.save(true);
-    await battleSummary(B, rep);
+    const rep = ch ? ch.finish(slot, B) : C.finishBattle(slot, B); UI.save(true);
+    if (!ch) await battleSummary(B, rep);
     layer.classList.remove('on'); layer.innerHTML = ''; UI.B = null;
     if (UI.v === 'game') try { F.setMode(UI.p.settings.particles ? 'embers' : 'none'); } catch (e) { /* ignore */ }
     return rep;
@@ -267,14 +267,14 @@
     const evs = B.ev.splice(0); const sp = B.speed; const d = (ms) => UI.wait(ms / sp);
     for (const e of evs) {
       switch (e.t) {
-        case 'skill': { const el = unitEl(e.u); if (el) { el.classList.add('acting'); setTimeout(() => el.classList.remove('acting'), 500 / sp); } floatTxt(e.u, `${e.ic || ''} ${esc(e.n)}`, 'skn'); UI.sfx(/ур|огн|лед|мол|луч|шар|взрыв|эфир/i.test(e.n || '') ? 'magic' : 'click'); await d(300); break; }
-        case 'dmg': { const el = unitEl(e.u); const col = (D.ELEMS[e.el] || D.ELEMS.phys).c; floatTxt(e.u, (e.crit ? '💥 ' : '') + '−' + fmt(e.v), 'dmg' + (e.crit ? ' crit' : '')); if (el) { el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit'); } burst(e.u, col, e.crit ? 22 : 12); UI.sfx(e.crit ? 'crit' : 'hit'); if (e.crit && UI.p.settings.shake) shake(); await d(220); break; }
+        case 'skill': { if (UI.juice) UI.juice.skill(B, e); const el = unitEl(e.u); if (el) { el.classList.add('acting'); setTimeout(() => el.classList.remove('acting'), 500 / sp); } floatTxt(e.u, `${e.ic || ''} ${esc(e.n)}`, 'skn'); UI.sfx(/ур|огн|лед|мол|луч|шар|взрыв|эфир/i.test(e.n || '') ? 'magic' : 'click'); await d(300); break; }
+        case 'dmg': { if (UI.juice) UI.juice.dmg(B, e); const el = unitEl(e.u); const col = (D.ELEMS[e.el] || D.ELEMS.phys).c; floatTxt(e.u, (e.crit ? '💥 ' : '') + '−' + fmt(e.v), 'dmg' + (e.crit ? ' crit' : '')); if (el) { el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit'); } burst(e.u, col, e.crit ? 22 : 12); UI.sfx(e.crit ? 'crit' : 'hit'); if (e.crit && UI.p.settings.shake) shake(); await d(220); break; }
         case 'heal': floatTxt(e.u, '+' + fmt(e.v), 'heal'); burst(e.u, '#7dffa0', 10); UI.sfx('heal'); await d(200); break;
         case 'miss': floatTxt(e.u, 'Мимо', 'txt'); UI.sfx('miss'); await d(150); break;
         case 'txt': floatTxt(e.u, esc(e.s), 'txt'); await d(160); break;
         case 'abs': floatTxt(e.u, 'щит −' + e.v, 'txt'); break;
         case 'dot': { floatTxt(e.u, '−' + fmt(e.v), 'dmg dot'); await d(120); break; }
-        case 'death': { const el = unitEl(e.u); if (el) el.classList.add('dead'); UI.sfx('die'); burst(e.u, '#ffffff', 18); await d(380); break; }
+        case 'death': { const el = unitEl(e.u); if (el) el.classList.add('dead'); UI.sfx('die'); burst(e.u, '#ffffff', 18); await d(380); if (UI.juice) await UI.juice.death(B, e); break; }
         case 'charge': { floatTxt(e.u, '⚠️ копит силу!', 'warn'); UI.sfx('buff'); await d(350); break; }
         case 'phase': { const u = B.units.find((x) => x.id === e.u); floatTxt(e.u, '🔥 ЯРОСТЬ!', 'warn'); UI.sfx('boom'); if (UI.p.settings.shake) shake(); if (u && D.ENEMIES[u.eid] && D.ENEMIES[u.eid].lines && D.ENEMIES[u.eid].lines[1]) await bubble(u, D.ENEMIES[u.eid].lines[1], B); else await d(400); break; }
         case 'summon': renderUnits(B, true); UI.sfx('magic'); await d(300); break;

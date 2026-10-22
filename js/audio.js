@@ -8,15 +8,16 @@
   };
   A.resume = function () { A.init(); if (A.ctx && A.ctx.state === 'suspended') A.ctx.resume(); if (A.on && A.music) A.startMusic(); };
   A.set = function (o) { Object.assign(A, o); if (A.master) A.master.gain.value = A.on ? A.vol * 0.5 : 0; if (A.on && A.music) A.startMusic(); else A.stopMusic(); };
+  A.sfx = 1; A.sfxK = () => Math.max(0, Math.min(1, A.sfx == null ? 1 : A.sfx));   // v2.26: отдельная громкость эффектов (музыка — своя)
   function tone(f, t0, dur, type, vol, f2) {
     if (!A.ctx || !A.on) return; const c = A.ctx, o = c.createOscillator(), g = c.createGain(); o.type = type || 'sine'; o.frequency.setValueAtTime(f, c.currentTime + t0);
     if (f2) o.frequency.exponentialRampToValueAtTime(f2, c.currentTime + t0 + dur);
-    g.gain.setValueAtTime(0.0001, c.currentTime + t0); g.gain.exponentialRampToValueAtTime(vol || 0.2, c.currentTime + t0 + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + t0 + dur);
+    g.gain.setValueAtTime(0.0001, c.currentTime + t0); g.gain.exponentialRampToValueAtTime(Math.max(0.0002, (vol || 0.2) * A.sfxK()), c.currentTime + t0 + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + t0 + dur);
     o.connect(g); g.connect(A.master); o.start(c.currentTime + t0); o.stop(c.currentTime + t0 + dur + 0.05);
   }
   function noise(t0, dur, vol, hp) {
     if (!A.ctx || !A.on) return; const c = A.ctx, n = Math.floor(c.sampleRate * dur), b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
-    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n); const s = c.createBufferSource(); s.buffer = b; const f = c.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp || 800; const g = c.createGain(); g.gain.value = vol || 0.2;
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n); const s = c.createBufferSource(); s.buffer = b; const f = c.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp || 800; const g = c.createGain(); g.gain.value = (vol || 0.2) * A.sfxK();
     s.connect(f); f.connect(g); g.connect(A.master); s.start(c.currentTime + t0);
   }
   const SFX = {
