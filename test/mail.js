@@ -1,7 +1,7 @@
 /* Тесты почты (node, без зависимостей): разбор ленты, валидация подарков, выдача один раз, миграция, срок, условия. Запуск: npm test */
 const fs = require('fs'), path = require('path'), assert = require('assert');
 const RPG = require('../js/data-core.js');
-['data-stats', 'data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'pets', 'allies', 'mail'].forEach((f) => require('../js/' + f + '.js'));
+['data-stats', 'data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'pets', 'allies', 'goals', 'mail'].forEach((f) => require('../js/' + f + '.js'));
 const { D, E, S, M } = RPG;
 let pass = 0, fail = 0; const failed = [];
 const t = (name, fn) => { try { fn(); pass++; } catch (e) { fail++; failed.push(name + ': ' + e.message); console.log('  ✗', name, '\n     ', e.message); } };
@@ -38,7 +38,7 @@ t('giftErrors: все типы подарков проверяются по да
   assert(M.giftErrors({ gear: [{ base: 'sword', rarity: 9 }] }).length === 1);
   assert(M.giftErrors({ cons: { pot_hp1: 1.5 } }).length === 1);
   assert(M.giftErrors({ gold: '100' }).length === 1);
-  Object.keys(M.GIFT_TYPES).forEach((k) => assert(['gold', 'xp', 'sp', 'cons', 'mats', 'presents', 'gear', 'unique', 'artifacts', 'pets', 'allies'].includes(k)));
+  Object.keys(M.GIFT_TYPES).forEach((k) => assert(['gold', 'xp', 'sp', 'cons', 'mats', 'presents', 'gear', 'unique', 'artifacts', 'pets', 'allies', 'goals'].includes(k)));
 });
 
 console.log('Почта: доставка и подарки');

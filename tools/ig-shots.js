@@ -1,0 +1,60 @@
+/* E2E + снимки v2.25 «Цели»: Ежедневно, достижения, Дозор, меню героя. node tools/ig-shots.js [url] → /workspace/shots-ig1/ */
+const { chromium } = require('playwright-core');
+const fs = require('fs'), path = require('path'), { execFileSync } = require('child_process');
+const { serve } = require('./serve.js');
+const outDir = process.env.SHOTS || '/workspace/shots-ig1'; fs.mkdirSync(outDir, { recursive: true });
+let ok = 0, bad = 0; const check = (n, c, x) => { if (c) { ok++; console.log('  ✓', n, x || ''); } else { bad++; console.log('  ✗', n, x || ''); } };
+(async () => {
+  let srv = null, url = process.argv[2];
+  if (!url) { srv = await serve(0); url = 'http://127.0.0.1:' + srv.address().port + '/'; }
+  const exe = process.env.CHROME_PATH || ['/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'].find((p) => fs.existsSync(p));
+  const browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
+  const ctx = await browser.newContext({ viewport: { width: 444, height: 986 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true, locale: 'ru-RU', timezoneId: 'Europe/Minsk' });
+  const page = await ctx.newPage(); const errors = [];
+  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_/.test(m.text())) errors.push(m.text()); });
+  page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
+  const shot = async (n) => { const raw = path.join(outDir, '.raw-' + n + '.png'), out = path.join(outDir, 'ig-' + n + '.jpg'); await page.screenshot({ path: raw });
+    execFileSync('python3', ['-c', `from PIL import Image\nim=Image.open(${JSON.stringify(raw)}).convert('RGB')\nim.save(${JSON.stringify(out)},quality=82)`]); fs.unlinkSync(raw); console.log('  📷', out, Math.round(fs.statSync(out).size / 1024) + ' КБ'); };
+  const ev = (f, a) => page.evaluate(f, a);
+  await page.route(/\/mail\/inbox\.json/, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ letters: [] }) }));
+  await page.goto(url, { waitUntil: 'load' }); await page.waitForTimeout(1200);
+  await ev(() => {
+    const { UI, S, E, D, story: ST } = __RPG;
+    const p = S.newProfile('Артефакт', '🏺'); const s = E.newSlot({ name: 'Кайрон', race: 'o_street', uniq: 'shadowdance', prof1: 'smith', prof2: 'miner', now: Date.now() }); s.hero.profLocked = true; s.tut = { guide: 1, bt: 1 };
+    p.slots[0] = s; ['prologue'].concat(ST.sceneIds(1), ST.sceneIds(2)).forEach((id) => E.finishScene(s, id)); s.story.flags.prologue_done = 1; ['mill', 'wood'].forEach((d) => { s.prog.cleared[d] = 1; s.prog.boss[d] = true; });
+    s.hero.level = 100; ['stray_cat','red_fox','storm_hawk','ember_dragon','ember_dragon','nimbus_kitsune','uncommon_a','uncommon_b','uncommon_c','divine_dragon'].forEach((id) => E.petGain(s, id)); s.petFood = 60; s.pets.divine_dragon.lv = 40; s.eggs = { 0: 2, 2: 1, 4: 1, 6: 1, 7: 1 }; s.hatch = { r: 3, end: Date.now() + 25 * 60000 }; s.pets.ember_dragon.lv = 32; s.pets.ember_dragon.bxp = 30; s.petEq = 'ember_dragon'; D.PET_IDS.forEach((id) => { if (!s.pets[id]) E.petGain(s, id); }); ['field_dog','jelly_slime','river_otter','night_owl','frost_wolf','crystal_slime','glacier_dragon','phoenix_fledgling','astral_kirin'].forEach((id) => E.petGain(s, id)); s.gold = 500000; s.mats.asc_sigil = 30;
+    const rng = E.rng(5); ['sword', 'head_h', 'body_h'].forEach((b) => { const it = E.genItem(rng, { base: b, il: 100, rarity: 7 }); E.addItem(s, it); E.equip(s, it.id); });
+    ['lantern', 'lucky_coin', 'moon_fang', 'moon_fang', 'first_banner', 'dragon_eye', 'dawn_lance', 'halo_shard', 'supernova_heart', 'hoard_key'].forEach((id) => E.artGain(s, id));
+    s.artEq = 'supernova_heart'; ['gen1', 'gen6', 'grak'].forEach((id) => E.recruit(s, id)); s.party = ['gen1', 'gen6', 'asteria'];
+    for (let i = 1; i <= 9; i++) s.prog.cleared['artd' + i] = 1; s.artProg.best = 9;
+    s.crew.grimhild.lv = 60; s.crew.grimhild.star = 2; s.crew.grimhild.skl = 1; s.crew.grimhild.bxp = 260; s.support = 'grimhild'; s.gold = 5e6; E.addMat(s, 'star_ore', 70); E.addMat(s, 'phoenix_f', 25); E.petGain(s, 'preexist_dragon_void');
+    s.stats.kills = 140; s.stats.wins = 7; s.afk.t = Date.now() - 7 * 3600e3; s.daily.loginDay = E.dayKey() - 1; s.daily.streak = 2; const L0 = E.dailyList(s); s.stats[__RPG.D.DAILY_POOL.find((x) => x.id === L0[0].id).st] += L0[0].need; S.save(p); UI.p = p; p.active = 0; UI.enterGame();
+  });
+  await page.waitForTimeout(1500); await ev(() => __RPG.UI.closeModal && __RPG.UI.closeModal());
+  await ev(() => { __RPG.UI.tab = 'city'; __RPG.UI.refresh(); }); await page.waitForTimeout(500);
+  check('Лагерь: карточка «Ежедневно» с 3 заданиями', await page.locator('.dailycard .dq').count() === 3);
+  await ev(() => document.querySelector('.dailycard').scrollIntoView({ block: 'start' })); await page.waitForTimeout(300); await shot('1-daily');
+  const g0 = await ev(() => __RPG.UI.slot().gold);
+  await page.locator('[data-act="loginClaim"]').click(); await page.waitForTimeout(300);
+  check('серия входов: день 3, золото начислено', await ev((g) => { const s = __RPG.UI.slot(); return s.daily.streak === 3 && s.gold > g; }, g0));
+  await page.locator('.dq.done [data-act="dailyClaim"]').first().click(); await page.waitForTimeout(300);
+  check('задание получено', await ev(() => __RPG.UI.slot().daily.claimed.length === 1));
+  await page.locator('[data-act="afkClaim"]').click(); await page.waitForTimeout(300);
+  check('Дозор собран (таймер обнулён)', await ev(() => Date.now() - __RPG.UI.slot().afk.t < 60e3));
+  await ev(() => document.querySelector('.dailycard').scrollIntoView({ block: 'start' })); await page.waitForTimeout(300); await shot('2-daily-claimed');
+  await page.locator('[data-act="achOpen"]').click(); await page.waitForTimeout(500); check('окно достижений', await page.locator('.achf').count() === 12); await shot('3-achievements');
+  await page.locator('.achf [data-act="achClaim"]:not([disabled])').first().click(); await page.waitForTimeout(400);
+  check('достижение получено', await ev(() => __RPG.UI.slot().ach.claimed.length >= 1));
+  await ev(() => { __RPG.UI.closeModal(); __RPG.UI.tab = 'hero'; __RPG.UI.refresh(); }); await page.waitForTimeout(600);
+  check('меню героя: вкладки и мощь', await page.locator('.hsecs button').count() === 4 && await page.locator('.hpow').count() === 1);
+  await shot('4-hero');
+  for (const [k, n] of [['gear', '5-hero-gear'], ['comp', '6-hero-comp'], ['info', '7-hero-info']]) { await page.locator(`.hsecs [data-k="${k}"]`).click(); await page.waitForTimeout(400); await shot(n); }
+  await page.locator('.hsecs [data-k="comp"]').click(); await page.waitForTimeout(300);
+  const vis = await ev(() => { const v = (q) => { const e = document.querySelector('.herowrap ' + q); return !!e && getComputedStyle(e).display !== 'none'; }; return [v('.petcard'), v('.allycard'), v('.gearcard')]; });
+  check('раздел «Спутники»: видны питомец и союзники, снаряжение скрыто', vis[0] && vis[1] && !vis[2], JSON.stringify(vis));
+  await page.locator('.hsecs [data-k="gear"]').click(); await page.waitForTimeout(300);
+  await page.locator('.gearcard .eqs').first().click(); await page.waitForTimeout(400); check('кнопки снаряжения работают', await ev(() => document.querySelector('#modal').classList.contains('on')));
+  await ev(() => __RPG.UI.closeModal()); await page.locator('.hsecs [data-k="all"]').click();
+  check('нет ошибок JS', errors.length === 0, errors.join(' | '));
+  await browser.close(); if (srv) srv.close(); console.log(`\nig-shots: ${ok} ✓, ${bad} ✗`); process.exit(bad ? 1 : 0);
+})();

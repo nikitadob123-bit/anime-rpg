@@ -5,7 +5,7 @@
    Подробно — docs/MAIL.md. После изменения: git commit + git push, через ~1 минуту письмо увидят игроки. */
 const fs = require('fs'), path = require('path');
 const RPG = require('../js/data-core.js');
-['data-stats', 'data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'allies', 'data-craft-icons', 'craft', 'mail'].forEach((f) => require('../js/' + f + '.js'));
+['data-stats', 'data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'allies', 'data-craft-icons', 'craft', 'goals', 'mail'].forEach((f) => require('../js/' + f + '.js'));
 const { D, M } = RPG;
 const FILE = process.env.MAIL_FILE || path.join(__dirname, '..', 'mail', 'inbox.json');
 

@@ -1,7 +1,7 @@
 /* v2.19 «Питомцы»: лестница редкостей, состав, драконы, статы ≈ снаряжению, навыки/пассивы, звёзды/корм/узы, яйца и инкубатор, выпадение, миграция, почта. node test/pets.js */
 const assert = require('assert');
 const RPG = require('../js/data-core.js'); require('../js/data-stats.js');
-['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'allies', 'data-craft-icons', 'craft', 'mail'].forEach((f) => require('../js/' + f + '.js'));
+['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'allies', 'data-craft-icons', 'craft', 'goals', 'mail'].forEach((f) => require('../js/' + f + '.js'));
 const { D, E, C, S, M } = RPG;
 let pass = 0, fail = 0; const t = (n, f) => { try { f(); pass++; } catch (e) { fail++; console.log('  ✗', n, '\n     ', e.message); } };
 const mk = (L) => { const s = E.newSlot({ name: 'Пит', race: 'o_street', uniq: 'phoenix', prof1: 'smith', prof2: 'miner' }); s.hero.level = L || 50; s.story.flags.prologue_done = 1; return s; };

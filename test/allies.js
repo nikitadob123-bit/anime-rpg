@@ -1,7 +1,7 @@
 /* v2.24 «Союзники»: спутницы Мировых артефактов — уровень со старта, эволюция до ★5, цена, рост статов, навыки, миграция. */
 const assert = require('assert');
 const RPG = require('../js/data-core.js'); require('../js/data-stats.js');
-['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'allies', 'data-craft-icons', 'craft'].forEach((f) => require('../js/' + f + '.js'));
+['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'allies', 'data-craft-icons', 'craft', 'goals'].forEach((f) => require('../js/' + f + '.js'));
 const { D, E, C, S } = RPG;
 let pass = 0, fail = 0; const t = (n, f) => { try { f(); pass++; } catch (e) { fail++; console.log('  ✗', n, '\n     ', e.message); } };
 const mk = (L) => { const s = E.newSlot({ name: 'Союз', race: 'o_street', uniq: 'phoenix', prof1: 'smith', prof2: 'miner' }); s.hero.level = L || 40; s.story.flags.prologue_done = 1; return s; };
@@ -56,10 +56,10 @@ t('союзник воюет в отряде (боевой юнит с навы�
   assert(E.setSupport(s, 'asteria') === '' || true);
 });
 t('миграция v8→v9: у существующих союзников появляется ev=0 и стартовый уровень, остальное цело', () => {
-  assert.strictEqual(S.VERSION, 9); const s = mk(); E.artGain(s, 'supernova_heart'); delete s.crew.asteria.ev; s.crew.asteria.lv = 7; s.crew.asteria.star = 2; s.crew.asteria.bxp = 90; s.gold = 777;
+  assert(S.VERSION >= 9); const s = mk(); E.artGain(s, 'supernova_heart'); delete s.crew.asteria.ev; s.crew.asteria.lv = 7; s.crew.asteria.star = 2; s.crew.asteria.bxp = 90; s.gold = 777;
   const p = { v: 8, slots: [s, null] }; const out = S.migrations[8](p); assert.strictEqual(out.v, 9);
   const a = out.slots[0].crew.asteria; assert.strictEqual(a.ev, 0); assert.strictEqual(a.lv, 25); assert.strictEqual(a.star, 2); assert.strictEqual(a.bxp, 90); assert.strictEqual(out.slots[0].gold, 777); assert.strictEqual(out.slots[1], null);
-  const m = { getItem: () => null }; assert(S.migrations[8] && S.VERSION === 9);
+  const m = { getItem: () => null }; assert(S.migrations[8] && S.VERSION >= 9);
 });
 t('новые союзники не ломают обычную Свиту', () => { const s = mk(); E.recruit(s, 'gen1'); assert.strictEqual(E.crewStars(s, 'gen1'), 0); s.crew.gen1.star = 3; assert.strictEqual(E.crewStars(s, 'gen1'), 3); assert(Math.abs(E.crewK(s, 'gen1', s.crew.gen1) - 1.36) < 1e-9); assert(E.allyEvolve(s, 'gen1')); });
 console.log(`\nСоюзники: ${pass} ✓, ${fail} ✗`); process.exit(fail ? 1 : 0);
