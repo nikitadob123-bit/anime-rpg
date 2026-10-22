@@ -1,7 +1,7 @@
 /* v2.25 «Цели»: ежедневные задания, серия входов, достижения, Дозор (AFK), мощь отряда, миграция v9→v10. */
 const assert = require('assert');
 const RPG = require('../js/data-core.js'); require('../js/data-stats.js');
-['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'allies', 'data-craft-icons', 'craft', 'goals'].forEach((f) => require('../js/' + f + '.js'));
+['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'allies', 'data-craft-icons', 'craft', 'goals', 'challenge'].forEach((f) => require('../js/' + f + '.js'));
 const { D, E, S } = RPG;
 let pass = 0, fail = 0; const t = (n, f) => { try { f(); pass++; } catch (e) { fail++; console.log('  ✗', n, '\n     ', e.message); } };
 const N0 = new Date(2026, 9, 22, 12, 0, 0).getTime(), DAY = 86400e3, H = 3600e3;
@@ -39,7 +39,7 @@ t('мощь отряда ≥ мощи героя и растёт с отрядо
   const s = mk(); const p0 = E.teamPower(s); assert.strictEqual(p0, E.power(s)); E.recruit(s, 'gen1'); s.party = ['gen1']; assert(E.teamPower(s) > p0);
 });
 t('миграция v9→v10: старый слот получает поля, остальное цело', () => {
-  assert.strictEqual(S.VERSION, 10); const s = mk(); delete s.daily; delete s.ach; delete s.afk; s.gold = 4321;
+  assert(S.VERSION >= 10); const s = mk(); delete s.daily; delete s.ach; delete s.afk; s.gold = 4321;
   const out = S.migrations[9]({ v: 9, slots: [s, null] }); assert.strictEqual(out.v, 10); const m = out.slots[0];
   assert(m.daily && m.daily.q.length === 3 && Array.isArray(m.ach.claimed) && m.afk.t > 0 && m.gold === 4321 && out.slots[1] === null);
   const bad = mk(); bad.daily = 'x'; bad.ach = { claimed: 5 }; bad.afk = {}; E.goalsEnsure(bad); assert(bad.daily.q.length === 3 && Array.isArray(bad.ach.claimed) && bad.afk.t > 0);
