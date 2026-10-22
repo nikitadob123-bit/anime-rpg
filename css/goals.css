@@ -1,0 +1,19 @@
+/* v2.25 Ежедневно / достижения / меню героя */
+.dailycard{display:flex;flex-direction:column;gap:8px}
+.dq,.dlogin,.dafk,.achf{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.dq.done{border-color:rgba(255,211,107,.45)}.dqi,.achi{font-size:22px;width:28px;text-align:center}.dqok{color:#9fe8b0;font-weight:700;font-size:18px}
+.dq .bar,.achf .bar{display:block;margin-top:4px}
+.dlogin.ready{background:linear-gradient(135deg,rgba(255,120,60,.18),rgba(255,211,107,.08));border-color:rgba(255,160,80,.5);animation:dpulse 2.4s ease-in-out infinite}
+@keyframes dpulse{50%{box-shadow:0 0 16px rgba(255,160,80,.35)}}
+.dafk{background:linear-gradient(135deg,rgba(90,110,255,.14),rgba(20,14,36,.6));border-color:rgba(140,150,255,.35)}
+.dbadge{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:#ff4d6d;color:#fff;font-style:normal;font-size:11px;line-height:18px}
+.achlist{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}.achf.all{opacity:.7}.achst{color:#ffd36b;font-size:12px;letter-spacing:1px}
+.hsecs{display:flex;gap:6px;margin:0 0 10px;overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:3;padding:4px 0;background:linear-gradient(rgba(16,10,28,.95),rgba(16,10,28,.7))}
+.hsecs button{flex:1 0 auto;padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:inherit;font:inherit;font-size:13px;transition:background .2s,border-color .2s}
+.hsecs button.on{background:linear-gradient(135deg,rgba(255,211,107,.3),rgba(180,120,255,.25));border-color:#ffd36b;color:#fff3c8}
+.herowrap>[data-hs]{animation:hsin .28s ease}@keyframes hsin{from{opacity:0;transform:translateY(6px)}}
+.hs-gear>[data-hs]:not([data-hs=top]):not([data-hs=gear]),.hs-comp>[data-hs]:not([data-hs=top]):not([data-hs=comp]),.hs-info>[data-hs]:not([data-hs=top]):not([data-hs=info]):not([data-hs=stat]){display:none}
+.herocard2 .heropor{box-shadow:0 0 0 2px var(--hrc),0 0 22px color-mix(in srgb,var(--hrc) 55%,transparent);border-radius:18px}
+.hpow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}.hpow span{padding:3px 9px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,211,107,.35);font-size:12px}.hpow b{color:#ffd36b}
+.hframe{opacity:.8;margin-top:4px}
+@media (prefers-reduced-motion:reduce){.dlogin.ready,.herowrap>[data-hs]{animation:none}}
