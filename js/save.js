@@ -55,7 +55,7 @@
   S.migrate = function (p) {
     if (!p || typeof p !== 'object') return null;
     let v = p.v || 1; if (v > S.VERSION) return null; // из будущего — не трогаем
-    let guard = 10; while (v < S.VERSION && guard--) { p = S.migrations[v](p); v = p.v; }
+    let guard = 64; while (v < S.VERSION && guard--) { p = S.migrations[v](p); v = p.v; }
     return p;
   };
   S.validate = function (p) {

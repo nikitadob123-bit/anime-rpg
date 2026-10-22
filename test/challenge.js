@@ -42,7 +42,7 @@ t('Зал: энергия тратится и восстанавливается
   const s2 = mk(300); assert.strictEqual(E.trainCap(s2), 30); assert(E.trainGold(s, 'agi') < E.trainGold(s, 'str'));
 });
 t('миграция v10→v11 и новые слоты', () => {
-  assert.strictEqual(S.VERSION, 11); const s = mk(); delete s.tower; delete s.arena; delete s.train; s.gold = 1234;
+  assert(S.VERSION >= 11); const s = mk(); delete s.tower; delete s.arena; delete s.train; s.gold = 1234;
   const out = S.migrations[10]({ v: 10, slots: [s, null] }); const m = out.slots[0]; assert.strictEqual(out.v, 11);
   assert(m.tower.best === 0 && m.arena.rating === 1000 && m.train.en === 20 && m.gold === 1234 && out.slots[1] === null);
 });
