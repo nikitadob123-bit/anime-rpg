@@ -13,7 +13,5 @@
 .hsecs button.on{background:linear-gradient(135deg,rgba(255,211,107,.3),rgba(180,120,255,.25));border-color:#ffd36b;color:#fff3c8}
 .herowrap>[data-hs]{animation:hsin .28s ease}@keyframes hsin{from{opacity:0;transform:translateY(6px)}}
 .hs-gear>[data-hs]:not([data-hs=top]):not([data-hs=gear]),.hs-comp>[data-hs]:not([data-hs=top]):not([data-hs=comp]),.hs-info>[data-hs]:not([data-hs=top]):not([data-hs=info]):not([data-hs=stat]){display:none}
-.herocard2 .heropor{box-shadow:0 0 0 2px var(--hrc),0 0 22px color-mix(in srgb,var(--hrc) 55%,transparent);border-radius:18px}
 .hpow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}.hpow span{padding:3px 9px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,211,107,.35);font-size:12px}.hpow b{color:#ffd36b}
-.hframe{opacity:.8;margin-top:4px}
 @media (prefers-reduced-motion:reduce){.dlogin.ready,.herowrap>[data-hs]{animation:none}}

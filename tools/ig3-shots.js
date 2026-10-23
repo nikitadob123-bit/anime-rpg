@@ -53,7 +53,7 @@ let ok = 0, bad = 0; const check = (n, c, x) => { if (c) { ok++; console.log('  
   await ev(() => { __RPG.UI.tab = 'hero'; __RPG.UI.refresh(); }); await page.waitForTimeout(400); check('герой: титул', await page.locator('.htitle').count() === 1);
   await page.locator('[data-act="cosOpen"]').click(); await page.waitForTimeout(300); await page.locator('[data-act="cosTitle"][data-id="slayer"]').click(); await page.waitForTimeout(200);
   await page.locator('[data-act="cosFrame"][data-id="void"]').click(); await page.waitForTimeout(200); await shot('8-cosmetics'); await ev(() => __RPG.UI.closeModal()); await page.waitForTimeout(300);
-  check('титул выбран', /Гроза чудовищ/.test(await page.locator('.htitle').innerText())); check('рамка «Пустота»', /9b6bff/i.test(await ev(() => document.querySelector('.herocard').getAttribute('style') || '')));
+  check('титул выбран', /Гроза чудовищ/.test(await page.locator('.htitle').innerText())); check('рамка «Пустота»', await page.locator('.herocard .pfw.pf-void').count() === 1 && await page.locator('.hframe').count() === 0);
   await shot('9-hero');
   check('нет ошибок консоли', errors.length === 0, errors.slice(0, 3).join(' | '));
   console.log(`\n${ok} ✓, ${bad} ✗`); await browser.close(); if (srv) srv.close(); process.exit(bad ? 1 : 0);

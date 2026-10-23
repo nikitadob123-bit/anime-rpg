@@ -10,10 +10,10 @@
   // ═════ Карточка в Лагере ═════
   UI.challengeCard = function (s) {
     const t = E.towerEnsure(s), a = E.arenaEnsure(s), tr = E.trainEnsure(s), ti = D.ARENA_TIERS[E.arenaTier(a.rating)];
-    return `<div class="card chcard"><b>🏯 Испытания</b><div class="chgrid">
-      <button class="chb tower" data-act="towerOpen" data-quiet="1"><span>🗼</span><b>Башня</b><small>этаж ${Math.min(100, t.best + 1)}/100</small></button>
-      <button class="chb arena" data-act="arenaOpen" data-quiet="1"><span>${ti[2]}</span><b>Арена</b><small>${a.rating} · ${esc(ti[0])}${a.pend ? ' · 🎁' : ''}</small></button>
-      <button class="chb train" data-act="trainOpen" data-quiet="1"><span>🏋️</span><b>Зал</b><small>⚡ ${tr.en}/${D.TRAIN_EN_MAX}</small></button></div></div>`;
+    return `<div class="card chcard"><b class="ttl">${UI.gi('act_tower', '🏯')} Испытания</b><div class="chgrid">
+      <button class="chb tower" data-act="towerOpen" data-quiet="1"><span>${UI.gi('act_tower', '🗼')}</span><b>Башня</b><small>этаж ${Math.min(100, t.best + 1)}/100</small></button>
+      <button class="chb arena" data-act="arenaOpen" data-quiet="1"><span>${UI.gi(['arena_bronze', 'arena_silver', 'arena_gold', 'arena_plat', 'arena_diamond'][E.arenaTier(a.rating)], ti[2])}</span><b>Арена</b><small>${a.rating} · ${esc(ti[0])}${a.pend ? ' · 🎁' : ''}</small></button>
+      <button class="chb train" data-act="trainOpen" data-quiet="1"><span>${UI.gi('act_train', '🏋️')}</span><b>Зал</b><small>${UI.gi('cur_energy', '⚡')} ${tr.en}/${D.TRAIN_EN_MAX}</small></button></div></div>`;
   };
   const _city = UI.tabs.city;
   UI.tabs.city = function (s) { const h = _city(s), k = h.indexOf('<div class="campaign-heading">'); const c = UI.challengeCard(s); return k < 0 ? h + c : h.slice(0, k) + c + h.slice(k); };
@@ -60,9 +60,9 @@
   // ═════ Тренировочный зал ═════
   UI.trainModal = function () {
     const s = UI.slot(), t = E.trainEnsure(s), cap = E.trainCap(s), nx = E.trainNextIn(s);
-    const rows = D.TRAIN_STATS.map((k) => { const v = t.pts[k] | 0, w = E.trainWhy(s, k); return `<div class="trow"><div class="grow tl"><b>${esc(E.gearLabel ? E.gearLabel(k) : k)}</b> <small class="dim">+${v}/${cap}</small>${bar(v, Math.max(1, cap), 'xp')}</div><button class="btn small ${w ? 'ghost' : 'primary'}" data-act="trainDo" data-k="${k}" ${w ? 'disabled' : ''}>+1 · ⚡${D.TRAIN_EN_COST} · 🪙${fmt(E.trainGold(s, k))}</button></div>`; }).join('');
+    const rows = D.TRAIN_STATS.map((k) => { const v = t.pts[k] | 0, w = E.trainWhy(s, k); return `<div class="trow"><div class="grow tl"><b>${esc(E.gearLabel ? E.gearLabel(k) : k)}</b> <small class="dim">+${v}/${cap}</small>${bar(v, Math.max(1, cap), 'xp')}</div><button class="btn small ${w ? 'ghost' : 'primary'}" data-act="trainDo" data-k="${k}" ${w ? 'disabled' : ''}>+1 · ${UI.gi('cur_energy', '⚡')}${D.TRAIN_EN_COST} · ${UI.gi('cur_gold', '🪙')}${fmt(E.trainGold(s, k))}</button></div>`; }).join('');
     UI.modal(`<h3>🏋️ Тренировочный зал</h3><div class="small dim tl">Энергия восстанавливается сама: +1 каждые ${D.TRAIN_REGEN_MIN} мин (до ${D.TRAIN_EN_MAX}). Каждая тренировка навсегда даёт +1 к характеристике. Предел — треть уровня героя, но не больше +30 к каждой.</div>
-      <div class="card"><div class="row between center-v"><b>⚡ Энергия ${t.en}/${D.TRAIN_EN_MAX}</b><span class="small dim">${nx ? 'следующая через ' + mm(nx) : 'полная'}</span></div>${bar(t.en, D.TRAIN_EN_MAX, 'mp')}</div>
+      <div class="card"><div class="row between center-v"><b>⚡ Энергия ${t.en}/${D.TRAIN_EN_MAX}</b><span class="small dim"> · ${nx ? 'следующая через ' + mm(nx) : 'полная'}</span></div>${bar(t.en, D.TRAIN_EN_MAX, 'mp')}</div>
       <div class="card trlist">${rows}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
   };
   UI.act.trainOpen = () => UI.trainModal();
