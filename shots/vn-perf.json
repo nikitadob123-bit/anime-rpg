@@ -2,9 +2,9 @@
  "cpuThrottle": 4,
  "dpr": 3,
  "viewport": "400x880",
- "fps": 55.4,
- "frames": 449,
- "p95FrameMs": 33,
+ "fps": 59.1,
+ "frames": 479,
+ "p95FrameMs": 17,
  "longTasks": [],
  "maxLongTaskMs": 0
 }

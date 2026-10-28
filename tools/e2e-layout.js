@@ -5,7 +5,7 @@ const { chromium } = require('playwright-core');
 const { serve } = require('./serve');
 (async () => {
   const srv = await serve(0);
-  const browser = await chromium.launch({ executablePath: '/usr/bin/chromium', args: ['--no-sandbox'] });
+  const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || ['/usr/bin/chromium', '/usr/bin/google-chrome'].find((p) => require('fs').existsSync(p)), args: ['--no-sandbox'] });
   try {
     const page = await browser.newPage({ viewport: { width: 390, height: 730 }, isMobile: true });
     const errors = []; page.on('pageerror', e => errors.push(e.message));
