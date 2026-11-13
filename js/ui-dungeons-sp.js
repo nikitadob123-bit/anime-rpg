@@ -9,7 +9,7 @@
     return h + `<span class="ach" style="--ac:#9ad86a">бросков: ${n}</span>`;
   };
   UI.spDunCards = (s) => D.SP_IDS.map((k) => { const S = D.SP_DUNS[k], open = s.hero.level >= S.unlock, best = S.stages.filter((d) => s.prog.cleared[d.id]).length;
-    return `<button class="card dcard spdun sp-${k} ${open ? '' : 'lockd'}" data-act="spDun" data-k="${k}" data-quiet="1"><div class="dic adic"><span>${S.ic}</span></div><div class="grow tl"><b>${S.n}</b> <span class="tag new">особое</span><div class="dim small">ур. ${S.stages[0].ur}–${S.stages[S.stages.length - 1].ur} · этапов: ${S.stages.length} · пройдено: ${best}</div><div class="small tl dim">${open ? esc(S.d) : 'Откроется на ' + S.unlock + ' уровне героя.'}</div></div></button>`; }).join('');
+    return `<button class="card dcard spdun sp-${k} ${open ? '' : 'lockd'}" data-act="spDun" data-k="${k}" data-quiet="1">${UI.dunArtBox ? UI.dunArtBox(k, S.ic) : `<div class="dic adic"><span>${S.ic}</span></div>`}<div class="grow tl"><b>${S.n}</b> <span class="tag new">особое</span><div class="dim small">ур. ${S.stages[0].ur}–${S.stages[S.stages.length - 1].ur} · этапов: ${S.stages.length} · пройдено: ${best}</div><div class="small tl dim">${open ? esc(S.d) : 'Откроется на ' + S.unlock + ' уровне героя.'}</div></div></button>`; }).join('');
   UI.act.spDun = (el) => {
     const s = UI.slot(), k = el.dataset.k, S = D.SP_DUNS[k];
     if (s.hero.level < S.unlock) { UI.toast(S.n + ' откроется на ' + S.unlock + ' уровне', 'bad'); UI.sfx('err'); return; }

@@ -68,3 +68,21 @@ body{background:#06030b}
 @media (prefers-reduced-motion:reduce){#bgl .bgi.on,.content h2,.herotitle,.mbox h3,.hub .hubtxt h2,.btn.primary::after,.irid::before,#nav button.on::before,.htitle>span,[class*=rwpulse],.dbadge,.nb{animation:none!important}.btn.primary[data-act]{animation:none!important}}
 body.nopart #bgl .bgi.on{animation:none}
 #view,#view .content{background:transparent!important}
+
+/* v2.28.1: портрет в шапке — ровно в скруглённом квадрате, без кружка и короны */
+.sovereign-avatar{padding:0;overflow:hidden;line-height:0;flex:none;width:54px;height:54px;border:1px solid #e9c47e;border-radius:14px;background:#21172e;box-shadow:0 0 0 3px #d9b57514}
+.sovereign-avatar>span{display:none!important}
+.sovereign-avatar .por,.sovereign-avatar .svgpor,
+.gh .sovereign-avatar .por.avring,.gh .sovereign-avatar .svgpor.avring{
+  width:100%!important;height:100%!important;max-width:none;max-height:none;
+  border-radius:inherit!important;border:0;box-shadow:none!important;
+  object-fit:cover;object-position:50% 18%;display:block;margin:0}
+@media (max-width:360px){.sovereign-avatar{width:48px;height:48px}}
+
+/* карточки особых подземелий: арт на месте эмодзи-заглушки */
+.dic.adic.hasart{padding:0;overflow:hidden}
+.dic.adic.hasart img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 45%}
+.dic.adic.hasart::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 45%,rgba(8,3,14,.45));border-radius:inherit}
+.dic.adic{position:relative}
+.chb .chicon{width:44px;height:44px;border-radius:10px;overflow:hidden;display:grid;place-items:center}
+.chb .chicon img{width:100%;height:100%;object-fit:cover;display:block}

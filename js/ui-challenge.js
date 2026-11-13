@@ -11,9 +11,9 @@
   UI.challengeCard = function (s) {
     const t = E.towerEnsure(s), a = E.arenaEnsure(s), tr = E.trainEnsure(s), ti = D.ARENA_TIERS[E.arenaTier(a.rating)];
     return `<div class="card chcard"><b class="ttl">${UI.gi('act_tower', '🏯')} Испытания</b><div class="chgrid">
-      <button class="chb tower" data-act="towerOpen" data-quiet="1"><span>${UI.gi('act_tower', '🗼')}</span><b>Башня</b><small>этаж ${Math.min(100, t.best + 1)}/100</small></button>
-      <button class="chb arena" data-act="arenaOpen" data-quiet="1"><span>${UI.gi(['arena_bronze', 'arena_silver', 'arena_gold', 'arena_plat', 'arena_diamond'][E.arenaTier(a.rating)], ti[2])}</span><b>Арена</b><small>${a.rating} · ${esc(ti[0])}${a.pend ? ' · 🎁' : ''}</small></button>
-      <button class="chb train" data-act="trainOpen" data-quiet="1"><span>${UI.gi('act_train', '🏋️')}</span><b>Зал</b><small>${UI.gi('cur_energy', '⚡')} ${tr.en}/${D.TRAIN_EN_MAX}</small></button></div></div>`;
+      <button class="chb tower" data-act="towerOpen" data-quiet="1"><span class="chicon">${UI.hasDunArt && UI.hasDunArt('tower') ? UI.dunArt('tower') : UI.gi('act_tower', '🗼')}</span><b>Башня</b><small>этаж ${Math.min(100, t.best + 1)}/100</small></button>
+      <button class="chb arena" data-act="arenaOpen" data-quiet="1"><span class="chicon">${UI.hasDunArt && UI.hasDunArt('arena') ? UI.dunArt('arena') : UI.gi(['arena_bronze', 'arena_silver', 'arena_gold', 'arena_plat', 'arena_diamond'][E.arenaTier(a.rating)], ti[2])}</span><b>Арена</b><small>${a.rating} · ${esc(ti[0])}${a.pend ? ' · 🎁' : ''}</small></button>
+      <button class="chb train" data-act="trainOpen" data-quiet="1"><span class="chicon">${UI.hasDunArt && UI.hasDunArt('train') ? UI.dunArt('train') : UI.gi('act_train', '🏋️')}</span><b>Зал</b><small>${UI.gi('cur_energy', '⚡')} ${tr.en}/${D.TRAIN_EN_MAX}</small></button></div></div>`;
   };
   const _city = UI.tabs.city;
   UI.tabs.city = function (s) { const h = _city(s), k = h.indexOf('<div class="campaign-heading">'); const c = UI.challengeCard(s); return k < 0 ? h + c : h.slice(0, k) + c + h.slice(k); };
