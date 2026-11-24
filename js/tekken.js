@@ -93,6 +93,7 @@
     ['atk', 'mag', 'hpow'].forEach((k) => { u[k] = Math.max(8, Math.round((h[k] || 10) * atkMul)); });
     u.def = Math.max(4, Math.round((h.def || 8) * (0.65 + i * 0.04)));
     u.res = Math.round(u.def * 0.9);
+    u.tkArt = 'tk_' + fid;
     return u;
   };
 

@@ -8,7 +8,7 @@
   const err = (r) => { if (r) { UI.toast(r, 'bad'); UI.sfx('err'); return true; } return false; };
   const por = (id, emo) => (UI.hasTkArt && UI.hasTkArt(id) ? `<img class="tkpor" src="img/tekken/${id}.webp" alt="" draggable="false">` : `<span class="tkemo">${emo || '👊'}</span>`);
 
-  D.TK_ART_HAVE = []; // @tk-art-have
+  D.TK_ART_HAVE = ["banner","bg_arena","bg_dojo","tk_bolt","tk_deviljin","tk_event","tk_frame","tk_gene","tk_gloves","tk_heihachi","tk_hwoarang","tk_jin","tk_jun","tk_kazuya","tk_king","tk_lars","tk_law","tk_nina","tk_pack_m","tk_pack_s","tk_paul","tk_rec_jin","tk_rec_nina","tk_title","tk_token"]; // @tk-art-have
   const haveArt = new Set(D.TK_ART_HAVE);
   UI.hasTkArt = (id) => haveArt.has(id);
   if (typeof document !== 'undefined') {
@@ -32,16 +32,24 @@
   const _por = UI.por;
   UI.por = function (id, cls, lazy, mood) {
     if (id && String(id).indexOf('tk_') === 0 && haveArt.has(id)) {
-      return `<img class="por ${cls || ''}" ${lazy === false ? '' : 'loading="lazy"'} decoding="async" alt="" draggable="false" src="img/tekken/${id}.webp">`;
+      return `<img class="por tkbust ${cls || ''}" ${lazy === false ? '' : 'loading="lazy"'} decoding="async" alt="" draggable="false" src="img/tekken/${id}.webp">`;
     }
     return _por.apply(this, arguments);
+  };
+
+  const _am = UI.artMetrics;
+  if (_am) UI.artMetrics = function (art, mood) {
+    if (art && String(art).indexOf('tk_') === 0 && haveArt.has(art)) {
+      return { w: 512, h: 512, fx: 256, fy: 158, fw: 200, vh: 512, img: true };
+    }
+    return _am(art, mood);
   };
 
   UI.tkBanner = function (s) {
     if (!E.tkActive()) return '';
     const t = E.tkEnsure(s), ch = D.TK_CH.find((c) => !t.story.includes(c.id) && E.tkChapterOpen(s, c.id)) || D.TK_CH[D.TK_CH.length - 1];
     const st = t.stage >= D.TK_FIGHTERS.length ? 'Турнир пройден' : 'Этап ' + (t.stage + 1) + '/' + D.TK_FIGHTERS.length;
-    return `<button class="card tkbanner" data-act="tkOpen" data-quiet="1"><div class="tkart"></div><div class="tkbody"><b class="ttl">${gi('tk_event', '👊')} ${esc(D.TK_EVENT.n)}</b><div class="small dim tl">Побочный сюжет: Король Демонов в мире турнира Железного Кулака.</div><div class="row gap wrap small"><span>⏳ ${mm(E.tkLeft())}</span><span>${tok(t.tokens)}</span><span>${esc(st)}</span></div><div class="small">${esc(ch.n)} · ${t.story.length}/${D.TK_CH.length} гл.</div></div></button>`;
+    return `<button class="card tkbanner${UI.hasTkArt('banner') ? ' hasart' : ''}" data-act="tkOpen" data-quiet="1"><div class="tkart"></div><div class="tkbody"><b class="ttl">${gi('tk_event', '👊')} ${esc(D.TK_EVENT.n)}</b><div class="small dim tl">Побочный сюжет: Король Демонов в мире турнира Железного Кулака.</div><div class="row gap wrap small"><span>⏳ ${mm(E.tkLeft())}</span><span>${tok(t.tokens)}</span><span>${esc(st)}</span></div><div class="small">${esc(ch.n)} · ${t.story.length}/${D.TK_CH.length} гл.</div></div></button>`;
   };
 
   const _city = UI.tabs.city;

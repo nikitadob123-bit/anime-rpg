@@ -180,7 +180,7 @@
     const sk = u.intent && (D.ESK[u.intent.id]); const ch = !!u.charging;
     const weak = (u.weak || []).map((e) => D.ELEMS[e].ic).join('');
     return `<div class="unit foe ${u.role === 'boss' ? 'boss' : ''} ${u.role === 'mini' ? 'mini' : ''} ${u.alive ? '' : 'dead'} ${B.sel === u.id ? 'sel' : ''} ${B.cur === u ? 'active' : ''} ${ch ? 'charging' : ''}" id="u_${u.id}" data-act="bSel" data-id="${u.id}" data-quiet="1">
-      <div class="intent">${u.alive && sk ? (ch ? '⚠️' : '') + sk.ic : ''}</div><div class="spr">${u.ic}</div><div class="nm">${esc(u.name)} <small>${u.lv}</small></div>${bar(u.hp, u.maxHp, 'hp')}<div class="sts">${stIcons(u)}</div><div class="wk">${weak ? 'слаб. ' + weak : ''}</div></div>`;
+      <div class="intent">${u.alive && sk ? (ch ? '⚠️' : '') + sk.ic : ''}</div><div class="spr">${u.tkArt && UI.hasTkArt && UI.hasTkArt(u.tkArt) ? `<img class="tkspr" src="img/tekken/${u.tkArt}.webp" alt="" draggable="false">` : u.ic}</div><div class="nm">${esc(u.name)} <small>${u.lv}</small></div>${bar(u.hp, u.maxHp, 'hp')}<div class="sts">${stIcons(u)}</div><div class="wk">${weak ? 'слаб. ' + weak : ''}</div></div>`;
   }
   function partyCard(B, u) {
     const c = u.hero ? D.CLASSES[u.cls] : null;

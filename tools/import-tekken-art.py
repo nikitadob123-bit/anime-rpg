@@ -1,7 +1,7 @@
 """Импорт артов коллабы «Железный Кулак»:
   python3 tools/import-tekken-art.py <папка>
 
-Принимает файлы <id>.png/jpg/webp и листы sheet_rewards.png (4×4, порядок — tekken-art-requests.json).
+Принимает файлы <id>.png/jpg/webp и листы sheet_rewards.png / .jpg / .webp (4×4, порядок — tekken-art-requests.json).
 Баннер и фоны масштабируются в свой размер без вырезания фона.
 Портреты — квадрат 512 (центр), фон сохраняется (ожидается тёмный, удобный для вырезания).
 Иконки наград — квадрат 512, мягкое удаление однотонного края, как в import-icons.py.
@@ -11,10 +11,9 @@ import json, os, sys, subprocess
 from pathlib import Path
 try:
     import numpy as np
-    from PIL import Image
-    from scipy import ndimage as ndi
+    from PIL import Image, ImageFilter
 except ImportError:
-    sys.exit('need Pillow, numpy, scipy')
+    sys.exit('need Pillow and numpy')
 
 root = Path(__file__).resolve().parents[1]
 out = root / 'img/tekken'; out.mkdir(parents=True, exist_ok=True)
@@ -40,19 +39,40 @@ def save_rgb(im, dest, size=None):
     else:
         im.convert('RGB').save(dest, 'WEBP', quality=84, method=6)
 
+def _blur(d, sigma=0.8):
+    # лёгкое размытие без scipy
+    im = Image.fromarray((np.clip(d, 0, 255)).astype('uint8'), 'L')
+    return np.array(im.filter(ImageFilter.GaussianBlur(radius=sigma)), dtype=float)
+
 def soft_icon(im, size=512):
     a = np.array(im.convert('RGB')).astype(float)
     h, w = a.shape[:2]
     edge = np.concatenate([a[:3].reshape(-1, 3), a[-3:].reshape(-1, 3), a[:, :3].reshape(-1, 3), a[:, -3:].reshape(-1, 3)])
     bg = np.median(edge, axis=0)
-    d = np.abs(a - bg).max(axis=2)
-    d = ndi.gaussian_filter(d, 0.8)
+    d = _blur(np.abs(a - bg).max(axis=2), 0.8)
     LO, HI = 14, 46
     soft = np.clip((d - LO) / (HI - LO), 0, 1)
     cand = d < HI
-    lab, _ = ndi.label(cand)
-    bl = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
-    bgreg = np.isin(lab, list(bl))
+    # фон — только область, связанная с краем кадра (flood fill)
+    bgreg = np.zeros((h, w), dtype=bool)
+    vis = np.zeros((h, w), dtype=bool)
+    stack = []
+    for x in range(w):
+        if cand[0, x]: stack.append((0, x))
+        if cand[h - 1, x]: stack.append((h - 1, x))
+    for y in range(h):
+        if cand[y, 0]: stack.append((y, 0))
+        if cand[y, w - 1]: stack.append((y, w - 1))
+    while stack:
+        y, x = stack.pop()
+        if vis[y, x]: continue
+        if not cand[y, x]: continue
+        vis[y, x] = True
+        bgreg[y, x] = True
+        if y > 0: stack.append((y - 1, x))
+        if y + 1 < h: stack.append((y + 1, x))
+        if x > 0: stack.append((y, x - 1))
+        if x + 1 < w: stack.append((y, x + 1))
     alpha = np.where(bgreg, soft, 1.0)
     m = (alpha > 0) & (alpha < 1)
     al = np.maximum(alpha, 1e-3)[..., None]
@@ -60,9 +80,9 @@ def soft_icon(im, size=512):
     im2 = Image.fromarray(np.dstack([rgb, alpha * 255]).astype('uint8'), 'RGBA')
     bb = Image.fromarray((alpha > 0.06).astype('uint8') * 255).getbbox()
     im2 = im2.crop(bb) if bb else im2
-    s = max(im2.size) + 8
-    c = Image.new('RGBA', (s, s))
-    c.paste(im2, ((s - im2.size[0]) // 2, (s - im2.size[1]) // 2))
+    side = max(im2.size) + 8
+    c = Image.new('RGBA', (side, side))
+    c.paste(im2, ((side - im2.size[0]) // 2, (side - im2.size[1]) // 2))
     return c.resize((size, size), Image.LANCZOS)
 
 def write_asset(idn, im):
@@ -83,6 +103,9 @@ for f in sorted(src.iterdir()):
         continue
     idn = f.stem
     im = Image.open(f)
+    sheet_id = idn if idn in sheets else next((k for k, sh in sheets.items() if Path(sh.get("file") or k).stem == idn), None)
+    if sheet_id:
+        idn = sheet_id
     if idn in sheets:
         sh = sheets[idn]
         cols, rows = sh.get('grid', [4, 4])
