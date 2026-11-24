@@ -114,6 +114,8 @@ t('путь Короля Демонов открывается только ес
   const u = C.unitFromCrew(s, 'tk_reina', 1);
   assert.strictEqual(D.CREW.tk_reina.k, 1.08);
   assert.strictEqual(D.CREW.tk_reina.sig, 'g_tk_reina_devil');
+  assert.strictEqual(E.tkReinaLook(s), 'tk_reina_devil');
+  assert.strictEqual(D.CREW.tk_reina.art, 'tk_reina_devil');
   assert(u.sk.includes('g_tk_reina_devil') || D.CREW.tk_reina.sig === 'g_tk_reina_devil');
   // не выше мировых артефактных спутников
   const worldK = Math.max(...Object.values(D.CREW).filter((c) => c && c.k).map((c) => c.k));

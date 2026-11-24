@@ -11,6 +11,7 @@
 .tkrow.lock{opacity:.55}.tkrow.done{opacity:.9}
 .tkrow .tkpor,.tkrow .tkemo,.tkrow>.gic,.tkrow>.gie{width:44px;height:44px;border-radius:10px;object-fit:cover;object-position:50% 22%;flex:none;background:#1a1020;display:grid;place-items:center;font-size:26px}
 .tkrow>.gic,.tkrow>.gie{object-fit:contain;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.10),rgba(8,4,12,.25));padding:3px}
+.tkrow .grow small{display:block;margin-top:1px}
 .tkrow .btn{flex:none;white-space:nowrap}
 .tkpane{max-height:58vh;overflow:auto;-webkit-overflow-scrolling:touch}
 .mbox.tkmodal{border-color:rgba(255,90,58,.4)}
@@ -24,13 +25,8 @@ img.por.tkbust,.tkpor,.tkspr{object-fit:cover;object-position:50% 22%}
 .unit.foe.mini .spr .tkspr{width:80px;height:80px;border-radius:14px}
 @media (max-height:700px){.unit.foe .spr .tkspr{width:52px;height:52px}.unit.foe.boss .spr .tkspr{width:80px;height:80px}}
 
-/* Высший Дьявол: алая аура на портрете Рейны */
+/* Высший Дьявол: лёгкая алая кайма поверх готового портрета (без пульсации) */
 img.por.tkdevil, .tkpor.tkdevil, img.gic.tkdevil, .tkspr.tkdevil{
-  filter:drop-shadow(0 0 6px #ff2a4a) drop-shadow(0 0 14px rgba(160,0,40,.85));
-  animation:tkdevil 2.6s ease-in-out infinite;
+  filter:drop-shadow(0 0 3px rgba(255,48,72,.55));
 }
-@keyframes tkdevil{
-  0%,100%{filter:drop-shadow(0 0 5px #ff2448) drop-shadow(0 0 10px rgba(140,0,30,.75))}
-  50%{filter:drop-shadow(0 0 12px #ff6a50) drop-shadow(0 0 22px rgba(200,20,40,.95))}
-}
-.tkrow.cur .tkpor.tkdevil{box-shadow:0 0 14px rgba(255,40,70,.45)}
+.tkrow.cur .tkpor.tkdevil{box-shadow:0 0 8px rgba(255,40,70,.28)}

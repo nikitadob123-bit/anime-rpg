@@ -97,7 +97,7 @@
     u.def = Math.max(4, Math.round((h.def || 8) * (0.65 + t * 0.45)));
     u.res = Math.round(u.def * 0.9);
     u.tkArt = 'tk_' + fid;
-    if (fid === 'reina' && s.tk && s.tk.blood) u.tkArt = 'tk_reina_top_bust';
+    if (fid === 'reina' && s.tk && s.tk.blood) u.tkArt = 'tk_reina_devil';
     return u;
   };
 
