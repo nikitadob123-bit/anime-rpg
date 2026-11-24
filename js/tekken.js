@@ -37,8 +37,81 @@
     const day = E.dayKey ? E.dayKey(now) : 0;
     if (t.day !== day) { t.day = day; t.fights = 0; }
     if (t.fights == null) t.fights = 0;
+    if (!Array.isArray(t.won)) {
+      t.won = [];
+      const oldL = D.TK_OLD_LADDER || ['paul', 'law', 'king', 'nina', 'hwoarang', 'lars', 'jun', 'heihachi', 'kazuya', 'jin', 'deviljin'];
+      for (let i = 0; i < (t.stage | 0) && i < oldL.length; i++) t.won.push(oldL[i]);
+    }
+    if (t.taken === undefined) t.taken = null;
+    if (t.ally === undefined) t.ally = null;
+    if (t.blood == null) t.blood = 0;
+    if (t.needAlly == null) t.needAlly = 0;
+    if (t.vowDone == null) t.vowDone = 0;
+    if (t.mig230 == null) t.mig230 = 0;
+    if (t.storyMig230 == null) t.storyMig230 = 0;
+    if (!s._tkEnsuring) {
+      s._tkEnsuring = 1;
+      try {
+        E.tkMigStory230(s);
+        if (t.ending && !t.mig230) E.tkApplyMig230(s);
+        E.tkSyncFlags && E.tkSyncFlags(s);
+      } finally { delete s._tkEnsuring; }
+    }
     return t;
   };
+  E.tkMigStory230 = function (s) {
+    const t = s.tk; if (!t || t.storyMig230) return;
+    t.storyMig230 = 1;
+    const map = {
+      tk02_paul: 'tk03_paul', tk03_law: 'tk04_dojo', tk04_king: 'tk05_king',
+      tk05_hwoarang: 'tk07_hwoarang', tk06_nina: 'tk08_nina', tk07_lars: 'tk10_lars',
+      tk08_jun: 'tk11_jun', tk09_heihachi: 'tk12_heihachi', tk10_feud: 'tk14_feud',
+      tk11_choice: 'tk14_feud', tk13_home: 'tk19_home'
+    };
+    let hadFinal = false, hadHome = false;
+    const next = [], seen = new Set();
+    (t.story || []).forEach((id) => {
+      if (id === 'tk12_final') { hadFinal = true; return; }
+      const nid = map[id] || id;
+      if (nid === 'tk19_home') hadHome = true;
+      if (nid && !seen.has(nid)) { seen.add(nid); next.push(nid); }
+    });
+    const add = (id) => { if (id && !seen.has(id)) { seen.add(id); next.push(id); } };
+    const ended = !!(t.ending || hadHome);
+    if (ended || hadFinal) {
+      if (t.ending === 'self') t.flags.tk_reina = t.flags.tk_reina || 1;
+      const shared = ['tk01_rift','tk02_reina','tk03_paul','tk04_dojo','tk05_king','tk06_girls','tk07_hwoarang','tk08_nina','tk09_coffee','tk09b_guests','tk10_lars','tk11_jun','tk12_heihachi', t.flags.tk_reina ? 'tk13_mask' : 'tk13_night', 'tk14_feud'];
+      if (!t.flags.tk_reina) shared[1] = 'tk02_reina'; // всё равно отмечаем, чтобы не блокировать финал
+      shared.forEach(add);
+      const side = t.ending || t.flags.tk_side;
+      const routes = { jin: ['tk15_jin','tk16_jin','tk17_jin'], kazuya: ['tk15_kaz','tk16_kaz','tk17_kaz'], self: ['tk15_self','tk16_self','tk17_self'], neutral: ['tk15_neu','tk16_neu','tk17_neu'] };
+      if (hadFinal) (routes[side] || []).slice(0, ended ? 3 : 2).forEach(add);
+      if (ended) { (routes[side] || []).forEach(add); add('tk18_vow'); add('tk19_home'); t.vowDone = t.vowDone || 1; }
+    }
+    t.story = next;
+  };
+
+  E.tkWon = (s, id) => E.tkEnsure(s).won.includes(id);
+  E.tkNextFighter = (s) => (D.TK_FIGHTERS || []).find((f) => !E.tkWon(s, f.id)) || null;
+  E.tkGrantComp = function (s, id) {
+    if (!id || !D.CREW[id]) return '';
+    const t = E.tkEnsure(s);
+    if (!s.crew[id]) E.recruit(s, id);
+    if (D.ROMANCE && D.ROMANCE[id]) s.rom[id] = s.rom[id] || { aff: 0, seen: [], dates: 0, gifts: 0 };
+    if (!t.rec.includes(id)) t.rec.push(id);
+    if (id === 'tk_reina' && t.blood) { s.crew[id].loy = Math.max(s.crew[id].loy | 0, 90); }
+    return id;
+  };
+  E.tkApplyMig230 = function (s) {
+    const t = E.tkEnsure(s);
+    if (t.mig230 || !t.ending) return;
+    t.mig230 = 1;
+    if (t.ending === 'jin') E.tkGrantComp(s, 'tk_jin');
+    else if (t.ending === 'neutral') E.tkGrantComp(s, 'tk_nina');
+    else if (t.ending === 'self') { t.flags.tk_reina = t.flags.tk_reina || 1; E.tkGrantComp(s, 'tk_reina'); }
+    else if (t.ending === 'kazuya' && !t.ally) t.needAlly = 1;
+  };
+
 
   // ───── Бойцы ─────
   D.SKILLS.tk_e_punch = { id: 'tk_e_punch', n: 'Хук', ic: '👊', mp: 0, cd: 0, tgt: 'foe', d: 'Прямой удар 110%.', fx: [{ k: 'dmg', s: 'atk', m: 1.1 }] };
@@ -286,9 +359,9 @@
     const t = E.tkEnsure(s, now);
     let foeId = fid, tokens = 8, mark = null;
     if (kind === 'tour') {
-      const next = D.TK_FIGHTERS[t.stage]; if (!next) return { err: 'Турнир пройден' };
+      const next = E.tkNextFighter(s); if (!next) return { err: 'Турнир пройден' };
       if (fid && fid !== next.id) return { err: 'Сначала предыдущий этап' };
-      foeId = next.id; tokens = 20 + 10 * next.i; mark = 'tour';
+      foeId = next.id; tokens = 20 + 8 * Math.min(next.i, 20); mark = 'tour';
     } else if (kind === 'story') {
       const ch = D.TK_CH_MAP[fid]; if (!ch || !ch.fight) return { err: 'В этой главе нет боя' };
       if (!E.tkChapterOpen(s, ch.id)) return { err: 'Глава ещё закрыта' };
@@ -297,7 +370,7 @@
     } else if (kind === 'daily') {
       if (!fid || !D.TK_FIGHTER[fid]) return { err: 'Нет такого бойца' };
       const need = D.TK_FIGHTER[fid].i;
-      if (t.best <= need && t.stage <= need) return { err: 'Сначала победите в турнире' };
+      if (!E.tkWon(s, fid) && t.best <= need && t.stage <= need) return { err: 'Сначала победите в турнире' };
       if (E.tkDailyLeft(s, now) <= 0) return { err: 'На сегодня попытки кончились' };
       t.fights++; tokens = 8; mark = 'daily';
     } else return { err: 'Неизвестный бой' };
@@ -315,7 +388,8 @@
     E.tkTokenGain(s, k.tokens); rep.tokens = k.tokens;
     if (k.mark === 'tour') {
       const f = D.TK_FIGHTER[k.fid];
-      if (f && t.stage === f.i) { t.stage = f.i + 1; t.best = Math.max(t.best, t.stage); }
+      if (f && !t.won.includes(f.id)) t.won.push(f.id);
+      t.stage = t.won.length; t.best = Math.max(t.best, t.stage);
     }
     if (k.mark && D.TK_CH_MAP[k.mark]) E.tkFinishChapter(s, k.mark);
     s.stats = s.stats || {}; s.stats.tkWins = (s.stats.tkWins || 0) + 1;
@@ -358,7 +432,7 @@
     { id: 'bolt', n: 'Навык «Электрический Удар Мисимы»', ic: '⚡', cost: 150, once: 1, typ: 'bolt' },
     { id: 'gloves', n: 'Перчатки Железного Кулака', ic: '👊', cost: 200, once: 1, typ: 'gloves' },
     { id: 'gene', n: 'Артефакт «Ген Дьявола»', ic: '😈', cost: 280, once: 1, typ: 'art' },
-    { id: 'rec_jin', n: 'Пригласить Дзина в Свиту', ic: '👊', cost: 240, once: 1, typ: 'rec', rec: 'tk_jin', need: (s) => E.tkEnsure(s).stage >= 8 || E.tkChapterDone(s, 'tk10_feud') },
+    { id: 'rec_jin', n: 'Пригласить Дзина в Свиту', ic: '👊', cost: 240, once: 1, typ: 'rec', rec: 'tk_jin', need: (s) => E.tkEnsure(s).stage >= 8 || E.tkChapterDone(s, 'tk10_feud') || E.tkChapterDone(s, 'tk14_feud') },
     { id: 'rec_nina', n: 'Пригласить Нину в Свиту', ic: '🗡️', cost: 220, once: 1, typ: 'rec', rec: 'tk_nina', need: (s) => E.tkEnsure(s).stage >= 4 || E.tkChapterDone(s, 'tk06_nina') }
   ];
   D.TK_SHOP_MAP = {}; D.TK_SHOP.forEach((x) => { D.TK_SHOP_MAP[x.id] = x; });
@@ -393,16 +467,88 @@
 
   E.tkGrantEnding = function (s, ending) {
     const t = E.tkEnsure(s);
-    if (t.shop.ending) return;
-    t.shop.ending = 1; t.shop.title = 1;
+    if (t.shop.ending) {
+      // повторно только добрать спутника, если его ещё нет (миграция / выбор союзника)
+      E.tkGrantEndingComps(s, ending);
+      return;
+    }
+    t.shop.ending = 1; t.shop.title = 1; t.mig230 = 1;
     const add = ending === 'neutral' ? 80 : ending === 'jin' ? 120 : ending === 'kazuya' ? 100 : 140;
     E.tkTokenGain(s, add);
     if (ending === 'self' && !(s.arts && s.arts.devil_gene != null)) { E.artGain(s, 'devil_gene'); t.shop.gene = 1; }
     if (ending === 'jin') t.shop.frame = 1;
     if (ending === 'kazuya') t.bolt = 1;
     E.setTitle(s, 'ironfist');
-    if (ending === 'jin') E.setFrame(s, 'ironfist');
+    if (ending === 'jin' || ending === 'self') E.setFrame(s, 'ironfist');
+    E.tkGrantEndingComps(s, ending);
   };
+  E.tkGrantEndingComps = function (s, ending) {
+    const t = E.tkEnsure(s);
+    if (ending === 'jin') E.tkGrantComp(s, 'tk_jin');
+    else if (ending === 'neutral') E.tkGrantComp(s, 'tk_nina');
+    else if (ending === 'self') E.tkGrantComp(s, 'tk_reina');
+    else if (ending === 'kazuya') {
+      if (t.ally) E.tkGrantComp(s, t.ally);
+      else t.needAlly = 1;
+    }
+  };
+  E.tkPickAlly = function (s, id) {
+    const t = E.tkEnsure(s);
+    if (t.ending !== 'kazuya' && t.flags.tk_side !== 'kazuya') return 'Этот выбор только на пути Кадзуи';
+    if (!(D.TK_KAZ_ALLIES || []).some((x) => x.id === id)) return 'Нет такого союзника';
+    if (t.ally && t.ally !== id) return 'Выбор уже сделан';
+    t.ally = id; t.needAlly = 0;
+    E.tkGrantComp(s, id);
+    s.rev = (s.rev || 0) + 1; return '';
+  };
+  E.tkRomCandidates = function (s) {
+    const t = E.tkEnsure(s);
+    return (D.TK_WOMEN || []).filter((id) => {
+      const r = s.rom && s.rom[id];
+      const aff = r ? r.aff | 0 : 0;
+      if (id === 'tk_reina' && !t.flags.tk_reina) return false;
+      return aff >= 15;
+    });
+  };
+  E.tkTakeGirl = function (s, id) {
+    const t = E.tkEnsure(s);
+    if (t.taken) return t.taken === id ? '' : 'Вы уже сделали выбор';
+    const can = E.tkRomCandidates(s);
+    if (id && !can.includes(id)) return 'Сначала нужно лучше узнать её';
+    t.taken = id || 'none'; t.vowDone = 1;
+    if (id) {
+      E.tkGrantComp(s, id);
+      if (s.rom[id]) s.rom[id].aff = Math.max(s.rom[id].aff | 0, 40);
+    }
+    s.rev = (s.rev || 0) + 1; return '';
+  };
+  E.tkGiveBlood = function (s, yes) {
+    const t = E.tkEnsure(s);
+    if (!t.flags.tk_reina) return 'Рейна не пошла за вами';
+    if (t.taken && t.taken !== 'tk_reina') return 'Клятву вы уже дали другой';
+    if (!yes) { t.bloodAsked = 1; return ''; }
+    t.blood = 1; t.taken = 'tk_reina'; t.vowDone = 1;
+    E.tkGrantComp(s, 'tk_reina');
+    E.tkReinaApply && E.tkReinaApply(s);
+    if (s.rom.tk_reina) s.rom.tk_reina.aff = Math.max(s.rom.tk_reina.aff | 0, 80);
+    if (s.crew.tk_reina) s.crew.tk_reina.loy = Math.max(s.crew.tk_reina.loy | 0, 90);
+    s.rev = (s.rev || 0) + 1; return '';
+  };
+  E.tkReinaLook = function (s) {
+    const t = s && s.tk;
+    if (!t) return 'tk_reina';
+    if (t.blood) return 'tk_reina_top_bust';
+    if (t.flags && (t.flags.tk_reina_reveal || t.ending === 'self')) return 'tk_reina_top_bust';
+    return 'tk_reina';
+  };
+  E.tkReinaApply = function (s) {
+    const c = D.CREW.tk_reina; if (!c) return;
+    const t = s && s.tk;
+    if (t && t.blood) { c.k = 1.08; c.sig = 'g_tk_reina_devil'; c.art = 'tk_reina_top'; }
+    else if (t && (t.ending === 'self' || (t.flags && t.flags.tk_reina_reveal))) { c.k = 0.98; c.sig = 'g_tk_reina'; c.art = 'tk_reina_top'; }
+    else { c.k = 0.98; c.sig = 'g_tk_reina'; c.art = 'tk_reina'; }
+  };
+
 
   // навык Мисимы — только добавление к уже собранному списку
   const _ufs = C.unitFromSlot;
@@ -415,9 +561,31 @@
   // ───── Слоты и миграция v12 → v13 ─────
   const _ns = E.newSlot;
   E.newSlot = function (o) { const s = _ns(o); E.tkEnsure(s, o && o.now); return s; };
+  const _rec = E.recruit;
+  E.recruit = function (slot, id) {
+    const ok = _rec(slot, id);
+    if (ok && D.ROMANCE && D.ROMANCE[id]) slot.rom[id] = slot.rom[id] || { aff: 0, seen: [], dates: 0, gifts: 0 };
+    return ok;
+  };
+  const _aa = E.addAff;
+  E.addAff = function (slot, id, n) {
+    if (D.ROMANCE && D.ROMANCE[id]) {
+      slot.rom = slot.rom || {};
+      slot.rom[id] = slot.rom[id] || { aff: 0, seen: [], dates: 0, gifts: 0 };
+    }
+    return _aa(slot, id, n);
+  };
+
+  const _ufc = C.unitFromCrew;
+  if (_ufc) C.unitFromCrew = function (s, id, k) {
+    if (id === 'tk_reina') E.tkReinaApply(s);
+    return _ufc(s, id, k);
+  };
+
   if (S && S.migrations) {
-    S.VERSION = 13;
+    S.VERSION = 14;
     S.migrations[12] = function (p) { p.slots = (p.slots || []).map((s) => { if (s) E.tkEnsure(s); return s; }); p.v = 13; return p; };
+    S.migrations[13] = function (p) { p.slots = (p.slots || []).map((s) => { if (s) { E.tkEnsure(s); E.tkApplyMig230(s); } return s; }); p.v = 14; return p; };
   }
   if (typeof module !== 'undefined') module.exports = RPG;
 })();

@@ -1,9 +1,9 @@
 /* E2E v2.29 коллаба «Железный Кулак»: вход, глава, бой, жетоны, магазин, выбор, скрытие после окончания.
-   Скриншоты — /workspace/shots-tekken/sel/  (444×986) */
+   Скриншоты — /workspace/shots-tekken/v230/  (444×986) */
 const { chromium } = require('playwright-core');
 const fs = require('fs'), path = require('path');
 const { serve } = require('./serve.js');
-const outDir = process.env.TK_SHOTS || '/workspace/shots-tekken/sel';
+const outDir = process.env.TK_SHOTS || '/workspace/shots-tekken/v230';
 fs.mkdirSync(outDir, { recursive: true });
 let ok = 0, bad = 0;
 const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra || ''); } else { bad++; console.log('  ✗', n, extra || ''); } };
@@ -96,34 +96,150 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   check('покупка за жетоны', bought.gold > gold0 && bought.tokens < tok0, JSON.stringify(bought));
   await shot('07-shop-bought');
 
-  // выбор и его сохранение
+  // глава Рейны: принять в подчинённые
+  await ev(() => { const s = __RPG.UI.slot(); s.tk.story = ['tk01_rift']; __RPG.UI.tkOpen('story'); });
+  await page.waitForTimeout(200);
+  await click('[data-act="tkPlay"][data-id="tk02_reina"]');
+  const vnR = await playVn();
+  check('сцена Рейны — выбор', vnR === 'choice', vnR);
+  await page.waitForSelector('#schoice.on .choice', { timeout: 8000 });
+  await shot('08-reina-schoolgirl');
+  const reiChoices = await ev(() => [...document.querySelectorAll('.choice')].map((e) => e.textContent));
+  check('принять или отказать Рейне', reiChoices.length >= 2, reiChoices.join(' | '));
+  const yes = page.locator('.choice').filter({ hasText: /Идёшь за мной|хорошо|подчин/i });
+  if (await yes.count()) await yes.first().click();
+  else await page.locator('.choice').first().click();
+  await playVn();
+  await page.waitForTimeout(300);
+  const accepted = await ev(() => !!__RPG.UI.slot().tk.flags.tk_reina);
+  check('Рейна принята, ветка Короля Демонов открыта', accepted);
+
+  // сетка из 43
+  await ev(() => __RPG.UI.tkOpen('tour'));
+  await page.waitForTimeout(200);
+  const fighterN = await ev(() => (__RPG.D.TK_FIGHTERS || []).length);
+  check('в сетке 43 бойца', fighterN === 43, String(fighterN));
+  await shot('09-tour-43');
+
+  // развилка: 4 варианта только после принятия Рейны
   await ev(() => {
-    const s = __RPG.UI.slot(), D = __RPG.D;
-    s.tk.story = D.TK_CH.filter((c) => c.i < 10).map((c) => c.id);
+    const s = __RPG.UI.slot(), E = __RPG.E, D = __RPG.D;
+    s.tk.flags.tk_reina = 1; E.tkSyncFlags && E.tkSyncFlags(s);
+    s.tk.best = 12; s.tk.stage = 12;
+    const vis = E.tkVisibleChapters(s);
+    const feudI = vis.findIndex((c) => c.id === 'tk14_feud');
+    s.tk.story = vis.slice(0, feudI).map((c) => c.id);
     __RPG.UI.tkOpen('story');
   });
   await page.waitForTimeout(200);
-  await click('[data-act="tkPlay"][data-id="tk11_choice"]');
-  const vn11 = await playVn();
-  if (vn11 !== 'choice') await shot('08-choice-miss');
+  await click('[data-act="tkPlay"][data-id="tk14_feud"]');
+  const vn14 = await playVn();
+  if (vn14 !== 'choice') await shot('10-choice-miss');
   await page.waitForSelector('#schoice.on .choice', { timeout: 8000 });
-  await shot('08-choice');
+  await shot('10-feud-choice');
   const labels = await ev(() => [...document.querySelectorAll('.choice')].map((e) => e.textContent));
-  check('четыре варианта выбора', labels.length >= 4, labels.join(' | '));
-  const kaz = page.locator('.choice').filter({ hasText: /Кадзуи/i });
-  if (await kaz.count()) await kaz.first().click();
-  else await page.locator('.choice').nth(1).click();
+  check('четыре варианта выбора (с путём Короля Демонов)', labels.length >= 4, labels.join(' | '));
+  const selfBtn = page.locator('.choice').filter({ hasText: /своим путём|Ни Дзин, ни Кадзуя|своей дорог/i });
+  if (await selfBtn.count()) await selfBtn.first().click();
+  else await page.locator('.choice').nth(2).click();
   await playVn();
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(300);
   const side = await ev(() => __RPG.UI.slot().tk.flags.tk_side);
-  check('выбор сохранён (kazuya)', side === 'kazuya', String(side));
-  const side2 = await ev(() => { __RPG.UI.save(true); return __RPG.UI.slot().tk.flags.tk_side; });
-  check('выбор держится в сохранении', side2 === 'kazuya');
+  check('выбор сохранён (self)', side === 'self', String(side));
+
+  // логика четырёх концовок, клятвы, крови, миграции
+  const logic = await ev(() => {
+    const { E, D, C, S } = __RPG;
+    const NOW = Date.parse('2026-11-24T12:00:00+01:00');
+    const mk = () => { const s = E.newSlot({ name: 'Т', race: 'human', uniq: 'phoenix', prof1: 'smith', now: NOW }); E.tkEnsure(s, NOW); s.tk.best = 12; s.tk.stage = 12; return s; };
+    const shared = (s, reina) => {
+      const ids = ['tk01_rift','tk02_reina','tk03_paul','tk04_dojo','tk05_king','tk06_girls','tk07_hwoarang','tk08_nina','tk09_coffee','tk09b_guests','tk10_lars','tk11_jun','tk12_heihachi', reina ? 'tk13_mask' : 'tk13_night'];
+      if (reina) s.tk.flags.tk_reina = 1; else s.tk.flags.tk_reina_no = 1;
+      E.tkSyncFlags && E.tkSyncFlags(s);
+      ids.forEach((id) => E.tkFinishChapter(s, id));
+    };
+    const out = {};
+    const jin = mk(); shared(jin, false); jin.tk.flags.tk_side = 'jin'; E.tkSyncFlags(jin);
+    ['tk14_feud','tk15_jin','tk16_jin','tk17_jin'].forEach((id) => E.tkFinishChapter(jin, id));
+    out.jin = !!(jin.crew.tk_jin && jin.tk.ending === 'jin');
+
+    const neu = mk(); shared(neu, false); neu.tk.flags.tk_side = 'neutral'; E.tkSyncFlags(neu);
+    ['tk14_feud','tk15_neu','tk16_neu','tk17_neu'].forEach((id) => E.tkFinishChapter(neu, id));
+    out.nina = !!(neu.crew.tk_nina && neu.tk.ending === 'neutral');
+
+    const kaz = mk(); shared(kaz, false); kaz.tk.flags.tk_side = 'kazuya'; E.tkSyncFlags(kaz);
+    ['tk14_feud','tk15_kaz','tk16_kaz'].forEach((id) => E.tkFinishChapter(kaz, id));
+    out.allyNeed = E.tkFinishChapter(kaz, 'tk17_kaz') === 'Сначала выберите союзника';
+    out.allyAz = E.tkPickAlly(kaz, 'tk_azucena') === '' && !!kaz.crew.tk_azucena;
+    E.tkFinishChapter(kaz, 'tk17_kaz');
+    out.kazEnd = kaz.tk.ending === 'kazuya';
+
+    const sl = mk(); shared(sl, true); sl.tk.flags.tk_side = 'self'; sl.tk.flags.tk_reina_reveal = 1; sl.story.flags.tk_blood = 1; sl.tk.flags.tk_blood = 1; E.tkSyncFlags(sl);
+    ['tk14_feud','tk15_self','tk16_self','tk17_self'].forEach((id) => E.tkFinishChapter(sl, id));
+    out.reina = !!(sl.crew.tk_reina && sl.tk.blood && sl.tk.taken === 'tk_reina');
+    out.devilK = D.CREW.tk_reina.k === 1.08;
+
+    const rom = mk(); shared(rom, true); rom.tk.flags.tk_side = 'jin'; E.tkSyncFlags(rom);
+    ['tk14_feud','tk15_jin','tk16_jin','tk17_jin'].forEach((id) => E.tkFinishChapter(rom, id));
+    E.addAff(rom, 'tk_lili', 40); E.addAff(rom, 'tk_asuka', 40);
+    out.vow = E.tkTakeGirl(rom, 'tk_lili') === '' && E.tkTakeGirl(rom, 'tk_asuka') === 'Вы уже сделали выбор';
+    out.bloodLock = E.tkGiveBlood(rom, 1) === 'Клятву вы уже дали другой';
+
+    const noR = mk(); shared(noR, false);
+    out.selfLocked = !E.tkVisibleChapters(noR).some((c) => c.route === 'self');
+
+    const old = mk();
+    old.tk = { tokens: 200, story: ['tk01_rift','tk02_paul','tk03_law','tk04_king','tk05_hwoarang','tk06_nina','tk07_lars','tk08_jun','tk09_heihachi','tk10_feud','tk11_choice','tk12_final','tk13_home'], flags: { tk_side: 'self', tk_self: 1 }, stage: 11, best: 11, shop: { ending: 1, title: 1 }, rec: [], ending: 'self', bolt: 0, day: 0, fights: 0 };
+    S.migrations[13]({ v: 13, slots: [old] });
+    out.migReina = !!(old.crew.tk_reina && old.tk.flags.tk_reina);
+
+    const oldK = mk();
+    oldK.tk = { tokens: 80, story: ['tk13_home'], flags: { tk_side: 'kazuya' }, stage: 5, best: 5, shop: { ending: 1 }, rec: [], ending: 'kazuya', bolt: 1, day: 0, fights: 0 };
+    S.migrations[13]({ v: 13, slots: [oldK] });
+    out.migAlly = oldK.tk.needAlly === 1;
+
+    return out;
+  });
+  check('концовка Дзина даёт Дзина', logic.jin);
+  check('нейтральная концовка даёт Нину', logic.nina);
+  check('Кадзуя требует выбрать союзника', logic.allyNeed);
+  check('можно взять Асусену', logic.allyAz);
+  check('концовка Кадзуи записана', logic.kazEnd);
+  check('кровь: Рейна — Высший Дьявол', logic.reina && logic.devilK, JSON.stringify({ reina: logic.reina, k: logic.devilK }));
+  check('одна клятва, остальные блокируются', logic.vow && logic.bloodLock);
+  check('путь Короля Демонов закрыт без принятия Рейны', logic.selfLocked);
+  check('миграция v2.29.1 self → Рейна', logic.migReina);
+  check('миграция kazuya → needAlly', logic.migAlly);
+
+  // карточки спутников и выбор союзника
+  await ev(() => {
+    const s = __RPG.UI.slot(), E = __RPG.E;
+    s.tk.ending = 'kazuya'; s.tk.needAlly = 1; s.tk.flags.tk_side = 'kazuya';
+    E.tkSyncFlags && E.tkSyncFlags(s);
+    __RPG.UI.tkAllyModal(s);
+  });
+  await page.waitForTimeout(200);
+  await shot('11-ally-pick');
+  const allyN = await ev(() => document.querySelectorAll('[data-act="tkPickAlly"]').length);
+  check('в выборе союзника 4 кандидата', allyN === 4, String(allyN));
+  await ev(() => { __RPG.UI.closeModal && __RPG.UI.closeModal(); });
+
+  await ev(() => {
+    const s = __RPG.UI.slot(), E = __RPG.E;
+    s.tk.flags.tk_reina = 1; s.tk.blood = 1; s.tk.taken = 'tk_reina';
+    if (!s.crew.tk_reina) E.tkGrantComp(s, 'tk_reina');
+    E.tkReinaApply && E.tkReinaApply(s);
+    __RPG.UI.tab = 'crew'; __RPG.UI.renderGame();
+  });
+  await page.waitForTimeout(250);
+  await shot('12-reina-devil-crew');
+  check('Рейна видна в Свите после крови', await ev(() => !!__RPG.UI.slot().crew.tk_reina));
 
   // скрытие после окончания, награды на месте
   const tokensKeep = await ev(() => __RPG.UI.slot().tk.tokens);
   await ev(() => {
-    const D = __RPG.D, UI = __RPG.UI;
+    const D = __RPG.D, UI = __RPG.UI, s = UI.slot();
+    s.tk.needAlly = 0;
     D.TK_EVENT.end = Date.now() - 1000;
     UI.closeModal && UI.closeModal();
     UI.tab = 'city'; UI.renderGame();
@@ -134,7 +250,7 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   await ev(() => { __RPG.UI.tab = 'dun'; __RPG.UI.renderGame(); });
   await page.waitForTimeout(150);
   check('нет входа и на Вылазках', await page.locator('.tkbanner').count() === 0);
-  await shot('09-expired-hidden');
+  await shot('13-expired-hidden');
 
   const jsErr = errors.filter((e) => !/Failed to load|webp|favicon/i.test(e));
   check('нет JS-ошибок', jsErr.length === 0, jsErr.slice(0, 3).join(' | '));
