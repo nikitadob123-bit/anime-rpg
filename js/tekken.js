@@ -54,6 +54,7 @@
       try {
         E.tkMigStory230(s);
         if (t.ending && !t.mig230) E.tkApplyMig230(s);
+        if (!t.mig231) E.tkApplyMig231(s);
         E.tkSyncFlags && E.tkSyncFlags(s);
       } finally { delete s._tkEnsuring; }
     }
@@ -153,10 +154,17 @@
   D.TK_FIGHTER = {}; D.TK_FIGHTERS.forEach((f, i) => { f.i = i; D.TK_FIGHTER[f.id] = f; });
 
   E.tkLv = (s, off) => clamp((s.hero.level | 0) + (off | 0), 8, 140);
+  D.TK_STORY_FOES = {
+    guard2: { id: 'guard2', n: 'Охрана посредника', en: 'golem', off: 4, i: 4, ic: '🛡️' },
+    jackmob: { id: 'jackmob', n: 'Джек', en: 'golem', off: 6, i: 6, ic: '🤖', art: 'tk_jack' }
+  };
   E.tkFoe = function (s, fid) {
-    const f = D.TK_FIGHTER[fid]; if (!f) return null;
+    const f = (D.TK_FIGHTER && D.TK_FIGHTER[fid]) || (D.TK_STORY_FOES && D.TK_STORY_FOES[fid]); if (!f) return null;
     const lv = E.tkLv(s, f.off);
-    const u = C.unitFromEnemy(f.en, lv, 0, 0, 'tk_' + fid);
+    const u = C.unitFromEnemy(f.en, lv, 0, 0, 'tk_' + (f.art ? f.art.replace(/^tk_/, '') : fid))
+      || C.unitFromEnemy('golem', lv, 0, 0, 'tk_' + fid)
+      || C.unitFromEnemy('gatekeeper', lv, 0, 0, 'tk_' + fid);
+    if (!u) return null;
     const h = C.unitFromSlot(s);
     const i = f.i | 0;
     const hpMul = 1.7 + i * 0.32;
@@ -166,7 +174,7 @@
     ['atk', 'mag', 'hpow'].forEach((k) => { u[k] = Math.max(8, Math.round((h[k] || 10) * atkMul)); });
     u.def = Math.max(4, Math.round((h.def || 8) * (0.65 + i * 0.04)));
     u.res = Math.round(u.def * 0.9);
-    u.tkArt = 'tk_' + fid;
+    u.tkArt = f.art || ((D.TK_FIGHTER && D.TK_FIGHTER[fid]) ? ('tk_' + fid) : null);
     return u;
   };
 
@@ -363,10 +371,16 @@
       if (fid && fid !== next.id) return { err: 'Сначала предыдущий этап' };
       foeId = next.id; tokens = 20 + 8 * Math.min(next.i, 20); mark = 'tour';
     } else if (kind === 'story') {
-      const ch = D.TK_CH_MAP[fid]; if (!ch || !ch.fight) return { err: 'В этой главе нет боя' };
-      if (!E.tkChapterOpen(s, ch.id)) return { err: 'Глава ещё закрыта' };
-      if (t.story.includes(ch.id)) return { err: 'Глава уже пройдена' };
-      foeId = ch.fight === 'final' ? E.tkFinalId(s) : ch.fight; tokens = 15; mark = ch.id;
+      const ch = D.TK_CH_MAP[fid];
+      if (ch) {
+        if (!E.tkChapterOpen(s, ch.id)) return { err: 'Глава ещё закрыта' };
+        const ff = E.tkFightFor ? E.tkFightFor(s, ch) : ch.fight;
+        foeId = Array.isArray(ff) ? ff[0] : ff;
+      } else {
+        foeId = fid;
+      }
+      if (!foeId || !E.tkFoe(s, foeId)) return { err: 'В этой главе нет боя' };
+      tokens = 0; mark = 'story';
     } else if (kind === 'daily') {
       if (!fid || !D.TK_FIGHTER[fid]) return { err: 'Нет такого бойца' };
       const need = D.TK_FIGHTER[fid].i;
@@ -377,7 +391,7 @@
     const P = C.unitFromSlot(s), party = [P];
     (s.party || []).forEach((id) => { if (s.crew[id] && party.length < 4) party.push(C.unitFromCrew(s, id, 1)); });
     const foes = [E.tkFoe(s, foeId)];
-    const B = C.create(party, foes, E.rng(((s.rev || 1) * 9176 + D.TK_FIGHTER[foeId].i * 13) >>> 0), { cons: s.cons, cmd: !!s.cmd, noFlee: true });
+    const B = C.create(party, foes, E.rng(((s.rev || 1) * 9176 + ((D.TK_FIGHTER[foeId] || D.TK_STORY_FOES[foeId] || { i: 5 }).i) * 13) >>> 0), { cons: s.cons, cmd: !!s.cmd, noFlee: true });
     B.cons = s.cons; B.tk = { kind, fid: foeId, tokens, mark }; B.noXp = 1; B.noLoot = 1;
     return B;
   };
@@ -424,6 +438,19 @@
   D.TITLES.push({ id: 'ironfist', n: 'Король Железного Кулака', ok: (s) => !!(s.tk && (s.tk.ending || (s.tk.shop && s.tk.shop.title))) });
   D.FRAMES.push({ id: 'ironfist', n: 'Железный Кулак', c: '#ff5a3a', ok: (s) => !!(s.tk && (s.tk.ending || (s.tk.shop && s.tk.shop.frame))) });
 
+
+  E.tkGrantSphere = function (s) {
+    const t = E.tkEnsure(s);
+    if (t.sphere) return;
+    t.sphere = 1; t.flags.tk_sphere = 1;
+    s.inv = s.inv || [];
+    if (!s.inv.some((it) => it && (it.id === 'tk_sphere' || it.k === 'tk_sphere'))) {
+      const it = { id: 'tk_sphere', k: 'tk_sphere', n: 'Сфера Судьбы', ic: '🔮', uniq: 1, flavor: 1 };
+      s.inv.push(it);
+    }
+    E.tkSyncFlags && E.tkSyncFlags(s);
+  };
+
   D.TK_SHOP = [
     { id: 'pack_s', n: 'Мешок золота', ic: '🪙', cost: 25, once: 0, typ: 'gold', gold: 4000 },
     { id: 'pack_m', n: 'Знаки и пыль', ic: '✨', cost: 40, once: 0, typ: 'mats', mats: { dust: 8, asc_sigil: 1 } },
@@ -432,8 +459,8 @@
     { id: 'bolt', n: 'Навык «Электрический Удар Мисимы»', ic: '⚡', cost: 150, once: 1, typ: 'bolt' },
     { id: 'gloves', n: 'Перчатки Железного Кулака', ic: '👊', cost: 200, once: 1, typ: 'gloves' },
     { id: 'gene', n: 'Артефакт «Ген Дьявола»', ic: '😈', cost: 280, once: 1, typ: 'art' },
-    { id: 'rec_jin', n: 'Пригласить Дзина в Свиту', ic: '👊', cost: 240, once: 1, typ: 'rec', rec: 'tk_jin', need: (s) => E.tkEnsure(s).stage >= 8 || E.tkChapterDone(s, 'tk10_feud') || E.tkChapterDone(s, 'tk14_feud') },
-    { id: 'rec_nina', n: 'Пригласить Нину в Свиту', ic: '🗡️', cost: 220, once: 1, typ: 'rec', rec: 'tk_nina', need: (s) => E.tkEnsure(s).stage >= 4 || E.tkChapterDone(s, 'tk06_nina') }
+    { id: 'rec_jin', n: 'Пригласить Дзина в Свиту', ic: '👊', cost: 240, once: 1, typ: 'rec', rec: 'tk_jin', need: (s) => { const t = E.tkEnsure(s); return t.stage >= 8 || (t.story && t.story.includes('tk16_outcome')) || t.ending === 'jin' || (t.rec && t.rec.includes('tk_jin')); } },
+    { id: 'rec_nina', n: 'Пригласить Нину в Свиту', ic: '🗡️', cost: 220, once: 1, typ: 'rec', rec: 'tk_nina', need: (s) => { const t = E.tkEnsure(s); return t.stage >= 4 || (t.story && t.story.includes('tk16_outcome')) || t.ending === 'neutral' || (t.rec && t.rec.includes('tk_nina')); } }
   ];
   D.TK_SHOP_MAP = {}; D.TK_SHOP.forEach((x) => { D.TK_SHOP_MAP[x.id] = x; });
 
@@ -466,6 +493,7 @@
   };
 
   E.tkGrantEnding = function (s, ending) {
+    if (s && s.tk) s.tk.mig230 = 1;
     const t = E.tkEnsure(s);
     if (t.shop.ending) {
       // повторно только добрать спутника, если его ещё нет (миграция / выбор союзника)
@@ -486,10 +514,10 @@
     const t = E.tkEnsure(s);
     if (ending === 'jin') E.tkGrantComp(s, 'tk_jin');
     else if (ending === 'neutral') E.tkGrantComp(s, 'tk_nina');
-    else if (ending === 'self') E.tkGrantComp(s, 'tk_reina');
-    else if (ending === 'kazuya') {
+    else if (ending === 'self') { if (t.flags.tk_reina) E.tkGrantComp(s, 'tk_reina'); }
+    if (ending === 'kazuya') {
+      E.tkGrantSphere && E.tkGrantSphere(s);
       if (t.ally) E.tkGrantComp(s, t.ally);
-      else t.needAlly = 1;
     }
   };
   E.tkPickAlly = function (s, id) {
@@ -582,10 +610,59 @@
     return _ufc(s, id, k);
   };
 
+
+  D.TK_LOSS = {
+    tk03_doors: [['jin', 'Всё?', 'n'], ['h', 'Дай плечу минуту. Потом ещё раз.', 'n']],
+    tk04_paul: [['paul', 'Я наконец выиграл у человека, который умеет ловить мой кулак. Сядь и не порть момент.', 'n'], ['h', 'Наслаждайся, пока не прозвенел гонг.', 'n']],
+    tk07_sisters: [['ann', 'Ещё одна копия. Охрана, к двери.', 'n']],
+    tk08_flagless: [['zaf', 'Здесь два входа. Дай мне отвернуть охрану от второго.', 'n']],
+    tk10_coliseum: [['h', 'Назад к первому пролёту. Попробуем снова.', 'n']],
+    tk13_island: [['ali', 'Можем начать снова. Трое всё ещё со мной.', 'n']]
+  };
+
+
+  const TK_NEW_CH = ['tk01_rift','tk02_reina','tk03_doors','tk04_paul','tk05_street','tk06_hwoarang','tk07_sisters','tk08_flagless','tk09_case','tk10_coliseum','tk11_daughter','tk12_night','tk13_island','tk14_sky','tk15_last','tk16_outcome','tk17_blood','tk18_vow','tk19_home'];
+  const TK_OLD_RANK = {
+    tk01_rift:1, tk02_reina:2, tk02_paul:2, tk03_paul:4, tk03_law:4, tk04_paul:4, tk04_dojo:4, tk04_king:5,
+    tk05_king:5, tk05_hwoarang:6, tk05_street:5, tk06_girls:5, tk06_nina:7, tk06_hwoarang:6,
+    tk07_hwoarang:6, tk07_lars:12, tk07_sisters:7, tk08_nina:7, tk08_jun:8, tk08_flagless:8,
+    tk09_coffee:8, tk09b_guests:8, tk09_heihachi:8, tk09_case:9,
+    tk10_lars:12, tk10_feud:9, tk10_coliseum:10, tk11_jun:11, tk11_choice:10, tk11_daughter:11,
+    tk12_heihachi:12, tk12_final:15, tk12_night:12, tk13_mask:11, tk13_night:11, tk13_home:19, tk13_island:13,
+    tk14_feud:10, tk14_sky:14, tk15_jin:13, tk15_kaz:13, tk15_self:13, tk15_neu:13, tk15_last:15,
+    tk16_jin:16, tk16_kaz:16, tk16_self:16, tk16_neu:16, tk16_outcome:16,
+    tk17_jin:16, tk17_kaz:16, tk17_self:16, tk17_neu:16, tk17_blood:17,
+    tk18_vow:18, tk19_home:19
+  };
+  E.tkApplyMig231 = function (s) {
+    const t = E.tkEnsure(s);
+    if (t.mig231) return;
+    t.mig231 = 1;
+    const old = (t.story || []).slice();
+    let max = 0;
+    old.forEach((id) => { if (TK_OLD_RANK[id]) max = Math.max(max, TK_OLD_RANK[id]); });
+    const finished = !!(t.ending && (old.includes('tk19_home') || old.includes('tk13_home') || /tk17_/.test(old.join(' '))));
+    if (finished || (t.ending && max >= 16)) t.story = TK_NEW_CH.slice();
+    else t.story = TK_NEW_CH.filter((id, i) => (i + 1) <= max);
+    if (t.flags.tk_side === 'self' || t.ending === 'self') {
+      t.flags.tk_side = 'neutral';
+      t.flags.tk_neutral = 1;
+      if (!t.flags.tk_reina_no) t.flags.tk_reina = t.flags.tk_reina || 1;
+    }
+    if (t.flags.tk_side === 'jin' || t.ending === 'jin') t.flags.tk_jin = 1;
+    if (t.flags.tk_side === 'kazuya' || t.ending === 'kazuya') t.flags.tk_kazuya = 1;
+    if (t.ending === 'kazuya') E.tkGrantSphere && E.tkGrantSphere(s);
+    if (t.rec && t.rec.includes('tk_jin')) t.flags.tk_has_jin = 1;
+    if (t.rec && t.rec.includes('tk_nina')) t.flags.tk_has_nina = 1;
+    if (t.rec && t.rec.includes('tk_reina')) t.flags.tk_has_reina = 1;
+    E.tkSyncFlags && E.tkSyncFlags(s);
+  };
+
   if (S && S.migrations) {
-    S.VERSION = 14;
+    S.VERSION = 15;
     S.migrations[12] = function (p) { p.slots = (p.slots || []).map((s) => { if (s) E.tkEnsure(s); return s; }); p.v = 13; return p; };
     S.migrations[13] = function (p) { p.slots = (p.slots || []).map((s) => { if (s) { E.tkEnsure(s); E.tkApplyMig230(s); } return s; }); p.v = 14; return p; };
+    S.migrations[14] = function (p) { p.slots = (p.slots || []).map((s) => { if (s) { E.tkEnsure(s); E.tkApplyMig230(s); E.tkApplyMig231(s); } return s; }); p.v = 15; return p; };
   }
 
   E.vnSceneBoxPor = function (lines) {

@@ -84,9 +84,10 @@
 
   // сгладить рост статов на длинной сетке (43 бойца)
   E.tkFoe = function (s, fid) {
-    const f = D.TK_FIGHTER[fid]; if (!f) return null;
+    const f = (D.TK_FIGHTER && D.TK_FIGHTER[fid]) || (D.TK_STORY_FOES && D.TK_STORY_FOES[fid]); if (!f) return null;
     const lv = E.tkLv(s, f.off);
-    const u = C.unitFromEnemy(f.en, lv, 0, 0, 'tk_' + fid);
+    const u = C.unitFromEnemy(f.en, lv, 0, 0, 'tk_' + fid) || C.unitFromEnemy('golem', lv, 0, 0, 'tk_' + fid);
+    if (!u) return null;
     const h = C.unitFromSlot(s);
     const n = Math.max(1, F.length - 1), t = (f.i | 0) / n;
     const hpMul = 1.7 + t * 3.5;
@@ -211,7 +212,30 @@
     ste: { n: 'Стив Фокс', art: 'tk_steve', c: '#e8e0d0' },
     edd: { n: 'Эдди Гордо', art: 'tk_eddy', c: '#f0d060' },
     cla: { n: 'Клаудио', art: 'tk_claudio', c: '#f0e8a0' },
-    bry: { n: 'Брайан Фьюри', art: 'tk_bryan', c: '#b0c0c8' }
+    bry: { n: 'Брайан Фьюри', art: 'tk_bryan', c: '#b0c0c8' },
+    kum: { n: 'Кума', art: 'tk_kuma', c: '#c8a060' },
+    pan: { n: 'Панда', art: 'tk_panda', c: '#f0d080' },
+    jac: { n: 'Джек-8', art: 'tk_jack', c: '#9aa0b8' },
+    yos: { n: 'Ёсимицу', art: 'tk_yoshimitsu', c: '#7ad87a' },
+    sha: { n: 'Шахин', art: 'tk_shaheen', c: '#e8d080' },
+    dra: { n: 'Сергей Драгунов', art: 'tk_dragunov', c: '#9ab0c0' },
+    fen: { n: 'Фэн Вэй', art: 'tk_feng', c: '#d0a070' },
+    rav: { n: 'Рэйвен', art: 'tk_raven', c: '#8090a8' },
+    lee: { n: 'Ли Чаолан', art: 'tk_lee', c: '#e8e0d0' },
+    cli: { n: 'Клайв Росфилд', art: 'tk_clive', c: '#c06070' },
+    fah: { n: 'Факумрам', art: 'tk_fahkumram', c: '#8fe8b0' },
+    ark: { n: 'Армор Кинг', art: 'tk_armorking', c: '#c8b080' },
+    bob: { n: 'Боб Ричардс', art: 'tk_bob', c: '#f0d060' },
+    rog: { n: 'Роджер-младший', art: 'tk_roger', c: '#ffd35a' },
+    yuj: { n: 'Юдзиро Ханма', art: 'tk_yujiro', c: '#ff6a4a' },
+    aza: { n: 'Азазель', c: '#c060ff' },
+    drv: { n: 'Водитель', c: '#9aa0b8' },
+    mer: { n: 'Торговец', c: '#c8a060' },
+    boy: { n: 'Мальчик', c: '#ffe0a0' },
+    med: { n: 'Медик', c: '#a0d0c8' },
+    sgc: { n: 'Солдат G Corporation', c: '#b0b8c8' },
+    syg: { n: 'Солдат Yggdrasil', c: '#a0c0e8' },
+    fgt: { n: 'Боец', c: '#9aa0b8' }
   });
 
   if (typeof module !== 'undefined') module.exports = RPG;

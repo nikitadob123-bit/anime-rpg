@@ -23,7 +23,7 @@
     return (UI.hasTkArt && UI.hasTkArt(src) ? `<img class="tkpor${devilCls(src)}" src="img/tekken/${src}.webp" alt="" draggable="false">` : `<span class="tkemo">${emo || '👊'}</span>`);
   };
 
-  D.TK_ART_HAVE = ["banner","bg_arena","bg_dojo","tk_alisa","tk_anna","tk_armorking","tk_asuka","tk_azucena","tk_bob","tk_bolt","tk_bryan","tk_claudio","tk_clive","tk_deviljin","tk_dragunov","tk_eddy","tk_event","tk_fahkumram","tk_feng","tk_frame","tk_gene","tk_gloves","tk_heihachi","tk_hwoarang","tk_jack","tk_jin","tk_jun","tk_kazuya","tk_king","tk_kuma","tk_kuni","tk_lars","tk_law","tk_lee","tk_leo","tk_leroy","tk_lidia","tk_lili","tk_miary","tk_nina","tk_pack_m","tk_pack_s","tk_panda","tk_paul","tk_raven","tk_rec_jin","tk_rec_nina","tk_reina","tk_reina_devil","tk_reina_jacket","tk_reina_top","tk_reina_top_bust","tk_roger","tk_shaheen","tk_steve","tk_title","tk_token","tk_victor","tk_xiaoyu","tk_yoshimitsu","tk_zafina"]; // @tk-art-have
+  D.TK_ART_HAVE = ["banner","bg_arena","bg_dojo","tk_alisa","tk_anna","tk_armorking","tk_asuka","tk_azucena","tk_bob","tk_bolt","tk_bryan","tk_claudio","tk_clive","tk_deviljin","tk_dragunov","tk_eddy","tk_event","tk_fahkumram","tk_feng","tk_frame","tk_gene","tk_gloves","tk_heihachi","tk_hwoarang","tk_jack","tk_jin","tk_jun","tk_kazuya","tk_king","tk_kuma","tk_kuni","tk_lars","tk_law","tk_lee","tk_leo","tk_leroy","tk_lidia","tk_lili","tk_miary","tk_nina","tk_pack_m","tk_pack_s","tk_panda","tk_paul","tk_raven","tk_rec_jin","tk_rec_nina","tk_reina","tk_reina_devil","tk_reina_jacket","tk_reina_top","tk_reina_top_bust","tk_roger","tk_shaheen","tk_steve","tk_title","tk_token","tk_victor","tk_xiaoyu","tk_yoshimitsu","tk_yujiro","tk_zafina"]; // @tk-art-have
   const haveArt = new Set(D.TK_ART_HAVE);
   UI.hasTkArt = (id) => haveArt.has(id);
   if (typeof document !== 'undefined') {
@@ -77,6 +77,17 @@
       if (!(s && s.tk && s.tk.needAlly)) return '';
     }
     const t = E.tkEnsure(s), ch = nextCh(s) || {};
+    if (UI.tkTab === 'meets') {
+      const list = (D.TK_MEETS || []).filter((m) => E.tkMeetOpen(s, m.id));
+      const post = !!(t.ending && t.story.includes('tk19_home'));
+      const rows = list.map((m) => {
+        const done = (t.meets || []).includes(m.id);
+        return `<div class="tkrow ${done ? 'done' : 'cur'}">${por(m.art || ('tk_' + m.id), '👊')}<div class="grow tl"><b>${esc(m.n)}</b><small class="dim">${esc(m.sub || '')}${done ? ' · прочитано' : ''}</small></div><button class="btn small ${done ? 'ghost' : 'primary'}" data-act="tkMeet" data-id="${m.id}" data-replay="${done ? 1 : ''}">${done && post ? 'Галерея бойцов' : done ? 'Ещё раз' : 'Поговорить'}</button></div>`;
+      }).join('');
+      const blood = (t.flags.tk_reina_join && !t.blood && t.story.includes('tk17_blood'))
+        ? `<div class="card tl small">Рейна: «Я попрошу ещё раз. На этот раз знаю, как выглядит та сила, которой мне не хватало».<button class="btn primary wide" data-act="tkLateBlood">Принять кровь</button></div>` : '';
+      return `<div class="small dim tl">${post ? 'Галерея бойцов — повтор встреч после титров.' : 'Личные встречи открываются по ходу истории. Спарринг — в турнире и ежедневных боях.'}</div>${blood}${rows || '<div class="dim center pad">Пока некого навестить. Продвиньтесь по сюжету.</div>'}`;
+    }
     const vis = visCh(s);
     const doneN = vis.filter((c) => t.story.includes(c.id)).length;
     const st = E.tkNextFighter(s) ? 'Этап ' + (t.won.length + 1) + '/' + D.TK_FIGHTERS.length : 'Турнир пройден';
@@ -104,7 +115,7 @@
     const ids = D.ROM_IDS;
     D.ROM_IDS = ids.filter((id) => {
       if (String(id).indexOf('tk_') !== 0) return true;
-      return !!(s.crew[id] || (s.rom && s.rom[id] && (s.rom[id].aff | 0) > 0));
+      return !!(s.crew[id] || (s.rom && s.rom[id] && (s.rom[id].aff | 0) > 0) || (E.tkRomGate && E.tkRomGate(s, id, 0)));
     });
     try { return _hearts(s); } finally { D.ROM_IDS = ids; }
   };
@@ -117,7 +128,7 @@
     }
     if (t && t.needAlly) { UI.tkAllyModal(s); return; }
     UI.tkTab = tab || UI.tkTab || 'story';
-    const tabs = [['story', '📜 Сюжет'], ['tour', '🏆 Турнир'], ['daily', '⚔️ Бои'], ['shop', '🛒 Лавка']].map(([k, n]) => `<button class="fchip ${UI.tkTab === k ? 'on' : ''}" data-act="tkTab" data-k="${k}" data-quiet="1">${n}</button>`).join('');
+    const tabs = [['story', '📜 Сюжет'], ['meets', '🤝 Встречи'], ['tour', '🏆 Турнир'], ['daily', '⚔️ Бои'], ['shop', '🛒 Лавка']].map(([k, n]) => `<button class="fchip ${UI.tkTab === k ? 'on' : ''}" data-act="tkTab" data-k="${k}" data-quiet="1">${n}</button>`).join('');
     UI.modal(`<h3>${gi('tk_event', '👊')} ${esc(D.TK_EVENT.n)}</h3>
       <div class="small dim tl">${esc(D.TK_EVENT.disc)}</div>
       <div class="row between center-v small"><span>⏳ ${mm(E.tkLeft())}</span><b>${tok(t.tokens)}</b><span>попыток: ${E.tkDailyLeft(s)}/${D.TK_DAILY}</span></div>
@@ -154,12 +165,11 @@
     const rows = vis.map((c, i) => {
       const done = t.story.includes(c.id), open = E.tkChapterOpen(s, c.id), cur = open && !done;
       let act = '';
-      if (cur && !c.fight) act = `<button class="btn primary small" data-act="tkPlay" data-id="${c.id}">Читать</button>`;
-      else if (cur && c.fight) act = `<button class="btn ghost small" data-act="tkPlay" data-id="${c.id}">Сцена</button><button class="btn primary small" data-act="tkFight" data-k="story" data-id="${c.id}">Бой</button>`;
+      if (cur) act = `<button class="btn primary small" data-act="tkPlay" data-id="${c.id}">Читать</button>`;
       else if (done) act = `<button class="btn ghost small" data-act="tkPlay" data-id="${c.id}" data-replay="1">Ещё раз</button>`;
       return `<div class="tkrow ${done ? 'done' : cur ? 'cur' : 'lock'}"><b>${i + 1}</b><div class="grow tl"><b>${esc(c.n)}</b><small class="dim">${esc((D.TK_SCENES[c.id] || {}).sub || '')}${c.fight ? ' · бой' : ''}</small></div>${act}</div>`;
     }).join('');
-    return `<div class="small dim tl">Король Демонов попадает в мир турнира из-за Энтропии Реальности. Ваши выборы изменят финал этой истории, но не сюжет Хельмора.</div>${rows}`;
+    return `<div class="small dim tl">По ту сторону Железного Кулака. Выбор стороны войны (слово Дзину, сделка с Кадзуей или наблюдатель) не закрывает Рейну: её путь независим, пока её не отказали на первой встрече.</div>${rows}`;
   };
 
   UI.act.tkBuy = (el) => { const s = UI.slot(); if (err(E.tkShopBuy(s, el.dataset.id))) return; UI.sfx('gold'); UI.save(true); UI.toast('Куплено', 'gold'); UI.tkOpen('shop'); };
@@ -189,29 +199,93 @@
     if (!sc) return; if (!replay && !E.tkChapterOpen(s, id)) { err('Глава ещё закрыта'); return; }
     UI.closeModal();
     prepSpeakers(s);
+    if (id === 'tk10_coliseum') E.tkSide && E.tkSide(s, true);
     const lines = E.tkSceneLines ? E.tkSceneLines(s, sc) : sc.lines;
     const _sf = E.setFlags, _fin = E.finishScene;
-    E.setFlags = function (slot, f) { _sf(slot, f); const tk = E.tkEnsure(slot); Object.assign(tk.flags, f); };
+    E.setFlags = function (slot, f) { _sf(slot, f); const tk = E.tkEnsure(slot); Object.assign(tk.flags, f); E.tkSyncFlags && E.tkSyncFlags(slot); };
     E.finishScene = function (slot, sid) { if (sid && String(sid).indexOf('tk') === 0) return; return _fin(slot, sid); };
-    try { await UI.playLines(lines, { bg: sc.bg || 'void', replay, title: sc.t, boxPor: true }); }
-    finally { E.setFlags = _sf; E.finishScene = _fin; }
-    if (!replay) {
-      const ch = D.TK_CH_MAP[id];
-      if (ch && ch.blood) {
-        const yes = !!(s.story && s.story.flags && s.story.flags.tk_blood);
-        E.tkGiveBlood(s, yes);
+    const ch = D.TK_CH_MAP[id];
+    const split = (arr) => {
+      const segs = []; let cur = { lines: [], fight: false };
+      (arr || []).forEach((l) => {
+        if (l && l[0] === 'fight') { cur.fight = true; segs.push(cur); cur = { lines: [], fight: false }; }
+        else cur.lines.push(l);
+      });
+      if (cur.lines.length || !segs.length) segs.push(cur);
+      return segs;
+    };
+    const opts = { bg: sc.bg || 'void', replay, title: sc.t, boxPor: true };
+    try {
+      const segs = split(lines);
+      const foesRaw = (E.tkFightFor && ch) ? E.tkFightFor(s, ch) : (ch && ch.fight && ch.fight !== 'route' ? ch.fight : null);
+      const foes = foesRaw ? [].concat(foesRaw) : [];
+      let fi = 0;
+      for (let i = 0; i < segs.length; i++) {
+        const seg = segs[i];
+        if (seg.lines && seg.lines.length) await UI.playLines(seg.lines, opts);
+        if (seg.fight || (i === segs.length - 1 && fi < foes.length)) {
+          const need = seg.fight ? 1 : 0;
+          const count = Math.max(need, (i === segs.length - 1 ? foes.length - fi : 0));
+          const nFights = seg.fight ? Math.max(1, (foes.length && segs.filter((x) => x.fight).length === 1) ? foes.length - fi : 1) : count;
+          const waves = seg.fight ? (segs.filter((x) => x.fight).length === 1 && foes.length > fi ? foes.length - fi : 1) : 0;
+          const wcount = waves || nFights;
+          for (let w = 0; w < wcount; w++) {
+            const fid = foes[fi] || foes[foes.length - 1];
+            fi++;
+            if (!fid) break;
+            let win = false;
+            while (!win) {
+              const B = E.tkBattle(s, 'story', fid);
+              if (B.err) { err(B.err); break; }
+              const f = (D.TK_FIGHTER && D.TK_FIGHTER[fid]) || (D.TK_STORY_FOES && D.TK_STORY_FOES[fid]) || { n: 'Противник', ic: '👊', id: fid };
+              const rep = await UI.battle({ B, ic: f.ic, bio: 'ash', title: 'Железный Кулак · ' + f.n, finish: E.tkFinish });
+              if (rep && rep.result === 'win') win = true;
+              else {
+                const loss = (D.TK_LOSS && (D.TK_LOSS[id] || D.TK_LOSS[fid])) || [['h', 'Ещё раз.', 'n']];
+                await UI.playLines(loss, opts);
+              }
+            }
+            if (!win) { UI.save(true); UI.tkOpen('story'); return; }
+          }
+        }
       }
-      if (ch && ch.pick === 'ally') {
-        const ok = await UI.tkAllyFlow(s);
-        if (!ok) { UI.save(true); UI.tkOpen('story'); return; }
+    } finally { E.setFlags = _sf; E.finishScene = _fin; }
+    if (!replay) {
+      if (ch && ch.blood) {
+        /* flags already set during the scene */
       }
       if (ch && ch.vow) {
         const ok = await UI.tkVowFlow(s);
         if (!ok) { UI.save(true); UI.tkOpen('story'); return; }
       }
-      if (ch && !ch.fight) { const r = E.tkFinishChapter(s, id); if (r) err(r); else UI.toast('Глава завершена', 'gold'); }
+      const r = E.tkFinishChapter(s, id); if (r) err(r); else UI.toast('Глава завершена', 'gold');
     }
     UI.save(true); UI.tkOpen('story');
+  };
+
+  UI.act.tkMeet = async (el) => {
+    const s = UI.slot(), id = el.dataset.id, m = D.TK_MEET_MAP && D.TK_MEET_MAP[id];
+    if (!m) return;
+    if (!el.dataset.replay && !E.tkMeetOpen(s, id)) { err('Встреча ещё закрыта'); return; }
+    UI.closeModal();
+    prepSpeakers(s);
+    const _sf = E.setFlags, _fin = E.finishScene;
+    E.setFlags = function (slot, f) { _sf(slot, f); const tk = E.tkEnsure(slot); Object.assign(tk.flags, f); E.tkSyncFlags && E.tkSyncFlags(slot); };
+    E.finishScene = function (slot, sid) { if (sid && String(sid).indexOf('tk') === 0) return; return _fin(slot, sid); };
+    try { await UI.playLines(m.lines || [], { bg: m.bg || 'tk_dojo', title: m.n, boxPor: true }); }
+    finally { E.setFlags = _sf; E.finishScene = _fin; }
+    if (!el.dataset.replay) E.tkMeetDone(s, id);
+    UI.save(true); UI.tkOpen('meets');
+  };
+
+  UI.act.tkLateBlood = () => {
+    const s = UI.slot(), t = E.tkEnsure(s);
+    if (t.blood) { err('Кровь уже дана'); return; }
+    if (!t.flags.tk_reina_join) return;
+    E.tkGiveBlood(s, 1);
+    t.flags.tk_blood = 1;
+    UI.sfx('level'); UI.toast('Рейна приняла кровь', 'gold');
+    UI.save(true); UI.tkOpen('meets');
   };
 
   UI.tkAllyFlow = function (s) {
@@ -242,25 +316,43 @@
   UI.tkVowFlow = function (s) {
     const t = E.tkEnsure(s);
     if (t.vowDone || t.taken) { t.vowDone = 1; return Promise.resolve(true); }
-    const can = E.tkRomCandidates(s);
-    if (!can.length) { t.vowDone = 1; t.taken = 'none'; return Promise.resolve(true); }
+    const can = (E.tkRomCandidates(s) || []).filter((id) => {
+      const r = s.rom && s.rom[id];
+      const love = !!(s.story && s.story.flags && s.story.flags['love_' + id]);
+      return love || (r && (r.aff | 0) >= 70);
+    });
     return new Promise((resolve) => {
       UI._tkVowDone = (ok) => { UI._tkVowDone = null; resolve(!!ok); };
       const rows = can.map((id) => {
         const c = D.CREW[id] || {}, aff = (s.rom[id] && s.rom[id].aff) || 0;
-        return `<button class="tkrow" data-act="tkTakeGirl" data-id="${id}" data-quiet="1">${por(id, c.ic)}<div class="grow tl"><b>${esc(c.n || id)}</b><small class="dim">симпатия ${aff}</small></div></button>`;
+        return `<button class="tkrow" data-act="tkTakeGirl" data-id="${id}" data-quiet="1">${por(id, c.ic)}<div class="grow tl"><b>${esc(c.n || id)}</b><small class="dim">Поговорить перед уходом · симпатия ${aff}</small></div></button>`;
       }).join('');
-      UI.modal(`<h3>Одна клятва</h3><div class="small dim tl">Увести с собой можно только одну. Остальные уйдут без ссоры, но клятвы не будет.</div><div class="tkpane">${rows}</div><button class="btn ghost wide" data-act="tkTakeGirl" data-id="" data-quiet="1">Уйти одному</button>`, { cls: 'tall tkmodal' });
+      UI.modal(`<h3>Одна клятва</h3><div class="small dim tl">Разлом открою под утро. До этого хочу договорить начатое. Можно выбрать один романтический финал или уйти без него. Служба Рейны, Нины и Дзина от этого не зависит.</div><div class="tkpane">${rows || '<div class="dim">Открытых сердечных линий пока нет.</div>'}</div><button class="btn ghost wide" data-act="tkTakeGirl" data-id="" data-quiet="1">Уйти без романа</button>`, { cls: 'tall tkmodal' });
     });
   };
-  UI.act.tkTakeGirl = (el) => {
+  UI.act.tkTakeGirl = async (el) => {
     const s = UI.slot(), id = el.dataset.id || '';
     const r = E.tkTakeGirl(s, id || null);
     if (err(r)) return;
     UI.sfx('level');
-    UI.toast(id ? ('Клятва: ' + ((D.CREW[id] || {}).n || id)) : 'Вы уходите одни.', 'gold');
+    UI.closeModal();
+    prepSpeakers(s);
+    if (id) {
+      const rom = D.ROMANCE && D.ROMANCE[id];
+      const sc = rom && rom.scenes && rom.scenes[2];
+      if (sc && sc.lines) await UI.playLines(sc.lines, { bg: sc.bg || 'tk_dojo', title: sc.t, boxPor: true });
+      UI.toast('Клятва: ' + ((D.CREW[id] || {}).n || id), 'gold');
+    } else {
+      await UI.playLines([
+        ['h', 'Утром ухожу. Если кто хотел сказать что-то перед дорогой, у нас ещё есть время.', 'n'],
+        ['paul', 'Если попадёшь сюда снова, браслет не выбрасывай.', 'n'],
+        ['h', 'Зачем?', 'n'],
+        ['paul', 'По нему оформляют реванш. Я проверил.', 'n']
+      ], { bg: 'tk_dojo', title: 'Уйти без романа', boxPor: true });
+      UI.toast('Вы уходите одни.', 'gold');
+    }
     UI.save(true);
-    if (UI._tkVowDone) { UI.closeModal(); UI._tkVowDone(true); }
+    if (UI._tkVowDone) UI._tkVowDone(true);
     else UI.tkOpen('story');
   };
 

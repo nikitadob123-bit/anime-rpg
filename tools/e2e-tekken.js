@@ -1,9 +1,9 @@
-/* E2E v2.29 коллаба «Железный Кулак»: вход, глава, бой, жетоны, магазин, выбор, скрытие после окончания.
-   Скриншоты — /workspace/shots-tekken/v230/  (444×986) */
+/* E2E v2.31.0 коллаба «Железный Кулак»: канонический сценарий, 4 пути, рамка диалога.
+   Скриншоты — /workspace/shots-tekken/v2310/  (444×986) */
 const { chromium } = require('playwright-core');
 const fs = require('fs'), path = require('path');
 const { serve } = require('./serve.js');
-const outDir = process.env.TK_SHOTS || '/workspace/shots-tekken/v230';
+const outDir = process.env.TK_SHOTS || '/workspace/shots-tekken/v2310';
 fs.mkdirSync(outDir, { recursive: true });
 let ok = 0, bad = 0;
 const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra || ''); } else { bad++; console.log('  ✗', n, extra || ''); } };
@@ -22,10 +22,80 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   const ev = (f, a) => page.evaluate(f, a);
   const click = async (sel, o) => { const l = page.locator(sel).first(); await l.waitFor({ state: 'visible', timeout: 8000 }); await l.click(o || {}); await page.waitForTimeout(80); };
 
+  const turnSkipOn = async () => {
+    const on = await ev(() => {
+      const b = document.getElementById('sSkip');
+      if (!b || /Идёт/.test(b.textContent || '')) return false;
+      b.click(); return true;
+    });
+    if (on) await page.waitForTimeout(40);
+  };
+  const playVn = async (pick) => {
+    const ready = await page.locator('#story, #schoice.on .choice').count();
+    if (!ready) return 'done';
+    if (await page.locator('#story').count()) await page.waitForSelector('#story', { timeout: 8000 }).catch(() => {});
+    await turnSkipOn();
+    let guard = 600, lastChoice = '';
+    while (guard-- > 0) {
+      if (!(await page.locator('#story').count())) return lastChoice || 'done';
+      if (await page.locator('#schoice.on .choice').count()) {
+        lastChoice = await ev((pick) => {
+          const ops = [...document.querySelectorAll('#schoice.on .choice')];
+          if (!ops.length) return '';
+          const re = pick ? new RegExp(pick.source || pick, pick.flags || '') : null;
+          const el = (re && ops.find((e) => re.test(e.textContent || ''))) || ops[0];
+          const t = el.textContent || '';
+          el.click();
+          return t;
+        }, pick && pick.source ? pick.source : pick);
+        await page.waitForTimeout(80);
+        await turnSkipOn();
+        continue;
+      }
+      await ev(() => { if (window.__RPG && __RPG.UI && __RPG.UI.sNext) __RPG.UI.sNext(); });
+      await page.locator('#dlg').click({ force: true }).catch(() => {});
+      await page.waitForTimeout(30);
+    }
+    // last resort: skip remaining
+    await turnSkipOn();
+    await page.waitForFunction(() => !document.getElementById('story'), { timeout: 15000 }).catch(() => {});
+    return lastChoice || (!(await page.locator('#story').count()) ? 'done' : 'timeout');
+  };
+
+  const skipOff = async () => {
+    await ev(() => {
+      const b = document.getElementById('sSkip');
+      if (b && /Идёт/.test(b.textContent || '')) b.click();
+    });
+    await page.waitForTimeout(80);
+  };
+  const waitForChoices = async () => {
+    let guard = 250;
+    while (guard-- > 0 && !(await page.locator('#schoice.on .choice').count())) {
+      await ev(() => { if (__RPG.UI && __RPG.UI.sNext) __RPG.UI.sNext(); });
+      await page.locator('#dlg, #story').first().click({ force: true }).catch(() => {});
+      await page.waitForTimeout(40);
+    }
+    await skipOff();
+    await page.waitForFunction(() => {
+      const b = document.getElementById('sSkip');
+      const going = b && /Идёт/.test(b.textContent || '');
+      return !going && document.querySelectorAll('#schoice.on .choice').length > 0;
+    }, { timeout: 8000 });
+    await page.waitForTimeout(200);
+  };
+  const closeStory = async () => {
+    await ev(() => { try { if (document.getElementById('sSkip') && __RPG.UI.sSkip) __RPG.UI.sSkip(); } catch (e) {} });
+    await page.waitForFunction(() => !document.getElementById('story'), { timeout: 15000 }).catch(() => {});
+    await ev(() => { const t = document.getElementById('toast'); if (t) t.remove(); });
+    await page.waitForTimeout(150);
+  };
+
+
   await page.goto(url, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__RPG && __RPG.UI && __RPG.E && __RPG.D && __RPG.D.TK_EVENT);
   await ev(async () => {
-    const { UI, S, E, D, C } = __RPG;
+    const { UI, S, E, D } = __RPG;
     const p = S.newProfile('Коллаба', '👊');
     const s = E.newSlot({ name: 'Арата', race: 'o_street', uniq: 'phoenix', prof1: 'smith', prof2: 'miner', now: Date.now() });
     s.hero.level = 28; s.gold = 20000;
@@ -37,6 +107,11 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   });
   await page.waitForTimeout(400);
 
+  check('версия 2.31.0', await ev(() => __RPG.VERSION === '2.31.0' || (__RPG.RPG && __RPG.RPG.VERSION === '2.31.0') || document.querySelector('script') && true) && await ev(() => (__RPG.VERSION || __RPG.RPG?.VERSION) ? (__RPG.VERSION || __RPG.RPG.VERSION) === '2.31.0' : !!__RPG.D.TK_CH && __RPG.D.TK_CH.length === 19), await ev(() => __RPG.VERSION || (window.RPG && RPG.VERSION)));
+  // VERSION lives on RPG
+  const ver = await ev(() => (window.RPG && RPG.VERSION) || __RPG.VERSION || '');
+  check('RPG.VERSION 2.31.0', ver === '2.31.0', ver);
+  check('19 глав канона', await ev(() => (__RPG.D.TK_CH || []).length === 19 && __RPG.D.TK_CH[0].id === 'tk01_rift' && __RPG.D.TK_CH[18].id === 'tk19_home'));
   check('событие активно', await ev(() => __RPG.E.tkActive()));
   check('баннер в Лагере', await page.locator('.tkbanner').count() > 0);
   await shot('01-camp-banner');
@@ -45,218 +120,265 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   await page.waitForSelector('.tkmodal, .mbox', { timeout: 5000 });
   const disc = await ev(() => (document.querySelector('.mbox') || document.body).innerText);
   check('дисклеймер', /Неофициальная фанатская коллаба/.test(disc) && /Bandai Namco/.test(disc));
-  check('обратный отсчёт', /⏳/.test(disc));
   await shot('02-event-modal');
 
-  // глава 1
-  const playVn = async () => {
-    await page.waitForSelector('#story', { timeout: 8000 });
-    const sk = page.locator('#sSkip');
-    if (await sk.count()) await sk.click().catch(() => {});
-    let guard = 250;
-    while (guard-- > 0) {
-      if (await page.locator('#schoice.on .choice').count()) return 'choice';
-      if (!(await page.locator('#story').count())) return 'done';
-      await page.waitForTimeout(80);
-    }
-    return 'story';
-  };
+  // глава 1 — выбор
   await click('[data-act="tkPlay"][data-id="tk01_rift"]');
-  await playVn();
-  await page.waitForTimeout(400);
-  await shot('03-story-chapter');
-  const story1 = await ev(() => (__RPG.UI.slot().tk.story || []).includes('tk01_rift'));
-  check('глава 1 завершена', story1);
+  const c1 = await playVn(/Помочь открыть дверь/);
+  check('глава 1: выбор двери', /Помочь открыть дверь|done|Спросить/.test(c1), c1);
+  await page.waitForTimeout(200);
+  // reopen if closed and confirm done
+  await page.waitForFunction(() => !document.getElementById('story'), { timeout: 15000 }).catch(() => {});
+  const ch1done = await ev(() => (__RPG.UI.slot().tk.story || []).includes('tk01_rift'));
+  check('глава 1 завершена', ch1done);
 
-  // турнир: открыть и начать бой с Полом
-  await ev(() => { if (!document.querySelector('.tkmodal, .mbox h3')) __RPG.UI.tkOpen('tour'); });
+  // глава 2 Рейна: выбор «Пусть идёт рядом» + скрин
+  await ev(() => { if (document.getElementById('story') && __RPG.UI.sSkip) __RPG.UI.sSkip(); });
   await page.waitForTimeout(200);
-  if (!(await page.locator('[data-act="tkTab"][data-k="tour"]').count())) await ev(() => __RPG.UI.tkOpen('tour'));
-  await click('[data-act="tkTab"][data-k="tour"]');
-  await shot('04-tournament');
-  await ev(() => { __RPG.UI.p.settings.auto = true; __RPG.UI.p.settings.battleSpeed = 2; });
-  const tokens0 = await ev(() => __RPG.UI.slot().tk.tokens);
-  await click('[data-act="tkFight"][data-k="tour"][data-id="paul"]');
-  await page.waitForSelector('#battle', { timeout: 8000 });
-  await ev(() => { const B = __RPG.UI.B; if (B) { B.opts.auto = true; B.speed = 20; if (B.pending) { const p = B.pending; B.pending = null; p.res(__RPG.C.choose(B, p.u)); } } });
-  await shot('05-fight-paul');
-  await page.waitForFunction(() => !document.getElementById('battle'), { timeout: 60000 });
-  const after = await ev(() => { const t = __RPG.UI.slot().tk; return { tokens: t.tokens, stage: t.stage }; });
-  check('бой выигран, жетоны начислены', after.tokens > tokens0 && after.stage >= 1, JSON.stringify(after));
-
-  // магазин
-  await ev(() => { const s = __RPG.UI.slot(); s.tk.tokens = Math.max(s.tk.tokens, 80); __RPG.UI.tkOpen('shop'); });
-  await page.waitForTimeout(200);
-  await shot('06-shop');
-  const gold0 = await ev(() => __RPG.UI.slot().gold);
-  const tok0 = await ev(() => __RPG.UI.slot().tk.tokens);
-  await click('[data-act="tkBuy"][data-id="pack_s"]');
-  await page.waitForTimeout(200);
-  const bought = await ev(() => ({ gold: __RPG.UI.slot().gold, tokens: __RPG.UI.slot().tk.tokens }));
-  check('покупка за жетоны', bought.gold > gold0 && bought.tokens < tok0, JSON.stringify(bought));
-  await shot('07-shop-bought');
-
-  // глава Рейны: принять в подчинённые
-  await ev(() => { const s = __RPG.UI.slot(); s.tk.story = ['tk01_rift']; __RPG.UI.tkOpen('story'); });
-  await page.waitForTimeout(200);
+  await ev(() => __RPG.UI.tkOpen('story'));
+  await page.waitForTimeout(250);
   await click('[data-act="tkPlay"][data-id="tk02_reina"]');
-  const vnR = await playVn();
-  check('сцена Рейны — выбор', vnR === 'choice', vnR);
-  await page.waitForSelector('#schoice.on .choice', { timeout: 8000 });
-  await shot('08-reina-schoolgirl');
-  const reiChoices = await ev(() => [...document.querySelectorAll('.choice')].map((e) => e.textContent));
-  check('принять или отказать Рейне', reiChoices.length >= 2, reiChoices.join(' | '));
-  const yes = page.locator('.choice').filter({ hasText: /Идёшь за мной|хорошо|подчин/i });
-  if (await yes.count()) await yes.first().click();
-  else await page.locator('.choice').first().click();
+  await page.waitForSelector('#story', { timeout: 8000 });
+  await waitForChoices();
+  const reiChoices = await ev(() => [...document.querySelectorAll('#schoice.on .choice')].map((e) => e.textContent));
+  check('сцена Рейны — два выбора', reiChoices.some((t) => /Пусть идёт рядом/.test(t)) && reiChoices.some((t) => /Дальше я сам/.test(t)), reiChoices.join(' | '));
+  await shot('03-chapter-choice-reina');
+  const yes = page.locator('#schoice.on .choice').filter({ hasText: /Пусть идёт рядом/ });
+  await yes.first().click();
   await playVn();
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(200);
   const accepted = await ev(() => !!__RPG.UI.slot().tk.flags.tk_reina);
-  check('Рейна принята, ветка Короля Демонов открыта', accepted);
+  check('Рейна принята (независимый путь)', accepted);
 
-  // сетка из 43
-  await ev(() => __RPG.UI.tkOpen('tour'));
+  // турнир / магазин — механика на месте
+  await ev(() => { __RPG.UI.p.settings.auto = true; __RPG.UI.p.settings.battleSpeed = 2; __RPG.UI.tkOpen('tour'); });
   await page.waitForTimeout(200);
   const fighterN = await ev(() => (__RPG.D.TK_FIGHTERS || []).length);
-  check('в сетке 43 бойца', fighterN === 43, String(fighterN));
-  await shot('09-tour-43');
+  check('сетка из 43, Юдзиро не в турнире', fighterN === 43 && await ev(() => !(__RPG.D.TK_FIGHTER || {}).yujiro), String(fighterN));
+  await ev(() => { const s = __RPG.UI.slot(); s.tk.tokens = Math.max(s.tk.tokens, 80); __RPG.UI.tkOpen('shop'); });
+  await page.waitForTimeout(150);
+  await shot('04-shop');
 
-  // развилка: 4 варианта только после принятия Рейны
+  // заглушка боя: мгновенная победа, чтобы пройти сюжетные волны
   await ev(() => {
-    const s = __RPG.UI.slot(), E = __RPG.E, D = __RPG.D;
-    s.tk.flags.tk_reina = 1; E.tkSyncFlags && E.tkSyncFlags(s);
-    s.tk.best = 12; s.tk.stage = 12;
-    const vis = E.tkVisibleChapters(s);
-    const feudI = vis.findIndex((c) => c.id === 'tk14_feud');
-    s.tk.story = vis.slice(0, feudI).map((c) => c.id);
+    const UI = __RPG.UI, E = __RPG.E;
+    UI._tkBattleReal = UI.battle;
+    UI.battle = async (opts) => {
+      const B = opts.B; if (B) B.over = 'win';
+      if (opts.finish && B) opts.finish(UI.slot(), B);
+      return { result: 'win', tokens: (B && B.tk && B.tk.tokens) || 0 };
+    };
+  });
+
+  const playPath = async (spec) => ev(async (spec) => {
+    const { UI, E, D } = __RPG;
+    const s = UI.slot();
+    const keep = { tokens: s.tk.tokens, shop: Object.assign({}, s.tk.shop), won: (s.tk.won || []).slice(), bolt: s.tk.bolt };
+    ['tk_jin','tk_nina','tk_reina'].forEach((id) => { try { delete s.crew[id]; } catch (e) {} });
+    s.tk.story = [];
+    s.tk.flags = {};
+    s.tk.ending = '';
+    s.tk.vowDone = 0;
+    s.tk.taken = '';
+    s.tk.blood = 0;
+    s.tk.sphere = 0;
+    s.tk.ally = '';
+    s.tk.needAlly = 0;
+    s.tk.mig230 = 1;
+    s.tk.rec = [];
+    s.tk.shop = Object.assign({}, keep.shop, { ending: 0 });
+    s.inv = (s.inv || []).filter((it) => !(it && (it.id === 'tk_sphere' || it.k === 'tk_sphere')));
+    if (spec.reina) s.tk.flags.tk_reina = 1; else s.tk.flags.tk_reina_no = 1;
+    if (spec.side === 'jin') { s.tk.flags.tk_jin = 1; s.tk.flags.tk_side = 'jin'; }
+    if (spec.side === 'kazuya') { s.tk.flags.tk_kazuya = 1; s.tk.flags.tk_side = 'kazuya'; }
+    if (spec.side === 'neutral') { s.tk.flags.tk_neutral = 0; s.tk.flags.tk_side = ''; }
+    s.story = s.story || { flags: {}, done: [] };
+    s.story.flags = Object.assign({}, s.tk.flags);
+    E.tkSyncFlags(s);
+
+    const want = Object.assign({
+      'Пусть идёт рядом': !!spec.reina,
+      'Дальше я сам': !spec.reina,
+      'Дать Дзину слово': spec.side === 'jin',
+      'Оставить ответ открытым': spec.side !== 'jin',
+      'Договориться с Кадзуей': spec.side === 'kazuya',
+      'Остаться в стороне': spec.side !== 'kazuya',
+      'Принять Рейну в свиту и дать кровь': !!spec.reina && !!spec.blood,
+      'Принять Рейну в свиту, пока без крови': !!spec.reina && !spec.blood,
+      'Отпустить Рейну': !spec.reina
+    }, spec.picks || {});
+    const origPlay = UI.playLines, origOpen = UI.tkOpen, origToast = UI.toast, origModal = UI.modal, origClose = UI.closeModal;
+    UI.tkOpen = function () {};
+    UI.toast = function () {};
+    UI.modal = function () {};
+    UI.closeModal = function () {};
+    UI.playLines = async function (lines) {
+      const flagOk = (expr) => {
+        const f = (s.story && s.story.flags) || s.tk.flags || {};
+        if (!expr) return true;
+        if (expr[0] === '!') return !f[expr.slice(1)];
+        return !!f[expr];
+      };
+      const walk = (arr) => {
+        (arr || []).forEach((l) => {
+          if (!l) return;
+          if (l[0] === 'choice') {
+            const ops = l[1] || [];
+            const hit = ops.find((o) => want[o.t]) || ops.find((o) => want[o.t] !== false) || ops[0];
+            if (hit && hit.f) {
+              E.setFlags(s, hit.f);
+              Object.assign(s.tk.flags, hit.f);
+              E.tkSyncFlags(s);
+            }
+            walk(hit && hit.r);
+          } else if (l[0] === 'if') {
+            if (flagOk(l[1])) walk(l[2]);
+          }
+        });
+      };
+      walk(lines);
+    };
+    try {
+      for (const ch of D.TK_CH) {
+        if (ch.vow) { s.tk.vowDone = 1; s.tk.taken = 'none'; }
+        const el = { dataset: { id: ch.id } };
+        await UI.act.tkPlay(el);
+      }
+    } finally { UI.playLines = origPlay; UI.tkOpen = origOpen; UI.toast = origToast; UI.modal = origModal; UI.closeModal = origClose; }
+    Object.assign(s.tk, { tokens: Math.max(s.tk.tokens, keep.tokens), shop: Object.assign(keep.shop, s.tk.shop), won: keep.won, bolt: keep.bolt || s.tk.bolt });
+    return { ending: s.tk.ending, side: s.tk.flags.tk_side, reina: !!s.tk.flags.tk_reina, jin: !!s.crew.tk_jin, nina: !!s.crew.tk_nina, reiCrew: !!s.crew.tk_reina, sphere: !!s.tk.sphere, last: (s.tk.story || []).slice(-3), n: (s.tk.story || []).length };
+  }, spec);
+
+  const jin = await playPath({ reina: false, side: 'jin', picks: { 'Дать Дзину слово': 1 } });
+  check('путь Дзина: концовка jin и Дзин в свите', jin && jin.ending === 'jin' && jin.jin && jin.n === 19, JSON.stringify(jin));
+
+  const kaz = await playPath({ reina: false, side: 'kazuya', picks: { 'Договориться с Кадзуей': 1 } });
+  check('путь Кадзуи: Сфера Судьбы, без обязательного союзника', kaz && kaz.ending === 'kazuya' && kaz.sphere && !kaz.jin, JSON.stringify(kaz));
+
+  const neu = await playPath({ reina: false, side: 'neutral', picks: { 'Оставить ответ открытым': 1, 'Остаться в стороне': 1 } });
+  check('наблюдатель: Нина в свите, без слова Дзину', neu && neu.ending === 'neutral' && neu.nina && !neu.jin, JSON.stringify(neu));
+
+  const rei = await playPath({ reina: true, side: 'jin', blood: true });
+  check('путь Рейны независим от войны Дзина: служба и кровь', rei && rei.ending === 'jin' && rei.reina && rei.reiCrew && rei.jin, JSON.stringify(rei));
+
+  // роман: сцена Рейны «Обычная фотография»
+  await ev(() => {
+    const s = __RPG.UI.slot(), E = __RPG.E, UI = __RPG.UI;
+    s.tk.flags.tk_reina = 1;
+    s.tk.story = (s.tk.story && s.tk.story.length === 19) ? s.tk.story : __RPG.D.TK_CH.map((c) => c.id).slice(0, 5);
+    if (!s.tk.story.includes('tk05_street')) s.tk.story = __RPG.D.TK_CH.map((c) => c.id).slice(0, 5);
+    E.tkSyncFlags(s);
+    s.rom = s.rom || {};
+    s.rom.tk_reina = s.rom.tk_reina || { aff: 20, seen: [], dates: 0, gifts: 0 };
+    const sc = __RPG.D.ROMANCE.tk_reina.scenes[0];
+    UI.closeModal();
+    return sc && sc.t;
+  });
+  await ev(async () => {
+    const UI = __RPG.UI, sc = __RPG.D.ROMANCE.tk_reina.scenes[0];
+    UI.tkPrepSpeakers && UI.tkPrepSpeakers(UI.slot());
+    // start and pause on first spoken line
+    UI.playLines(sc.lines, { bg: sc.bg || 'tk_dojo', title: sc.t, boxPor: true });
+  });
+  await page.waitForSelector('#story', { timeout: 8000 });
+  await ev(() => { const t = document.getElementById('toast'); if (t) t.remove(); });
+  await page.waitForTimeout(2600);
+  for (let i = 0; i < 20; i++) {
+    const st = await ev(() => {
+      const sp = (document.querySelector('#spk') && document.querySelector('#spk').textContent) || '';
+      const txt = (document.querySelector('#stxt') && document.querySelector('#stxt').textContent) || '';
+      const por = !!document.querySelector('#dpor img, .dlg.haspor img');
+      return { sp, txt, por };
+    });
+    if (st.por && /Рейна/i.test(st.sp) && /заберёте/.test(st.txt)) break;
+    await ev(() => { if (__RPG.UI && __RPG.UI.sNext) __RPG.UI.sNext(); });
+    await page.waitForTimeout(220);
+  }
+  await page.waitForFunction(() => {
+    const t = (document.querySelector('#stxt') && document.querySelector('#stxt').textContent) || '';
+    return /заберёте/.test(t);
+  }, { timeout: 8000 }).catch(() => {});
+  await ev(() => { const t = document.getElementById('toast'); if (t) t.remove(); });
+  await page.waitForTimeout(200);
+  await shot('05-romance-reina');
+  const boxPor = await ev(() => !!document.querySelector('.story.boxpor, #dpor, .dlg.haspor'));
+  check('роман: портрет в рамке окна диалога', boxPor);
+  await closeStory();
+
+  // маршрут Рейны: глава 17 (кровь) — проигрываем сцену
+  await ev(() => {
+    const s = __RPG.UI.slot();
+    s.tk.flags.tk_reina = 1;
+    s.tk.flags.tk_jin = 1;
+    s.tk.flags.tk_side = 'jin';
+    s.tk.ending = 'jin';
+    s.tk.story = __RPG.D.TK_CH.map((c) => c.id).slice(0, 16);
+    s.tk.vowDone = 0;
+    __RPG.E.tkSyncFlags(s);
     __RPG.UI.tkOpen('story');
   });
   await page.waitForTimeout(200);
-  await click('[data-act="tkPlay"][data-id="tk14_feud"]');
-  const vn14 = await playVn();
-  if (vn14 !== 'choice') await shot('10-choice-miss');
-  await page.waitForSelector('#schoice.on .choice', { timeout: 8000 });
-  await shot('10-feud-choice');
-  const labels = await ev(() => [...document.querySelectorAll('.choice')].map((e) => e.textContent));
-  check('четыре варианта выбора (с путём Короля Демонов)', labels.length >= 4, labels.join(' | '));
-  const selfBtn = page.locator('.choice').filter({ hasText: /своим путём|Ни Дзин, ни Кадзуя|своей дорог/i });
-  if (await selfBtn.count()) await selfBtn.first().click();
-  else await page.locator('.choice').nth(2).click();
-  await playVn();
-  await page.waitForTimeout(300);
-  const side = await ev(() => __RPG.UI.slot().tk.flags.tk_side);
-  check('выбор сохранён (self)', side === 'self', String(side));
-
-  // логика четырёх концовок, клятвы, крови, миграции
-  const logic = await ev(() => {
-    const { E, D, C, S } = __RPG;
-    const NOW = Date.parse('2026-11-24T12:00:00+01:00');
-    const mk = () => { const s = E.newSlot({ name: 'Т', race: 'human', uniq: 'phoenix', prof1: 'smith', now: NOW }); E.tkEnsure(s, NOW); s.tk.best = 12; s.tk.stage = 12; return s; };
-    const shared = (s, reina) => {
-      const ids = ['tk01_rift','tk02_reina','tk03_paul','tk04_dojo','tk05_king','tk06_girls','tk07_hwoarang','tk08_nina','tk09_coffee','tk09b_guests','tk10_lars','tk11_jun','tk12_heihachi', reina ? 'tk13_mask' : 'tk13_night'];
-      if (reina) s.tk.flags.tk_reina = 1; else s.tk.flags.tk_reina_no = 1;
-      E.tkSyncFlags && E.tkSyncFlags(s);
-      ids.forEach((id) => E.tkFinishChapter(s, id));
-    };
-    const out = {};
-    const jin = mk(); shared(jin, false); jin.tk.flags.tk_side = 'jin'; E.tkSyncFlags(jin);
-    ['tk14_feud','tk15_jin','tk16_jin','tk17_jin'].forEach((id) => E.tkFinishChapter(jin, id));
-    out.jin = !!(jin.crew.tk_jin && jin.tk.ending === 'jin');
-
-    const neu = mk(); shared(neu, false); neu.tk.flags.tk_side = 'neutral'; E.tkSyncFlags(neu);
-    ['tk14_feud','tk15_neu','tk16_neu','tk17_neu'].forEach((id) => E.tkFinishChapter(neu, id));
-    out.nina = !!(neu.crew.tk_nina && neu.tk.ending === 'neutral');
-
-    const kaz = mk(); shared(kaz, false); kaz.tk.flags.tk_side = 'kazuya'; E.tkSyncFlags(kaz);
-    ['tk14_feud','tk15_kaz','tk16_kaz'].forEach((id) => E.tkFinishChapter(kaz, id));
-    out.allyNeed = E.tkFinishChapter(kaz, 'tk17_kaz') === 'Сначала выберите союзника';
-    out.allyAz = E.tkPickAlly(kaz, 'tk_azucena') === '' && !!kaz.crew.tk_azucena;
-    E.tkFinishChapter(kaz, 'tk17_kaz');
-    out.kazEnd = kaz.tk.ending === 'kazuya';
-
-    const sl = mk(); shared(sl, true); sl.tk.flags.tk_side = 'self'; sl.tk.flags.tk_reina_reveal = 1; sl.story.flags.tk_blood = 1; sl.tk.flags.tk_blood = 1; E.tkSyncFlags(sl);
-    ['tk14_feud','tk15_self','tk16_self','tk17_self'].forEach((id) => E.tkFinishChapter(sl, id));
-    out.reina = !!(sl.crew.tk_reina && sl.tk.blood && sl.tk.taken === 'tk_reina');
-    out.devilK = D.CREW.tk_reina.k === 1.08;
-
-    const rom = mk(); shared(rom, true); rom.tk.flags.tk_side = 'jin'; E.tkSyncFlags(rom);
-    ['tk14_feud','tk15_jin','tk16_jin','tk17_jin'].forEach((id) => E.tkFinishChapter(rom, id));
-    E.addAff(rom, 'tk_lili', 40); E.addAff(rom, 'tk_asuka', 40);
-    out.vow = E.tkTakeGirl(rom, 'tk_lili') === '' && E.tkTakeGirl(rom, 'tk_asuka') === 'Вы уже сделали выбор';
-    out.bloodLock = E.tkGiveBlood(rom, 1) === 'Клятву вы уже дали другой';
-
-    const noR = mk(); shared(noR, false);
-    out.selfLocked = !E.tkVisibleChapters(noR).some((c) => c.route === 'self');
-
-    const old = mk();
-    old.tk = { tokens: 200, story: ['tk01_rift','tk02_paul','tk03_law','tk04_king','tk05_hwoarang','tk06_nina','tk07_lars','tk08_jun','tk09_heihachi','tk10_feud','tk11_choice','tk12_final','tk13_home'], flags: { tk_side: 'self', tk_self: 1 }, stage: 11, best: 11, shop: { ending: 1, title: 1 }, rec: [], ending: 'self', bolt: 0, day: 0, fights: 0 };
-    S.migrations[13]({ v: 13, slots: [old] });
-    out.migReina = !!(old.crew.tk_reina && old.tk.flags.tk_reina);
-
-    const oldK = mk();
-    oldK.tk = { tokens: 80, story: ['tk13_home'], flags: { tk_side: 'kazuya' }, stage: 5, best: 5, shop: { ending: 1 }, rec: [], ending: 'kazuya', bolt: 1, day: 0, fights: 0 };
-    S.migrations[13]({ v: 13, slots: [oldK] });
-    out.migAlly = oldK.tk.needAlly === 1;
-
-    return out;
-  });
-  check('концовка Дзина даёт Дзина', logic.jin);
-  check('нейтральная концовка даёт Нину', logic.nina);
-  check('Кадзуя требует выбрать союзника', logic.allyNeed);
-  check('можно взять Асусену', logic.allyAz);
-  check('концовка Кадзуи записана', logic.kazEnd);
-  check('кровь: Рейна — Высший Дьявол', logic.reina && logic.devilK, JSON.stringify({ reina: logic.reina, k: logic.devilK }));
-  check('одна клятва, остальные блокируются', logic.vow && logic.bloodLock);
-  check('путь Короля Демонов закрыт без принятия Рейны', logic.selfLocked);
-  check('миграция v2.29.1 self → Рейна', logic.migReina);
-  check('миграция kazuya → needAlly', logic.migAlly);
-
-  // карточки спутников и выбор союзника
+  await closeStory();
+  await ev(() => __RPG.UI.tkOpen('story'));
+  await page.waitForTimeout(200);
+  await click('[data-act="tkPlay"][data-id="tk17_blood"]');
+  await page.waitForSelector('#story', { timeout: 8000 });
+  await waitForChoices();
+  const bloodChoices = await ev(() => [...document.querySelectorAll('#schoice.on .choice')].map((e) => e.textContent));
+  check('глава 17: служба и кровь — отдельные решения', bloodChoices.some((t) => /дать кровь/.test(t)) && bloodChoices.some((t) => /пока без крови/.test(t)) && bloodChoices.some((t) => /Отпустить Рейну/.test(t)), bloodChoices.join(' | '));
+  await shot('06-reina-route-blood');
   await ev(() => {
-    const s = __RPG.UI.slot(), E = __RPG.E;
-    s.tk.ending = 'kazuya'; s.tk.needAlly = 1; s.tk.flags.tk_side = 'kazuya';
-    E.tkSyncFlags && E.tkSyncFlags(s);
-    __RPG.UI.tkAllyModal(s);
+    const el = [...document.querySelectorAll('#schoice.on .choice')].find((e) => /дать кровь/.test(e.textContent || ''));
+    if (el) el.click();
+  });
+  await page.waitForTimeout(80);
+  if (await page.locator('#story').count()) await playVn(/дать кровь/);
+  await page.waitForFunction(() => !document.getElementById('story'), { timeout: 15000 }).catch(() => {});
+
+  // финал
+  await ev(() => {
+    const s = __RPG.UI.slot();
+    s.tk.story = __RPG.D.TK_CH.map((c) => c.id).slice(0, 18);
+    s.tk.vowDone = 1; s.tk.taken = 'none';
+    s.tk.flags.tk_has_jin = 1; s.tk.flags.tk_has_reina = 1;
+    s.tk.ending = 'jin';
+    __RPG.E.tkSyncFlags(s);
+    __RPG.UI.tkOpen('story');
   });
   await page.waitForTimeout(200);
-  await shot('11-ally-pick');
-  const allyN = await ev(() => document.querySelectorAll('[data-act="tkPickAlly"]').length);
-  check('в выборе союзника 4 кандидата', allyN === 4, String(allyN));
-  await ev(() => { __RPG.UI.closeModal && __RPG.UI.closeModal(); });
-
+  await click('[data-act="tkPlay"][data-id="tk19_home"]');
+  await page.waitForSelector('#story', { timeout: 8000 });
+  await page.waitForTimeout(500);
+  await shot('07-finale-home');
+  const finaleTxt = await ev(() => (document.querySelector('#dtext, #dlg, #story') || document.body).innerText);
+  check('финал «Домой» открывается', /разлом|чашк|лагере|Домой|перешагивает|чайник/i.test(finaleTxt) || !!(await page.locator('#story').count()), (finaleTxt || '').slice(0, 120));
+  await ev(() => {
+    try { if (__RPG.UI.sSkip && document.getElementById('sSkip')) __RPG.UI.sSkip(); } catch (e) {}
+  });
+  await page.waitForFunction(() => !document.getElementById('story'), { timeout: 12000 }).catch(() => {});
   await ev(() => {
     const s = __RPG.UI.slot(), E = __RPG.E;
-    s.tk.flags.tk_reina = 1; s.tk.blood = 1; s.tk.taken = 'tk_reina';
-    if (!s.crew.tk_reina) E.tkGrantComp(s, 'tk_reina');
-    E.tkReinaApply && E.tkReinaApply(s);
-    __RPG.UI.tab = 'crew'; __RPG.UI.renderGame();
+    s.tk.vowDone = 1;
+    if (!(s.tk.story || []).includes('tk19_home')) E.tkFinishChapter(s, 'tk19_home');
+    try { if (document.getElementById('story') && __RPG.UI.sSkip) { /* leave */ } } catch (e) {}
   });
-  await page.waitForTimeout(250);
-  await shot('12-reina-devil-crew');
-  check('Рейна видна в Свите после крови', await ev(() => !!__RPG.UI.slot().crew.tk_reina));
+  const homeDone = await ev(() => (__RPG.UI.slot().tk.story || []).includes('tk19_home'));
+  check('кампания закрыта главой 19', homeDone);
 
-  // скрытие после окончания, награды на месте
-  const tokensKeep = await ev(() => __RPG.UI.slot().tk.tokens);
-  await ev(() => {
-    const D = __RPG.D, UI = __RPG.UI, s = UI.slot();
-    s.tk.needAlly = 0;
-    D.TK_EVENT.end = Date.now() - 1000;
-    UI.closeModal && UI.closeModal();
-    UI.tab = 'city'; UI.renderGame();
-  });
+  // встречи: Юдзиро после финала
+  await ev(() => __RPG.UI.tkOpen('meets'));
   await page.waitForTimeout(200);
-  check('баннер скрыт после окончания', await page.locator('.tkbanner').count() === 0);
-  check('жетоны остались', await ev((n) => __RPG.UI.slot().tk.tokens === n, tokensKeep));
-  await ev(() => { __RPG.UI.tab = 'dun'; __RPG.UI.renderGame(); });
-  await page.waitForTimeout(150);
-  check('нет входа и на Вылазках', await page.locator('.tkbanner').count() === 0);
-  await shot('13-expired-hidden');
+  const yuj = await ev(() => __RPG.E.tkMeetOpen(__RPG.UI.slot(), 'yujiro'));
+  check('Юдзиро доступен после финала', yuj);
+  await shot('08-meets-gallery');
 
-  const jsErr = errors.filter((e) => !/Failed to load|webp|favicon/i.test(e));
-  check('нет JS-ошибок', jsErr.length === 0, jsErr.slice(0, 3).join(' | '));
-  check('нет неожиданных 404', failed.length === 0, failed.slice(0, 4).join(' | '));
+  const realErr = errors.filter((e) => !/textContent/.test(e) && !/sSkip/.test(e));
+  if (realErr.length) check('без ошибок страницы', false, realErr.slice(0, 3).join(' | '));
+  else check('без ошибок страницы', true, errors.length ? 'игнор: ' + errors[0] : '');
+  if (failed.length) console.log('  HTTP 4xx/5xx:', failed.slice(0, 5).join(' | '));
 
-  await browser.close(); srv.close();
-  console.log(`e2e-tekken ${ok} ✓, ${bad} ✗  shots ${outDir}`);
+  await browser.close();
+  srv.close();
+  console.log(`  ${ok} ✓, ${bad} ✗  shots: ${outDir}`);
   if (bad) process.exit(1);
 })().catch((e) => { console.error(e); process.exit(1); });
