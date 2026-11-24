@@ -58,8 +58,10 @@
   if (_am) UI.artMetrics = function (art, mood) {
     if (art === 'tk_reina_jacket') return { w: 555, h: 1024, fx: 274, fy: 158, fw: 180, vh: 1024, img: true };
     if (art === 'tk_reina_top') return { w: 639, h: 1024, fx: 308, fy: 166, fw: 180, vh: 1024, img: true };
+    if (art === 'tk_reina_top_bust') return { w: 512, h: 512, fx: 256, fy: 158, fw: 200, vh: 512, img: true };
+    if (art === 'tk_gene') return { w: 512, h: 512, fx: 256, fy: 158, fw: 200, vh: 512, img: true };
     if (art && String(art).indexOf('tk_') === 0 && haveArt.has(art)) {
-      return { w: 512, h: 512, fx: 256, fy: 158, fw: 200, vh: 512, img: true };
+      return { w: 1024, h: 1024, fx: 512, fy: 410, fw: 360, vh: 1024, img: true };
     }
     return _am(art, mood);
   };
