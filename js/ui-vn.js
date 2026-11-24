@@ -62,11 +62,60 @@
       const result = {};
       layer.innerHTML = `<div id="story" class="story vn"><div class="vbg" id="sbg"></div><div class="vbg b2" id="sbg2"></div><div class="lira vring" id="vring" hidden></div><div class="vcg" id="vcg"></div><div class="vstage" id="vstage"></div><div class="vfog"></div>
         <div class="vtop"><button class="mini" data-act="vLog" data-quiet="1" title="Лог">📜</button><button class="mini" data-act="vAuto" id="vAuto" data-quiet="1">▶ Авто</button><button class="mini" data-act="sSkip" id="sSkip" data-quiet="1">⏭ Пропуск</button></div>
-        <div class="dlg" id="dlg" data-act="sNext" data-quiet="1"><div class="spk" id="spk"></div><div class="txt" id="stxt"></div><i class="nx">▾</i></div><div class="schoice" id="schoice"></div><div class="tcard" id="tcard"></div><div class="flash" id="sflash"></div><div class="vlog" id="vlog"></div></div>`;
+        <div class="dlg" id="dlg" data-act="sNext" data-quiet="1"><div class="dpor" id="dpor" hidden><div class="dpor-clip"><div class="dpor-imgs" id="dporimgs"></div></div><i class="dpor-frame" aria-hidden="true"></i></div><div class="dbody"><div class="spk" id="spk"></div><div class="txt" id="stxt"></div></div><i class="nx">▾</i></div><div class="schoice" id="schoice"></div><div class="tcard" id="tcard"></div><div class="flash" id="sflash"></div><div class="vlog" id="vlog"></div></div>`;
       layer.classList.add('on'); const root = $('#story');
       const Q = lines.slice(); let typing = null, waitNext = null, skipping = false, auto = false, curBg = '', curCg = null, finished = false;
       const logArr = []; const actors = {}; // key -> {el, mood, art, ord, imgs}
       const stage = $('#vstage'); let ord = 0, bgGen = 0, bgTimer = 0; const timers = new Set();
+      if (UI.tkPrepSpeakers && slot) UI.tkPrepSpeakers(slot);
+      const boxPor = !!(o.boxPor || (o.boxPor !== false && E.vnSceneBoxPor && E.vnSceneBoxPor(lines)));
+      if (boxPor) root.classList.add('boxpor');
+      let porKey = '', porMood = '';
+      const porEl = (art, mood) => {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = UI.por(art, 'dpor-im', false, mood);
+        const el = wrap.firstElementChild; if (el) { el.classList.remove('vsp', 'tkbust'); el.classList.add('dpor-im'); el.removeAttribute('loading'); }
+        return el;
+      };
+      const placePor = (el, art, mood) => {
+        const clip = $('#dpor .dpor-clip'); const S = (clip && clip.clientWidth) || 64;
+        const r = RPG.dlgPorPlace(UI.artMetrics(art, mood), S);
+        el.style.left = r.left + 'px'; el.style.top = r.top + 'px'; el.style.width = r.width + 'px'; el.style.height = r.height + 'px';
+      };
+      const clearDlgPor = () => {
+        const dlg = $('#dlg'), frame = $('#dpor');
+        if (dlg) dlg.classList.remove('haspor');
+        if (frame) { frame.classList.remove('on'); frame.hidden = true; }
+        porKey = ''; porMood = '';
+      };
+      const setDlgPor = (key, sp, mood) => {
+        const dlg = $('#dlg'), frame = $('#dpor'), box = $('#dporimgs');
+        if (!boxPor || !dlg || !frame || !box) return;
+        if (!sp || !sp.art) { clearDlgPor(); return; }
+        mood = mood || 'n';
+        if (key === porKey && mood === porMood && frame.classList.contains('on') && !frame.hidden) return;
+        const img = porEl(sp.art, mood); if (!img) { clearDlgPor(); return; }
+        dlg.classList.add('haspor'); frame.hidden = false;
+        placePor(img, sp.art, mood);
+        const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        [...box.children].forEach((c) => { if (c.classList.contains('xf') && !c.classList.contains('on')) c.remove(); });
+        while (box.children.length > 2) box.firstElementChild.remove();
+        const commit = () => {
+          placePor(img, sp.art, mood);
+          frame.classList.add('on');
+          porKey = key; porMood = mood;
+        };
+        if (!box.children.length || reduce) {
+          box.innerHTML = ''; box.appendChild(img); commit();
+        } else {
+          img.classList.add('xf'); box.appendChild(img);
+          const finish = () => { if (finished || img.parentNode !== box) return; void img.offsetWidth; img.classList.add('on'); later(() => { while (img.previousElementSibling) img.previousElementSibling.remove(); img.classList.remove('xf', 'on'); }, 300); };
+          (img.tagName === 'IMG' && img.decode ? img.decode().catch(() => {}) : Promise.resolve()).then(finish);
+          later(finish, 80);
+        }
+        commit();
+      };
+
       const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); if (!finished) fn(); }, ms); timers.add(t); return t; };
       const finalizeBg = () => { if (!bgTimer) return; clearTimeout(bgTimer); bgTimer = 0; const b1 = $('#sbg'), b2 = $('#sbg2'); if (!b1 || !b2) return; b1.className = 'vbg bg-' + curBg; b1.innerHTML = b2.innerHTML; b2.className = 'vbg b2'; b2.innerHTML = ''; };
       const setBg = (bg) => {
@@ -170,7 +219,7 @@
           }
           const sp = D.SPEAKERS[k]; if (!sp) continue; const narr = !sp.n;
           const text = E.fmtText(l[1], slot);
-          ahead(3); if (!narr) showActor(k, l[2]); else Object.keys(actors).forEach((a) => actors[a].el.classList.remove('talk'));
+          ahead(3); if (!narr) { if (boxPor) setDlgPor(k, sp, l[2]); else showActor(k, l[2]); } else { Object.keys(actors).forEach((a) => actors[a].el.classList.remove('talk')); if (boxPor) clearDlgPor(); }
           const spk = $('#spk'); const spn = narr ? '' : E.fmtText(sp.n, slot);
           if (!narr && !sp.art) { spk.innerHTML = '<i class="spkbadge" style="background:' + esc(sp.c || '#c8c8e0') + '">' + esc(Array.from(spn)[0] || '?') + '</i>' + esc(spn); } else spk.textContent = spn;   // говорящий без портрета: значок-силуэт с инициалом вместо спрайта
           spk.style.color = sp.c || '#fff'; spk.style.display = narr ? 'none' : 'block';

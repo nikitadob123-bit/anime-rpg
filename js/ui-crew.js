@@ -143,13 +143,13 @@
   UI.act.romScene = async (el) => {
     const s = UI.slot(), id = el.dataset.id, i = +el.dataset.i, R = s.rom[id], sc = D.ROMANCE[id].scenes[i]; if (!R || R.aff < E.ROM_AT[i]) return;
     const first = !R.seen.includes(i); UI.closeModal();
-    await UI.playLines(sc.lines, { bg: sc.bg, replay: !first });
+    await UI.playLines(sc.lines, { bg: sc.bg, replay: !first, boxPor: !!(id && String(id).indexOf('tk_') === 0) });
     if (first) { R.seen.push(i); E.addLoy(s, id, 5); E.addAff(s, id, 2); s.rev++; UI.toast('💞 Бонус сердца усилен', 'gold'); UI.save(true); }
     UI.refresh(false); UI.heartModal();
   };
   UI.act.dateGo = async (el) => {
     const s = UI.slot(), id = el.dataset.id, sc = D.dateScene(id, +el.dataset.i); if (E.dateOk(s, id)) return; UI.closeModal();
-    const res = await UI.playLines(sc.lines, { bg: sc.bg, replay: false });
+    const res = await UI.playLines(sc.lines, { bg: sc.bg, replay: false, boxPor: !!(id && String(id).indexOf('tk_') === 0) });
     const r = E.doDate(s, id, !!res.date); UI.save(true);
     if (r) UI.toast(`💞 Свидание: симпатия +${r.aff}, верность +${r.loy}`, res.date ? 'gold' : 'ok');
     UI.refresh(false); UI.heartModal();

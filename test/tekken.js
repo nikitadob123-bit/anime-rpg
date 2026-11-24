@@ -210,4 +210,26 @@ t('миграция v12→v13→v14 и справедливые спутники
 });
 
 t('существующие профессии и стоимость смены не тронуты', () => { assert.strictEqual(D.PROF_CHANGE_COST, 50000); });
+
+t('кроп лица для рамки диалога: центр в середине кадра, лицо целиком внутри', () => {
+  const m = { w: 1024, h: 1024, fx: 512, fy: 410, fw: 360 };
+  const r = RPG.dlgPorPlace(m, 80);
+  assert(Math.abs(r.left + 512 * r.sc - 40) < 0.51, 'fx не в центре: ' + r.left);
+  assert(Math.abs(r.top + 410 * r.sc - 40) < 0.51, 'fy не в центре: ' + r.top);
+  const face = 360 * r.sc;
+  assert(face <= 80 + 0.01, 'лицо шире рамки: ' + face);
+  assert(face >= 80 * 0.5, 'лицо слишком мелкое: ' + face);
+  const jacket = RPG.dlgPorPlace({ w: 555, h: 1024, fx: 274, fy: 158, fw: 180 }, 80);
+  assert(180 * jacket.sc <= 80 + 0.01);
+  assert(Math.abs(jacket.left + 274 * jacket.sc - 40) < 0.51);
+});
+
+t('рамка в диалоге включается для сцен коллабы и не для обычного сюжета', () => {
+  assert(E.vnSceneBoxPor(D.TK_SCENES.tk06_girls.lines));
+  assert(E.vnSceneBoxPor(D.TK_SCENES.tk02_reina.lines));
+  assert(!E.vnSceneBoxPor([['n', 'Только рассказчик.'], ['h', 'Реплика героя.', 'n']]));
+  const rom = D.ROMANCE.tk_reina && D.ROMANCE.tk_reina.scenes[0];
+  assert(rom && E.vnSceneBoxPor(rom.lines));
+});
+
 console.log(`  ${pass} ✓, ${fail} ✗`); if (fail) process.exit(1);

@@ -587,5 +587,26 @@
     S.migrations[12] = function (p) { p.slots = (p.slots || []).map((s) => { if (s) E.tkEnsure(s); return s; }); p.v = 13; return p; };
     S.migrations[13] = function (p) { p.slots = (p.slots || []).map((s) => { if (s) { E.tkEnsure(s); E.tkApplyMig230(s); } return s; }); p.v = 14; return p; };
   }
+
+  E.vnSceneBoxPor = function (lines) {
+    const keys = D.TK_SPEAKERS || {};
+    const walk = (arr, d) => {
+      if (!arr || d > 8) return false;
+      for (let i = 0; i < arr.length; i++) {
+        const l = arr[i]; if (!l) continue;
+        const k = l[0];
+        if (k === 'choice') {
+          const ops = l[1] || [];
+          for (let j = 0; j < ops.length; j++) if (ops[j] && ops[j].r && walk(ops[j].r, d + 1)) return true;
+        } else if (k === 'if' && walk(l[2], d + 1)) return true;
+        if (keys[k]) return true;
+        const sp = D.SPEAKERS && D.SPEAKERS[k];
+        if (sp && sp.art && String(sp.art).indexOf('tk_') === 0) return true;
+      }
+      return false;
+    };
+    return walk(lines, 0);
+  };
+
   if (typeof module !== 'undefined') module.exports = RPG;
 })();

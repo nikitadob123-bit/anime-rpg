@@ -30,3 +30,30 @@ img.por.tkdevil, .tkpor.tkdevil, img.gic.tkdevil, .tkspr.tkdevil{
   filter:drop-shadow(0 0 3px rgba(255,48,72,.55));
 }
 .tkrow.cur .tkpor.tkdevil{box-shadow:0 0 8px rgba(255,40,70,.28)}
+
+/* Портрет говорящего в окне диалога (рамка слева, как в новеллах) */
+.story.boxpor .dlg .dbody{display:contents}
+.story.boxpor .dlg .dpor[hidden]{display:none}
+.story.boxpor .dlg.haspor{display:flex;align-items:stretch;gap:16px;text-align:left;padding:12px 14px 14px 10px}
+.story.boxpor .dlg.haspor .dbody{display:flex;flex-direction:column;flex:1;min-width:0;text-align:left;position:relative;z-index:2}
+.story.boxpor .dlg.haspor .spk{position:static;top:auto;left:auto;margin:0 0 6px;padding:0 0 2px;border:0;border-radius:0;background:none;box-shadow:none;clip-path:none;width:fit-content;max-width:100%;line-height:1.2;font-size:13.5px;letter-spacing:.04em;border-bottom:1px solid currentColor}
+.story.boxpor .dlg.haspor .txt{min-width:0;overflow-wrap:anywhere;word-break:normal;hyphens:auto}
+.story.boxpor .dpor{position:relative;flex:none;width:clamp(76px,22vw,104px);height:clamp(76px,22vw,104px);align-self:center;pointer-events:none;z-index:1}
+.story.boxpor .dpor-clip{position:absolute;inset:20.5%;overflow:hidden;border-radius:2px;background:#0a0612}
+.story.boxpor .dpor-imgs{position:absolute;inset:0}
+.story.boxpor .dpor-im,.story.boxpor img.por.dpor-im{position:absolute;display:block;max-width:none;margin:0;padding:0;border:0;border-radius:0;background:transparent;object-fit:fill;object-position:0 0;pointer-events:none;box-shadow:none;filter:none}
+.story.boxpor .dpor-im.xf{opacity:0;transition:opacity .28s ease}
+.story.boxpor .dpor-im.xf.on{opacity:1}
+.story.boxpor .dpor-frame{position:absolute;inset:-2%;display:block;background:url(../img/tekken/tk_frame_dlg.webp) center/contain no-repeat;pointer-events:none;z-index:1}
+.story.boxpor .dlg.haspor .nx{right:10px}
+@media (max-width:360px){
+  .story.boxpor .dpor{width:76px;height:76px}
+  .story.boxpor .dlg.haspor{gap:12px;padding:10px 12px 12px 8px}
+  .story.boxpor .dlg.haspor .txt{font-size:14.5px}
+}
+@media (max-height:700px){
+  .story.boxpor .dpor{width:clamp(72px,20vw,92px);height:clamp(72px,20vw,92px)}
+}
+@media (prefers-reduced-motion:reduce){
+  .story.boxpor .dpor-im.xf{transition:none;opacity:1}
+}

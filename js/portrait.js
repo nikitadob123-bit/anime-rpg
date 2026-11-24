@@ -323,5 +323,18 @@ RPG.vnLayout = (refs, W, Yb) => {
   });
 };
 RPG.vnPlaceRect = (ref, m) => { const V = RPG.VN, r = ref.fw / m.fw; return { left: V.FR_CX - m.fx * r, top: V.FR_T + ref.fy - m.fy * r, width: m.w * r, height: m.h * r, r }; };
+RPG.dlgPorPlace = function (m, S) {
+  /* Кроп лица в квадрат S: центр (fx, fy), лицо fw полностью в кадре, небольшой запас по волосам. */
+  if (!m || !S) return { left: 0, top: 0, width: S || 0, height: S || 0, side: S || 0, sc: 1 };
+  const w = m.w || S, h = m.h || S;
+  const fx = m.fx != null ? m.fx : w / 2;
+  const fy = m.fy != null ? m.fy : h * 0.38;
+  const fw = Math.max(1, m.fw || w * 0.4);
+  const room = Math.max(fw * 1.35, Math.min(fx * 2, (w - fx) * 2, fy * 2.05, (h - fy) * 2, Math.max(w, h)));
+  const side = Math.min(Math.max(fw * 1.7, fw + 8), room);
+  const sc = S / side;
+  return { left: S / 2 - fx * sc, top: S / 2 - fy * sc, width: w * sc, height: h * sc, side, sc };
+};
+
 if (typeof module !== 'undefined') module.exports = RPG;
 })();

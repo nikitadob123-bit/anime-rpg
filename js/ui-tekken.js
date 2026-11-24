@@ -182,6 +182,7 @@
       }
     }
   };
+  UI.tkPrepSpeakers = prepSpeakers;
 
   UI.act.tkPlay = async (el) => {
     const s = UI.slot(), id = el.dataset.id, sc = D.TK_SCENES[id], replay = !!el.dataset.replay;
@@ -192,7 +193,7 @@
     const _sf = E.setFlags, _fin = E.finishScene;
     E.setFlags = function (slot, f) { _sf(slot, f); const tk = E.tkEnsure(slot); Object.assign(tk.flags, f); };
     E.finishScene = function (slot, sid) { if (sid && String(sid).indexOf('tk') === 0) return; return _fin(slot, sid); };
-    try { await UI.playLines(lines, { bg: sc.bg || 'void', replay, title: sc.t }); }
+    try { await UI.playLines(lines, { bg: sc.bg || 'void', replay, title: sc.t, boxPor: true }); }
     finally { E.setFlags = _sf; E.finishScene = _fin; }
     if (!replay) {
       const ch = D.TK_CH_MAP[id];
