@@ -1,0 +1,15 @@
+/* v2.29 Коллаба: Железный Кулак */
+.tkbanner{position:relative;overflow:hidden;display:flex;gap:10px;align-items:stretch;text-align:left;padding:0;border:1px solid rgba(255,90,58,.45);background:linear-gradient(100deg,rgba(80,16,24,.72),rgba(20,8,28,.8))}
+.tkbanner .tkart{flex:none;width:88px;background:center/cover no-repeat radial-gradient(circle at 30% 20%,rgba(255,90,58,.45),transparent 60%),#140810}
+.tkbanner .tkbody{padding:10px 12px 10px 0;min-width:0}
+.tkbanner .tkbody b.ttl{color:#ffd0c0}
+.tkrow{display:flex;gap:8px;align-items:center;padding:8px;margin:5px 0;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);text-align:left}
+.tkrow.cur{border-color:rgba(255,211,107,.55);box-shadow:0 0 12px rgba(255,90,58,.18)}
+.tkrow.lock{opacity:.55}.tkrow.done{opacity:.9}
+.tkrow .tkpor,.tkrow .tkemo{width:44px;height:44px;border-radius:10px;object-fit:cover;object-position:50% 18%;flex:none;background:#1a1020;display:grid;place-items:center;font-size:26px}
+.tkrow .btn{flex:none;white-space:nowrap}
+.tkpane{max-height:58vh;overflow:auto;-webkit-overflow-scrolling:touch}
+.mbox.tkmodal{border-color:rgba(255,90,58,.4)}
+.bg-tk_arena,.bg-tk_dojo{background:#12060c center/cover no-repeat}
+.bg-tk_arena{background-image:radial-gradient(ellipse at 50% 30%,#4a1820,#0a0508)}
+.bg-tk_dojo{background-image:linear-gradient(180deg,#2a1a10,#120a08)}
