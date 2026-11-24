@@ -1,4 +1,4 @@
-/* v2.31.0 коллаба «Железный Кулак»: канонический сценарий, 19 глав, 3 исхода + Рейна. */
+/* v2.31.1 коллаба «Железный Кулак»: канонический сценарий, 19 глав, 3 исхода + Рейна. */
 const assert = require('assert');
 const RPG = require('../js/data-core.js'); require('../js/data-stats.js');
 ['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'allies', 'data-craft-icons', 'craft', 'goals', 'challenge', 'life', 'tekken', 'tekken-roster', 'tekken-story', 'tekken-romance', 'tekken-meet'].forEach((f) => require('../js/' + f + '.js'));
@@ -237,6 +237,78 @@ t('рамка в диалоге включается для сцен колла�
   assert(!E.vnSceneBoxPor([['n', 'Только рассказчик.'], ['h', 'Реплика героя.', 'n']]));
   const rom = D.ROMANCE.tk_reina && D.ROMANCE.tk_reina.scenes[0];
   assert(rom && E.vnSceneBoxPor(rom.lines));
+});
+
+
+t('в коллабе нет голой буквы «К» вместо героя', () => {
+  assert.strictEqual(D.SPEAKERS.h.n, '{name}');
+  assert.strictEqual(D.SPEAKERS.h.art, 'hero');
+  assert(D.SPEAKERS.h.hero);
+  const named = mk();
+  const untitled = E.newSlot({ name: '', race: 'human', uniq: 'phoenix', prof1: 'smith', now: NOW });
+  untitled.hero.name = '';
+  E.tkEnsure(untitled, NOW);
+  assert.strictEqual(E.heroName(named, 'nom'), 'Арата');
+  assert.strictEqual(E.heroName(named, 'gen'), 'Араты');
+  assert.strictEqual(E.heroName(named, 'dat'), 'Арате');
+  assert.strictEqual(E.heroName(named, 'acc'), 'Арату');
+  assert.strictEqual(E.heroName(named, 'ins'), 'Аратой');
+  assert.strictEqual(E.heroName(untitled, 'nom'), 'Король Демонов');
+  assert.strictEqual(E.heroName(untitled, 'gen'), 'Короля Демонов');
+  assert.strictEqual(E.heroName(untitled, 'dat'), 'Королю Демонов');
+  assert.strictEqual(E.heroName(untitled, 'acc'), 'Короля Демонов');
+  assert.strictEqual(E.heroName(untitled, 'ins'), 'Королём Демонов');
+  const opener = (D.TK_SCENES.tk01_rift.lines.find((l) => l[0] === 'n' && /сидит у костра/.test(l[1] || '')) || [])[1];
+  assert(opener, 'есть ремарка про костёр');
+  assert.strictEqual(E.fmtText(opener, named), opener.replace(/\{name\}/g, 'Арата'));
+  assert(/Арата сидит у костра/.test(E.fmtText(opener, named)));
+  assert(/Король Демонов сидит у костра/.test(E.fmtText(opener, untitled)));
+  assert.strictEqual(E.fmtText(D.SPEAKERS.h.n, named), 'Арата');
+  assert.strictEqual(E.fmtText(D.SPEAKERS.h.n, untitled), 'Король Демонов');
+
+  const SKIP = new Set(['fight', 'bg', 'cg', 'fx', 'title', 'hide', 'set', 'give', 'rec', 'loy', 'aff', 'if', 'choice']);
+  const PREP = /^\s+(вам|нас|нему|ней|ним|тебе|себе|мне|нам|Якусиме|Кадзуе|Хельмору)(?![A-Za-zА-Яа-яЁё])/;
+  const bare = (s) => {
+    const out = [];
+    s = String(s || '');
+    for (let i = 0; i < s.length; i++) {
+      if (s[i] !== 'К') continue;
+      const prev = i ? s[i - 1] : '';
+      const next = s[i + 1] || '';
+      if (/[A-Za-zА-Яа-яЁё\-]/.test(prev) || /[A-Za-zА-Яа-яЁё\-]/.test(next)) continue;
+      if (PREP.test(s.slice(i + 1))) continue;
+      out.push(s.slice(Math.max(0, i - 24), i + 24));
+    }
+    return out;
+  };
+  const hits = [];
+  const walk = (src, arr) => {
+    (arr || []).forEach((l, i) => {
+      if (!l || !l.length) return;
+      const k = l[0];
+      if (k === 'К' || k === 'K' || k === 'k') hits.push(src + ': speaker ' + k);
+      if (k === 'if') return walk(src + '/if', l[2]);
+      if (k === 'choice') {
+        (l[1] || []).forEach((op, j) => {
+          walk(src + '/choice' + j, [{ 0: 'n', 1: op.t }, ...(op.r || [])].map((x, idx) => idx === 0 ? ['n', op.t] : x));
+        });
+        return;
+      }
+      if (SKIP.has(k)) return;
+      const text = typeof l[1] === 'string' ? l[1] : '';
+      ['named', 'untitled'].forEach((tag) => {
+        const slot = tag === 'named' ? named : untitled;
+        bare(E.fmtText(text, slot)).forEach((ctx) => hits.push(src + ' [' + tag + '] ' + ctx));
+      });
+    });
+  };
+  Object.keys(D.TK_SCENES || {}).forEach((id) => walk('scene:' + id, (D.TK_SCENES[id] || {}).lines));
+  Object.keys(D.ROMANCE || {}).filter((id) => String(id).startsWith('tk_')).forEach((id) => {
+    (D.ROMANCE[id].scenes || []).forEach((sc, i) => walk('rom:' + id + '/' + i, sc.lines));
+  });
+  Object.keys(D.TK_MEETS || {}).forEach((id) => walk('meet:' + id, (D.TK_MEETS[id] || {}).lines));
+  Object.keys(D.TK_LOSS || {}).forEach((id) => walk('loss:' + id, D.TK_LOSS[id]));
+  assert.strictEqual(hits.length, 0, hits.slice(0, 8).join(' | '));
 });
 
 console.log(`  ${pass} ✓, ${fail} ✗`); if (fail) process.exit(1);

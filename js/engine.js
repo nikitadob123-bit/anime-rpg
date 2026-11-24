@@ -329,5 +329,47 @@
     if (g.sp) slot.hero.bossPts = (slot.hero.bossPts || 0) + g.sp;
     if (g.item === 'tear') { const it = E.genItem(E.rng(777), { base: 'amulet', il: 14, rarity: 5 }); it.nm = 'Слеза Осколка'; it.st.hp = (it.st.hp || 0) + 60; it.st.res = (it.st.res || 0) + 20; E.addItem(slot, it); }
   };
-  E.fmtText = (s, slot) => String(s).replace(/\{name\}/g, slot.hero.name).replace(/\{echo\}/g, slot.hero.uniq ? D.UNIQ[slot.hero.uniq].n : 'Отголосок');
+  const TITLE = { nom: 'Король Демонов', gen: 'Короля Демонов', dat: 'Королю Демонов', acc: 'Короля Демонов', ins: 'Королём Демонов', prep: 'Короле Демонов' };
+  // Склонение имени героя: русские окончания; латиница и прочее не склоняем. Пустое имя → титул.
+  E.declineName = (name, cas) => {
+    const n = String(name || '').trim(), c = cas || 'nom';
+    if (!n) return TITLE[c] || TITLE.nom;
+    if (c === 'nom') return n;
+    if (!/^[А-Яа-яЁё]+(?:[ -][А-Яа-яЁё]+)*$/.test(n)) return n;
+    const parts = n.split(/(?=[ -])/);
+    const head = parts[0], tail = parts.slice(1).join('');
+    const lower = head.toLowerCase();
+    const keep = (ending) => head.slice(0, head.length - ending.length);
+    const cap = (s) => (head[0] === head[0].toUpperCase() ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+    let stem, form;
+    if (/ия$/.test(lower)) { // Мария
+      stem = keep('я');
+      form = { gen: stem + 'и', dat: stem + 'и', acc: stem + 'ю', ins: stem + 'ей', prep: stem + 'и' }[c];
+    } else if (/[ая]$/.test(lower)) { // Арата, Никита, Маша
+      const a = lower.slice(-1);
+      stem = keep(a);
+      const ghi = /[гкхжчшщ]$/.test(lower.slice(0, -1));
+      const gen = stem + (a === 'я' || ghi ? 'и' : 'ы');
+      const acc = stem + (a === 'я' ? 'ю' : 'у');
+      const ins = stem + (a === 'я' ? 'ей' : 'ой');
+      form = { gen, dat: stem + 'е', acc, ins, prep: stem + 'е' }[c];
+    } else if (/й$/.test(lower)) { // Андрей
+      stem = keep('й');
+      form = { gen: stem + 'я', dat: stem + 'ю', acc: stem + 'я', ins: stem + 'ем', prep: stem + 'е' }[c];
+    } else if (/[ь]$/.test(lower)) { // Игорь
+      stem = keep('ь');
+      form = { gen: stem + 'я', dat: stem + 'ю', acc: stem + 'я', ins: stem + 'ем', prep: stem + 'е' }[c];
+    } else if (/[бвгджзклмнпрстфхцчшщ]$/.test(lower)) { // Макс
+      form = { gen: head + 'а', dat: head + 'у', acc: head + 'а', ins: head + 'ом', prep: head + 'е' }[c];
+    } else {
+      return n + tail;
+    }
+    return (form ? cap(form) : head) + tail;
+  };
+  E.heroName = (slot, cas) => E.declineName(slot && slot.hero && slot.hero.name, cas);
+  const NAME_CAS = { r: 'gen', d: 'dat', v: 'acc', t: 'ins', p: 'prep' };
+  E.fmtText = (s, slot) => String(s)
+    .replace(/\{name_(r|d|v|t|p)\}/g, (_, k) => E.heroName(slot, NAME_CAS[k]))
+    .replace(/\{name\}/g, E.heroName(slot, 'nom'))
+    .replace(/\{echo\}/g, slot && slot.hero && slot.hero.uniq && D.UNIQ[slot.hero.uniq] ? D.UNIQ[slot.hero.uniq].n : 'Отголосок');
 })();

@@ -2,7 +2,7 @@
 """Generate v2.31.0 Tekken story / romance / meetings from the user's script."""
 import re, sys, json
 from pathlib import Path
-sys.path.insert(0, '/tmp')
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from tkparse import compile_lines, js_str
 
 ROOT = Path('/workspace/anime-rpg')
