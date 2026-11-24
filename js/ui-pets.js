@@ -26,7 +26,7 @@
   UI.act.petSearch = () => { const el = document.getElementById('petQ'); UI.petFlt.q = el ? el.value : ''; UI.petListModal(true); const n = document.getElementById('petQ'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } };
   document.addEventListener('input', (e) => { if (e.target.id === 'petQ') { clearTimeout(UI._pq); UI._pq = setTimeout(() => UI.act.petSearch(), 250); } });
   UI.petListModal = function (keep) {
-    const s = UI.slot(), F = UI.petFlt; E.petEnsure(s); const m0 = document.querySelector('.mbox'), top = m0 && m0.scrollTop;
+    const s = UI.slot(), F = UI.petFlt; E.petEnsure(s); const m0 = (UI.mboxBody && UI.mboxBody()) || document.querySelector('.mbox-body') || document.querySelector('.mbox'), top = m0 && m0.scrollTop;
     const have = (r) => E.petsOf(r).filter((p) => s.pets[p.id]).length, all = D.PETS.length, got = Object.keys(s.pets).length;
     const chips = `<div class="pfilt"><button class="${F.r < 0 ? 'on' : ''}" data-act="petFlt" data-r="-1" data-quiet="1">Все ${got}/${all}</button>${D.PET_RAR.filter((x) => x.open).map((x, r) => `<button class="${F.r === r ? 'on' : ''}" style="--ac:${x.c}" data-act="petFlt" data-r="${r}" data-quiet="1">${x.n.slice(0, 4)}. ${have(r)}/${E.petsOf(r).length}</button>`).join('')}<button class="${F.own ? 'on' : ''}" data-act="petFlt" data-k="own" data-quiet="1">✔ Мои</button></div><input id="petQ" class="petq" type="search" placeholder="🔍 Поиск по имени" value="${esc(F.q || '')}" autocomplete="off">`;
     const rows = D.PET_RAR.filter((x) => x.open && (F.r < 0 || F.r === D.PET_RAR.indexOf(x))).map((rr) => { const r = D.PET_RAR.indexOf(rr);
@@ -39,7 +39,7 @@
     const soon = '';
     UI.modal(`<h3>🐾 Питомцы</h3><div class="small dim tl">Один питомец идёт с героем: даёт характеристики как снаряжение его редкости, навыки в бою и пассивы. Повтор добавляет звезду (+${Math.round(D.PET_STAR_K * 100)}% к статам), корм поднимает уровень, а узы открывают пассивы. Драконы — только Легендарные и выше.</div>
       <div class="row gap"><button class="btn ghost grow small" data-act="hatchery" data-quiet="1">🥚 Инкубатор и лавка</button><span class="card small center m0">🍖 Корм: <b>${fmt(s.petFood)}</b></span></div>${chips}<div class="alist">${rows}${soon}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
-    const m1 = document.querySelector('.mbox'); if (m1 && top && m0) m1.scrollTop = top;
+    const m1 = (UI.mboxBody && UI.mboxBody()) || document.querySelector('.mbox-body') || document.querySelector('.mbox'); if (m1 && top && m0) m1.scrollTop = top;
   };
   UI.act.petOpen = (el) => UI.petModal(el.dataset.id);
   UI.petModal = function (id) {

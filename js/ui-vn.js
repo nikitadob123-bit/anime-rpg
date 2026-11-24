@@ -214,7 +214,7 @@
           if (k === 'if') { if (E.flagTest(slot, l[1])) Q.unshift(...l[2]); continue; }
           if (k === 'choice') {
             skipping = false; auto = false; $('#sSkip').classList.remove('on'); $('#sSkip').textContent = '⏭ Пропуск'; $('#vAuto').textContent = '▶ Авто';
-            const pick = await new Promise((r) => { const c = $('#schoice'); c.innerHTML = l[1].map((op, i) => `<button class="choice" data-act="sChoice" data-i="${i}" data-quiet="1">${esc(E.fmtText(op.t, slot))}</button>`).join(''); c.classList.add('on'); UI.sChoice = (i) => { c.classList.remove('on'); c.innerHTML = ''; UI.sfx('ok'); r(i); }; });
+            const pick = await new Promise((r) => { const c = $('#schoice'); const warn = l[2] && l[2].warn ? `<div class="chwarn" role="note">${esc(E.fmtText(l[2].warn, slot))}</div>` : ''; c.innerHTML = warn + l[1].map((op, i) => `<button class="choice" data-act="sChoice" data-i="${i}" data-quiet="1">${esc(E.fmtText(op.t, slot))}</button>`).join(''); c.classList.add('on'); UI.sChoice = (i) => { c.classList.remove('on'); c.innerHTML = ''; UI.sfx('ok'); r(i); }; });
             const op = l[1][pick]; if (!o.replay && op.f && Object.keys(op.f).length) E.setFlags(slot, op.f); logArr.push({ n: '', t: '▸ ' + op.t, c: '#fff' }); if (op.r) Q.unshift(...op.r); continue;
           }
           const sp = D.SPEAKERS[k]; if (!sp) continue; const narr = !sp.n;

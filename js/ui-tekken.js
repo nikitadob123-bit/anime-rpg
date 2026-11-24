@@ -10,7 +10,9 @@
     const s = UI.slot && UI.slot();
     if (id && String(id).indexOf('tk_reina') === 0) {
       if (s && s.tk && s.tk.blood && UI.hasTkArt('tk_reina_devil')) return 'tk_reina_devil';
-      if (id === 'tk_reina' && s && E.tkReinaLook) return E.tkReinaLook(s);
+      // полный рост (jacket/top) только если его явно запросили — карточка романа
+      if (id === 'tk_reina_jacket' || id === 'tk_reina_top') return id;
+      return UI.hasTkArt('tk_reina') ? 'tk_reina' : id;
     }
     return id;
   };
@@ -23,14 +25,20 @@
     return (UI.hasTkArt && UI.hasTkArt(src) ? `<img class="tkpor${devilCls(src)}" src="img/tekken/${src}.webp" alt="" draggable="false">` : `<span class="tkemo">${emo || '👊'}</span>`);
   };
 
-  D.TK_ART_HAVE = ["banner","bg_arena","bg_dojo","tk_alisa","tk_anna","tk_armorking","tk_asuka","tk_azucena","tk_bob","tk_bolt","tk_bryan","tk_claudio","tk_clive","tk_deviljin","tk_dragunov","tk_eddy","tk_event","tk_fahkumram","tk_feng","tk_frame","tk_gene","tk_gloves","tk_heihachi","tk_hwoarang","tk_jack","tk_jin","tk_jun","tk_kazuya","tk_king","tk_kuma","tk_kuni","tk_lars","tk_law","tk_lee","tk_leo","tk_leroy","tk_lidia","tk_lili","tk_miary","tk_nina","tk_pack_m","tk_pack_s","tk_panda","tk_paul","tk_raven","tk_rec_jin","tk_rec_nina","tk_reina","tk_reina_devil","tk_reina_jacket","tk_reina_top","tk_reina_top_bust","tk_roger","tk_shaheen","tk_steve","tk_title","tk_token","tk_victor","tk_xiaoyu","tk_yoshimitsu","tk_yujiro","tk_zafina"]; // @tk-art-have
+  D.TK_ART_HAVE = ["banner","bg_arena","bg_awaken","bg_coliseum","bg_dojo","bg_eastgate","bg_gcorp","bg_helmor","bg_jinhall","bg_kazbox","bg_lawdojo","bg_manhattan","bg_pier","bg_sanctuary","bg_service","bg_shore","tk_alisa","tk_anna","tk_armorking","tk_asuka","tk_azazel","tk_azucena","tk_bob","tk_bolt","tk_boy","tk_bryan","tk_claudio","tk_clive","tk_deviljin","tk_dragunov","tk_driver","tk_eddy","tk_event","tk_fahkumram","tk_feng","tk_fixer","tk_frame","tk_gene","tk_gloves","tk_heihachi","tk_hwoarang","tk_jack","tk_jin","tk_jun","tk_kazuya","tk_king","tk_kuma","tk_kuni","tk_lars","tk_law","tk_lee","tk_leo","tk_leroy","tk_lidia","tk_lili","tk_medic","tk_miary","tk_nina","tk_pack_m","tk_pack_s","tk_panda","tk_paul","tk_raven","tk_rec_jin","tk_rec_nina","tk_reina","tk_reina_devil","tk_reina_jacket","tk_reina_top","tk_reina_top_bust","tk_roger","tk_shaheen","tk_steve","tk_title","tk_token","tk_vendor","tk_victor","tk_xiaoyu","tk_ygg","tk_yoshimitsu","tk_yujiro","tk_zafina"]; // @tk-art-have
   const haveArt = new Set(D.TK_ART_HAVE);
   UI.hasTkArt = (id) => haveArt.has(id);
+
+  UI.romCardPor = (id) => {
+    if (id !== 'tk_reina' || !UI.hasTkArt('tk_reina_jacket')) return null;
+    return '<img class="por lg tkfull" src="img/tekken/tk_reina_jacket.webp" alt="" draggable="false">';
+  };
   if (typeof document !== 'undefined') {
     const rules = [];
     if (haveArt.has('banner')) rules.push('.tkbanner .tkart{background-image:url(img/tekken/banner.webp)}');
-    if (haveArt.has('bg_arena')) rules.push('.bg-tk_arena{background-image:url(img/tekken/bg_arena.webp)}');
-    if (haveArt.has('bg_dojo')) rules.push('.bg-tk_dojo{background-image:url(img/tekken/bg_dojo.webp)}');
+    haveArt.forEach((id) => {
+      if (id.indexOf('bg_') === 0) rules.push('.bg-tk_' + id.slice(3) + '{background-image:url(img/tekken/' + id + '.webp)}');
+    });
     if (rules.length) { const el = document.createElement('style'); el.textContent = rules.join('\n'); (document.head || document.documentElement).appendChild(el); }
   }
 
@@ -60,6 +68,16 @@
     if (art === 'tk_reina_top') return { w: 639, h: 1024, fx: 308, fy: 166, fw: 180, vh: 1024, img: true };
     if (art === 'tk_reina_top_bust') return { w: 512, h: 512, fx: 256, fy: 158, fw: 200, vh: 512, img: true };
     if (art === 'tk_gene') return { w: 512, h: 512, fx: 256, fy: 158, fw: 200, vh: 512, img: true };
+    const TALL = {
+      tk_azazel: { fx: 512, fy: 500, fw: 520 },
+      tk_driver: { fx: 512, fy: 430, fw: 390 },
+      tk_vendor: { fx: 512, fy: 430, fw: 390 },
+      tk_boy: { fx: 512, fy: 450, fw: 400 },
+      tk_medic: { fx: 512, fy: 430, fw: 390 },
+      tk_ygg: { fx: 512, fy: 420, fw: 380 },
+      tk_fixer: { fx: 512, fy: 430, fw: 380 }
+    };
+    if (art && TALL[art]) return Object.assign({ w: 1024, h: 1536, vh: 1536, img: true }, TALL[art]);
     if (art && String(art).indexOf('tk_') === 0 && haveArt.has(art)) {
       return { w: 1024, h: 1024, fx: 512, fy: 410, fw: 360, vh: 1024, img: true };
     }
@@ -180,8 +198,7 @@
       if (k === 'rei') {
         const t = s && s.tk;
         if (t && t.blood && UI.hasTkArt('tk_reina_devil')) sp.art = 'tk_reina_devil';
-        else if (t && t.flags && t.flags.tk_reina_reveal && UI.hasTkArt('tk_reina_top')) sp.art = 'tk_reina_top';
-        else sp.art = UI.hasTkArt('tk_reina_jacket') ? 'tk_reina_jacket' : (UI.hasTkArt('tk_reina') ? 'tk_reina' : null);
+        else sp.art = UI.hasTkArt('tk_reina') ? 'tk_reina' : (sp.art || null);
       }
       if (sp.art && !(UI.hasTkArt && UI.hasTkArt(sp.art))) delete sp.art;
       if (!D.SPEAKERS[k]) D.SPEAKERS[k] = sp;

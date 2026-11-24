@@ -29,9 +29,12 @@
     while (w.children.length > 4) w.firstChild.remove();
     setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 400); }, 2400);
   };
+  UI.mboxBody = () => document.querySelector('#modal .mbox-body') || document.querySelector('#modal .mbox');
   UI.modal = function (html, o) {
-    o = o || {}; const m = $('#modal'); m.innerHTML = `<div class="mback" data-act="${o.lock ? '' : 'closeModal'}"></div><div class="mbox ${o.cls || ''}" role="dialog" aria-modal="true">${html}</div>`;
-    m.classList.add('on'); m.dataset.lock = o.lock ? '1' : ''; const b = $('.mbox', m); b.scrollTop = 0; UI.sfx('page');
+    o = o || {}; const raw = o.raw || /cfmake|\bcfm\b/.test(o.cls || '');
+    const inner = raw ? html : `<div class="mbox-body">${html}</div>`;
+    const m = $('#modal'); m.innerHTML = `<div class="mback" data-act="${o.lock ? '' : 'closeModal'}"></div><div class="mbox ${o.cls || ''}" role="dialog" aria-modal="true">${inner}</div>`;
+    m.classList.add('on'); m.dataset.lock = o.lock ? '1' : ''; const b = UI.mboxBody(); if (b) b.scrollTop = 0; UI.sfx('page');
   };
   UI.closeModal = function () { const m = $('#modal'); m.classList.remove('on'); m.innerHTML = ''; };
   UI.confirm = function (title, text, okLabel, onOk, danger) {

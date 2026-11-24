@@ -195,7 +195,7 @@
   ];
 
   D.TK_SPEAKERS = Object.assign({}, D.TK_SPEAKERS, {
-    rei: { n: 'Рейна', art: 'tk_reina_jacket', c: '#b48cff' },
+    rei: { n: 'Рейна', art: 'tk_reina', c: '#b48cff' },
     asu: { n: 'Асука Кадзама', art: 'tk_asuka', c: '#7ad87a' },
     xia: { n: 'Лин Сяоюй', art: 'tk_xiaoyu', c: '#ff9ad0' },
     lil: { n: 'Лили', art: 'tk_lili', c: '#e8c0ff' },
@@ -228,14 +228,15 @@
     bob: { n: 'Боб Ричардс', art: 'tk_bob', c: '#f0d060' },
     rog: { n: 'Роджер-младший', art: 'tk_roger', c: '#ffd35a' },
     yuj: { n: 'Юдзиро Ханма', art: 'tk_yujiro', c: '#ff6a4a' },
-    aza: { n: 'Азазель', c: '#c060ff' },
-    drv: { n: 'Водитель', c: '#9aa0b8' },
-    mer: { n: 'Торговец', c: '#c8a060' },
-    boy: { n: 'Мальчик', c: '#ffe0a0' },
-    med: { n: 'Медик', c: '#a0d0c8' },
+    aza: { n: 'Азазель', c: '#c060ff', art: 'tk_azazel' },
+    drv: { n: 'Водитель', c: '#9aa0b8', art: 'tk_driver' },
+    mer: { n: 'Торговец', c: '#c8a060', art: 'tk_vendor' },
+    boy: { n: 'Мальчик', c: '#ffe0a0', art: 'tk_boy' },
+    med: { n: 'Медик', c: '#a0d0c8', art: 'tk_medic' },
     sgc: { n: 'Солдат G Corporation', c: '#b0b8c8' },
-    syg: { n: 'Солдат Yggdrasil', c: '#a0c0e8' },
-    fgt: { n: 'Боец', c: '#9aa0b8' }
+    syg: { n: 'Солдат Yggdrasil', c: '#a0c0e8', art: 'tk_ygg' },
+    fgt: { n: 'Боец', c: '#9aa0b8' },
+    fix: { n: 'Посредник', c: '#b8a888', art: 'tk_fixer' }
   });
 
   if (typeof module !== 'undefined') module.exports = RPG;

@@ -1,4 +1,4 @@
-/* v2.31.1 коллаба «Железный Кулак»: канонический сценарий, 19 глав, 3 исхода + Рейна. */
+/* v2.31.2 коллаба «Железный Кулак»: канонический сценарий, 19 глав, 3 исхода + Рейна. */
 const assert = require('assert');
 const RPG = require('../js/data-core.js'); require('../js/data-stats.js');
 ['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'allies', 'data-craft-icons', 'craft', 'goals', 'challenge', 'life', 'tekken', 'tekken-roster', 'tekken-story', 'tekken-romance', 'tekken-meet'].forEach((f) => require('../js/' + f + '.js'));
@@ -309,6 +309,92 @@ t('в коллабе нет голой буквы «К» вместо героя
   Object.keys(D.TK_MEETS || {}).forEach((id) => walk('meet:' + id, (D.TK_MEETS[id] || {}).lines));
   Object.keys(D.TK_LOSS || {}).forEach((id) => walk('loss:' + id, D.TK_LOSS[id]));
   assert.strictEqual(hits.length, 0, hits.slice(0, 8).join(' | '));
+});
+
+
+t('диалоги Рейны — пакетный бюст, полный рост только в карточке романа', () => {
+  assert.strictEqual(D.TK_SPEAKERS.rei.art, 'tk_reina');
+  const s = mk();
+  assert.strictEqual(E.tkReinaLook(s), 'tk_reina');
+  s.tk.flags.tk_reina_reveal = 1;
+  assert.strictEqual(E.tkReinaLook(s), 'tk_reina');
+  s.tk.blood = 1;
+  assert.strictEqual(E.tkReinaLook(s), 'tk_reina_devil');
+  E.tkReinaApply(s);
+  assert.strictEqual(D.CREW.tk_reina.art, 'tk_reina_devil');
+  s.tk.blood = 0;
+  E.tkReinaApply(s);
+  assert.strictEqual(D.CREW.tk_reina.art, 'tk_reina');
+});
+
+
+t('новые портреты NPC и фоны локаций привязаны без догадок', () => {
+  const art = {
+    aza: 'tk_azazel', drv: 'tk_driver', mer: 'tk_vendor', boy: 'tk_boy',
+    med: 'tk_medic', syg: 'tk_ygg', fix: 'tk_fixer'
+  };
+  Object.keys(art).forEach((id) => assert.strictEqual(D.TK_SPEAKERS[id].art, art[id], id));
+  assert.strictEqual(D.TK_SPEAKERS.sgc.art, undefined, 'sgc still has no portrait');
+  assert.strictEqual(D.TK_SPEAKERS.fgt.art, undefined, 'fgt still has no portrait');
+  const bg = {
+    tk01_rift: 'tk_helmor', tk02_reina: 'tk_service', tk03_doors: 'tk_jinhall',
+    tk04_paul: 'tk_coliseum', tk05_street: 'tk_service', tk06_hwoarang: 'tk_jinhall',
+    tk07_sisters: 'tk_dojo', tk08_flagless: 'tk_eastgate', tk09_case: 'tk_kazbox',
+    tk10_coliseum: 'tk_eastgate', tk11_daughter: 'tk_pier', tk12_night: 'tk_gcorp',
+    tk13_island: 'tk_shore', tk14_sky: 'tk_awaken', tk15_last: 'tk_shore',
+    tk16_outcome: 'tk_shore', tk17_blood: 'tk_awaken', tk18_vow: 'tk_pier',
+    tk19_home: 'tk_helmor'
+  };
+  Object.keys(bg).forEach((id) => assert.strictEqual(D.TK_SCENES[id].bg, bg[id], id));
+  const flat = (lines) => {
+    const out = [];
+    (lines || []).forEach((l) => {
+      if (l[0] === 'bg') out.push(l[1]);
+      if (l[0] === 'if') flat(l[2]).forEach((x) => out.push(x));
+    });
+    return out;
+  };
+  assert(flat(D.TK_SCENES.tk01_rift.lines).includes('tk_manhattan'));
+  assert(flat(D.TK_SCENES.tk12_night.lines).includes('tk_pier'));
+  assert(flat(D.TK_SCENES.tk13_island.lines).includes('tk_sanctuary'));
+  assert(flat(D.TK_SCENES.tk13_island.lines).includes('tk_pier'));
+  assert.strictEqual(D.TK_MEET_MAP.azazel.art, 'tk_azazel');
+  assert.strictEqual(D.TK_MEET_MAP.law.bg, 'tk_lawdojo');
+});
+
+
+t('в репликах нет сценарных скобок «[Называет имя…]» и «Прощание. […]»', () => {
+  const hits = [];
+  const walk = (src, lines) => {
+    (lines || []).forEach((l) => {
+      if (!l || typeof l === 'string') return;
+      if (l[0] === 'if') return walk(src, l[2]);
+      if (l[0] === 'choice') return (l[1] || []).forEach((op, j) => walk(src + '/c' + j, op.r));
+      const text = typeof l[1] === 'string' ? l[1] : '';
+      if (/\[Называет имя/.test(text) || /Прощание\.\s*\[/.test(text)) hits.push(src + ': ' + text);
+    });
+  };
+  Object.keys(D.TK_SCENES || {}).forEach((id) => walk('scene:' + id, (D.TK_SCENES[id] || {}).lines));
+  (D.TK_MEETS || []).forEach((m) => walk('meet:' + m.id, m.lines));
+  const named = [];
+  const collect = (lines) => (lines || []).forEach((l) => {
+    if (!l) return;
+    if (l[0] === 'if') return collect(l[2]);
+    if (l[0] === 'choice') return (l[1] || []).forEach((op) => collect(op.r));
+    if (typeof l[1] === 'string' && /Покажешь, куда ушёл/.test(l[1])) named.push(l[1]);
+  });
+  collect((D.TK_SCENES.tk02_reina || {}).lines);
+  assert(named.length && named.every((s) => s.indexOf('{name}.') === 0), named.join(' | '));
+  assert.strictEqual(hits.length, 0, hits.slice(0, 6).join(' | '));
+});
+
+
+t('выбор Рейны в гл. 02 — косметическое предупреждение, флаги те же', () => {
+  const ch = (D.TK_SCENES.tk02_reina.lines || []).find((l) => l && l[0] === 'choice');
+  assert(ch && ch[2] && /Осторожно: этот выбор опасен/.test(ch[2].warn), ch && ch[2] && ch[2].warn);
+  assert.strictEqual(ch[1].length, 2);
+  assert.deepStrictEqual(ch[1][0].f, { tk_reina: 1 });
+  assert.deepStrictEqual(ch[1][1].f, { tk_reina_no: 1 });
 });
 
 console.log(`  ${pass} ✓, ${fail} ✗`); if (fail) process.exit(1);

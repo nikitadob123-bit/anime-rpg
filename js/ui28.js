@@ -29,7 +29,7 @@
   const ARTM = (D.ART_RAR || []).findIndex((r) => r.id === 'mythic');
   const mark = (el, lv) => { if (lv <= 0) return; el.classList.add('irid'); if (lv > 1) el.classList.add('irid2'); };
   const pass = (root) => {
-    root.querySelectorAll('.rar').forEach((el) => { const m = /\br(\d+)\b/.exec(el.className); if (m) { const r = +m[1]; mark(el, r >= 7 ? 2 : r >= 6 ? 1 : 0); } });
+    root.querySelectorAll('.rar').forEach((el) => { if (el.matches('.rn, .rbadge, .rn *, .rbadge *')) return; const m = /\br(\d+)\b/.exec(el.className); if (m) { const r = +m[1]; mark(el, r >= 7 ? 2 : r >= 6 ? 1 : 0); } });
     root.querySelectorAll('[data-act="petOpen"][data-id]').forEach((el) => { const p = D.PET && D.PET[el.dataset.id]; if (p) mark(el, p.r >= 5 ? 2 : p.r >= 4 ? 1 : 0); });
     root.querySelectorAll('[data-act="artOpen"][data-id]').forEach((el) => { const a = D.ART && D.ART[el.dataset.id]; if (a && ARTM >= 0) mark(el, a.r > ARTM ? 2 : a.r >= ARTM ? 1 : 0); });
   };

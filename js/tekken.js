@@ -564,16 +564,13 @@
   };
   E.tkReinaLook = function (s) {
     const t = s && s.tk;
-    if (!t) return 'tk_reina';
-    if (t.blood) return 'tk_reina_devil';
-    if (t.flags && (t.flags.tk_reina_reveal || t.ending === 'self')) return 'tk_reina_top_bust';
+    if (t && t.blood) return 'tk_reina_devil';
     return 'tk_reina';
   };
   E.tkReinaApply = function (s) {
     const c = D.CREW.tk_reina; if (!c) return;
     const t = s && s.tk;
     if (t && t.blood) { c.k = 1.08; c.sig = 'g_tk_reina_devil'; c.art = 'tk_reina_devil'; }
-    else if (t && (t.ending === 'self' || (t.flags && t.flags.tk_reina_reveal))) { c.k = 0.98; c.sig = 'g_tk_reina'; c.art = 'tk_reina_top'; }
     else { c.k = 0.98; c.sig = 'g_tk_reina'; c.art = 'tk_reina'; }
   };
 

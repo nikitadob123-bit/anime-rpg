@@ -15,7 +15,7 @@
 .tkrow .btn{flex:none;white-space:nowrap}
 .tkpane{max-height:58vh;overflow:auto;-webkit-overflow-scrolling:touch}
 .mbox.tkmodal{border-color:rgba(255,90,58,.4)}
-.bg-tk_arena,.bg-tk_dojo{background:#12060c center/cover no-repeat}
+.bg-tk_arena,.bg-tk_dojo,.bg-tk_helmor,.bg-tk_manhattan,.bg-tk_service,.bg-tk_lawdojo,.bg-tk_jinhall,.bg-tk_coliseum,.bg-tk_eastgate,.bg-tk_kazbox,.bg-tk_gcorp,.bg-tk_pier,.bg-tk_shore,.bg-tk_sanctuary,.bg-tk_awaken{background:#12060c center/cover no-repeat}
 .bg-tk_arena{background-image:radial-gradient(ellipse at 50% 30%,#4a1820,#0a0508)}
 .bg-tk_dojo{background-image:linear-gradient(180deg,#2a1a10,#120a08)}
 /* бюсты: лицо остаётся в кадре (не 12–18% как у ростовых портретов) */
@@ -57,3 +57,18 @@ img.por.tkdevil, .tkpor.tkdevil, img.gic.tkdevil, .tkspr.tkdevil{
 @media (prefers-reduced-motion:reduce){
   .story.boxpor .dpor-im.xf{transition:none;opacity:1}
 }
+
+/* полный рост Рейны — только карточка романа в «Сердцах» */
+.crewm .por.lg.tkfull{
+  width:132px;height:260px;max-height:42dvh;aspect-ratio:auto;
+  object-fit:contain;object-position:center top;
+  background:radial-gradient(circle at 50% 20%,#2a1a3a,#120c1c);
+  border-radius:14px;
+}
+.crewm>.row{align-items:flex-start}
+
+/* косметическое предупреждение у сюжетного выбора (без влияния на флаги) */
+.schoice .chwarn{padding:10px 12px;border-radius:12px;background:linear-gradient(180deg,rgba(72,16,22,.94),rgba(28,8,12,.96));border:1px solid rgba(242,195,92,.75);color:#ffe29a;font-size:13px;line-height:1.4;text-align:left;box-shadow:0 0 16px rgba(180,30,40,.35),inset 0 0 12px rgba(255,80,70,.08);text-shadow:0 0 8px rgba(242,195,92,.25)}
+.schoice.on .choice{animation-delay:0s}
+.schoice.on .choice + .choice{animation-delay:.08s}
+.schoice.on .choice + .choice + .choice{animation-delay:.16s}
