@@ -284,6 +284,32 @@ t('миграция сохранения со старыми узлами дер
 console.log('v2.8.0: Силы без Отголоска, снаряжение героя');
 t('sw.js: версия кэша совпадает с версией игры', () => { const sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8'); const version = require('../package.json').version; assert(sw.includes(`VERSION = 'arpg-v${version}'`)); assert(sw.includes("'assets/gear/null_possibility_art.webp'"), 'арт меча в кэше SW'); assert(sw.includes("'js/gear.js'") && sw.includes("'css/gear.css'"), 'gear в кэше SW'); });
 t('js/update.js: RPG.VERSION = package.json; SKIP_WAITING в sw.js; сохранения не очищаются', () => { const u = fs.readFileSync(path.join(__dirname, '../js/update.js'), 'utf8'), sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8'); assert(u.includes("RPG.VERSION = '" + require('../package.json').version + "'")); assert(sw.includes("'SKIP_WAITING'") && sw.includes("'js/update.js'")); assert(!/localStorage\.(clear|removeItem)|indexedDB\.deleteDatabase/.test(u)); });
+
+t('sw.js: ядро — reload с повторами; картинки — allSettled и не срывают install', () => {
+  const sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8');
+  assert(sw.includes("cache: 'reload'"));
+  assert(sw.includes('putRetry') && sw.includes('addCore') && sw.includes('addExtra'));
+  assert(sw.includes('allSettled'));
+  assert(sw.includes('CORE_ASSETS') && sw.includes('EXTRA_ASSETS'));
+  assert(!/\.addAll\s*\(\s*ASSETS\s*\)/.test(sw), 'addAll(ASSETS) больше не ставит все файлы атомарно');
+});
+t('sw.js: навигация и js/css — сеть первая (no-cache), картинки — сначала кэш', () => {
+  const sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8');
+  assert(sw.includes("cache: 'no-cache'"));
+  assert(sw.includes("req.mode === 'navigate'"));
+  assert(sw.includes('isCode'));
+  assert(sw.includes('ignoreSearch: true'));
+});
+t('js/update.js: прогресс, кэш файлов в обычном пути не чистится до активации, принудительный сброс не трогает сохранения', () => {
+  const u = fs.readFileSync(path.join(__dirname, '../js/update.js'), 'utf8');
+  assert(/Обновляю/.test(u));
+  assert(u.includes('getRegistrations') && u.includes('unregister'));
+  assert(/setTimeout\(\s*hard,\s*20000\s*\)/.test(u));
+  const hardIdx = u.indexOf('const hard');
+  const delIdx = u.indexOf('caches.delete');
+  assert(hardIdx > 0 && delIdx > hardIdx, 'caches.delete только в принудительном пути');
+  assert(!/localStorage\.(clear|removeItem)|indexedDB\.deleteDatabase/.test(u));
+});
 t('ui-skills: нет кнопки Отголосок, есть Концепты и Приёмы', () => {
   const src = fs.readFileSync(path.join(__dirname, '../js/ui-skills.js'), 'utf8');
   assert(!src.includes('>🔆 Отголосок</button>'));

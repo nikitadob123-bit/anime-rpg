@@ -1,6 +1,6 @@
 {
   "name": "anime-rpg",
-  "version": "2.31.2",
+  "version": "2.31.3",
   "private": true,
   "description": "Нимб Мира — RPG-PWA без сборки",
   "scripts": {
@@ -17,7 +17,8 @@
     "e2e:craft": "node tools/craft-shots.js",
     "e2e:art": "node tools/art-shots.js",
     "mail": "node tools/mail.js",
-    "e2e:tekken": "node tools/e2e-tekken.js"
+    "e2e:tekken": "node tools/e2e-tekken.js",
+    "e2e:update": "node tools/upd-shots.js && node tools/e2e-sw-update.js"
   },
   "devDependencies": {
     "playwright-core": "^1.48.0"

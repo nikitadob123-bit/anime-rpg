@@ -1,8 +1,8 @@
-/* v2.18.2 «🔄 Обновить игру»: версия, проверка новой (sw.js с cache:no-store), мгновенное обновление без потери сохранений.
+/* v2.31.3 «🔄 Обновить игру»: прогресс, сеть для проверки, принудительный сброс кэша файлов если новый SW не встал.
    Сохранения живут в localStorage/IndexedDB — их не трогаем; чистим только Cache Storage (файлы игры). */
 (function () {
   const RPG = globalThis.RPG, UI = RPG.UI;
-  RPG.VERSION = '2.31.2';   // коллаба: бюст Рейны в диалогах; полный рост в романе; NPC и фоны локаций
+  RPG.VERSION = '2.31.3';   // надёжное обновление на слабой сети; ядро отдельно от картинок
   const U = RPG.UPD = { latest: null, status: '', busy: false };
   const cmp = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); } return 0; };
   U.cmp = cmp;
@@ -19,20 +19,49 @@
   };
   U.update = async function () {
     if (U.busy) return; U.busy = true;
+    let watchdog;
     try {
-      if (UI.p) UI.save(true);   // 1) сначала — сохранение (localStorage); его не очищаем
-      set('Обновляю…');
-      const sw = navigator.serviceWorker, reg = sw && await sw.getRegistration();
-      let reloaded = false; const go = () => { if (reloaded) return; reloaded = true; if (UI.p) UI.save(true); const u = new URL(location.href); u.searchParams.set('u', Date.now()); location.replace(u.toString()); };
+      if (UI.p) UI.save(true);   // сначала — сохранение (localStorage); его не очищаем
+      set('Обновляю… сохранил игру');
+      const sw = navigator.serviceWorker;
+      let reloaded = false, finishing = false;
+      const go = () => {
+        if (reloaded) return; reloaded = true;
+        if (watchdog) clearTimeout(watchdog);
+        if (UI.p) UI.save(true);
+        set('Готово, перезагружаю…');
+        const u = new URL(location.href); u.searchParams.set('u', Date.now()); location.replace(u.toString());
+      };
+      const hard = async () => {
+        if (reloaded || finishing) return; finishing = true;
+        if (watchdog) clearTimeout(watchdog);
+        set('Принудительное обновление… сбрасываю кэш файлов');
+        if (UI.p) UI.save(true);
+        try { if (sw) { const regs = await sw.getRegistrations(); await Promise.all(regs.map((r) => r.unregister())); } } catch (e) { /* продолжаем сброс кэша */ }
+        try { if (self.caches) { const ks = await caches.keys(); await Promise.all(ks.map((k) => caches.delete(k))); } } catch (e) { /* перезагрузимся без кэша SW */ }
+        const u = new URL(location.href); u.searchParams.set('u', Date.now()); location.replace(u.toString());
+      };
+      watchdog = setTimeout(hard, 20000);
       if (sw) sw.addEventListener('controllerchange', go, { once: true });
+      const reg = sw && await sw.getRegistration();
       if (reg) {
+        set('Обновляю… загружаю новую версию');
         try { await reg.update(); } catch (e) { /* офлайн — перезагрузимся тем, что есть */ }
         const w = reg.waiting || reg.installing;
-        if (w) { if (w.state !== 'installed') await new Promise((r) => { const f = () => { if (w.state === 'installed' || w.state === 'activated' || w.state === 'redundant') { w.removeEventListener('statechange', f); r(); } }; w.addEventListener('statechange', f); setTimeout(r, 15000); }); (reg.waiting || w).postMessage('SKIP_WAITING'); }
+        if (w) {
+          set('Обновляю… устанавливаю');
+          if (w.state !== 'installed' && w.state !== 'activated') {
+            await new Promise((r) => {
+              const f = () => { if (w.state === 'installed' || w.state === 'activated' || w.state === 'redundant') { w.removeEventListener('statechange', f); r(); } };
+              w.addEventListener('statechange', f); setTimeout(r, 18000);
+            });
+          }
+          if (reg.waiting || w.state === 'installed') (reg.waiting || w).postMessage('SKIP_WAITING');
+          set('Обновляю… активирую');
+        }
       }
-      if (self.caches) { const ks = await caches.keys(); await Promise.all(ks.filter((k) => !(RPG.UPD.latest && k.startsWith('arpg-v' + RPG.UPD.latest))).map((k) => caches.delete(k))); }   // старые кэши файлов игры
-      setTimeout(go, reg && reg.waiting ? 4000 : 1200);   // запасной путь, если controllerchange не придёт
-    } catch (e) { U.busy = false; set('Ошибка обновления: ' + e.message); }
+      // Нормальный путь: старые кэши не трогаем до активации нового SW (это делает обработчик activate).
+    } catch (e) { if (watchdog) clearTimeout(watchdog); U.busy = false; set('Ошибка обновления: ' + e.message); }
   };
   UI.act.updCheck = () => U.check();
   UI.act.updGo = async () => { if (U.latest == null) { const n = await U.check(); if (n === false && !confirm('У вас последняя версия. Всё равно перезагрузить игру с очисткой кэша файлов? Сохранения не пострадают.')) return; } U.update(); };
