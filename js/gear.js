@@ -130,6 +130,12 @@
     const pool = D.GEAR_AFF.filter((a) => it.st[a.k] == null); if (!pool.length) return null;
     const a = pool[rng.weighted(pool.map((x) => x.w))]; it.st[a.k] = affVal(a, it.il, ri, rng); return a;
   }
+  E.ensureAff = function (it, k, rng) {
+    if (!it || !it.st || it.st[k] != null) return it.st && it.st[k];
+    const a = (D.GEAR_AFF || []).find((x) => x.k === k); if (!a) return null;
+    it.st[k] = affVal(a, it.il, it.r, rng || E.rng(E.hash('aff:' + it.k + ':' + k + ':' + it.il)));
+    return it.st[k];
+  };
   function fxVal(f, il, ri, rng) {
     if (f.fixed != null) return f.fixed;
     const v = round1(Math.min(f.cap, (f.pct[0] + il * f.pct[1]) * D.RARITY[ri].pm * (0.85 + rng() * 0.3)));

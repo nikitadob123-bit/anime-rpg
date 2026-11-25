@@ -20,7 +20,7 @@
     unique: 'уникальный предмет по id (например eden_light — «Свет Эдема», Концептуальный; prime_cause, zero_law, first_division — Исток; null_possibility — До существования, только один экземпляр на сохранение: второй подарок отклоняется); строка или массив id. Единственный способ получить такие вещи',
     pets: 'питомец по id (например stray_cat — «Уличная кошка», Обычный); строка или массив. Выдаётся как находка из яйца: новый или +звезда; на максимуме звёзд — корм',
     artifacts: 'артефакт по id (например lantern — «Фонарь Путника», Обычный); строка или массив id. Выдаётся как выпадение в Подземелье Артефактов: новый или +звезда; Мировой — только один экземпляр',
-    gear: 'снаряжение: [{ base, rarity, il?, nm? }] — base из списка, rarity 0–7 или common/uncommon/rare/unique/epic/legend/mythic/divine, il — уровень (по умолчанию = уровень героя)'
+    gear: 'снаряжение: [{ base, rarity, il?, nm?, en?, el? }] — base из списка, rarity 0–7 или common/uncommon/rare/unique/epic/legend/mythic/divine, il — уровень (по умолчанию = уровень героя), en — id чар (например en_light), el — стихия (light/fire/…) — на вещь ставится аффикс урона этой стихией'
   };
   const MAXN = 10000000;
   const isInt = (n) => typeof n === 'number' && Number.isInteger(n) && n > 0 && n <= MAXN;
@@ -84,6 +84,8 @@
           if (!(Number.isInteger(r) && r >= 0 && r <= D.RARITY_OPEN)) err.push(`gear[${i}]: rarity — 0…${D.RARITY_OPEN} или ${M.RARITY_IDS.join('/')}` + (lockd ? ' («' + D.RARITY[typeof it.rarity === 'number' ? it.rarity : D.RARITY_IDS.indexOf(String(it.rarity))].n + '» и выше ещё не открыты)' : ''));
           if (it.il != null && !(isInt(it.il) && it.il <= D.LEVEL_CAP)) err.push(`gear[${i}]: il — уровень 1…${D.LEVEL_CAP}`);
           if (it.nm != null && (typeof it.nm !== 'string' || it.nm.length > 40)) err.push(`gear[${i}]: nm — строка до 40 символов`);
+          if (it.en != null && (typeof it.en !== 'string' || !(D.ENCHANTS || []).some((e) => e.id === it.en))) err.push(`gear[${i}]: неизвестные чары «${it.en}»`);
+          if (it.el != null && (typeof it.el !== 'string' || !(D.ELEM_IDS || []).includes(it.el))) err.push(`gear[${i}]: неизвестная стихия «${it.el}»`);
         });
       }
       else if (k === 'item' && v === 'tear') { /* сюжетный артефакт */ }
@@ -124,6 +126,8 @@
       if (!D.BASES[x.base]) return;
       const it = E.genItem(E.rng(E.hash(String(seed) + ':' + i)), { base: x.base, rarity: Math.max(0, Math.min(D.RARITY_OPEN, rarIdx(x.rarity || 0) | 0)), il: x.il || slot.hero.level || 1 });
       if (x.nm) it.nm = String(x.nm).slice(0, 40);
+      if (x.en && (D.ENCHANTS || []).some((e) => e.id === x.en)) it.en = x.en;
+      if (x.el && (D.ELEM_IDS || []).includes(x.el) && x.el !== 'phys' && E.ensureAff) E.ensureAff(it, 'dmg_' + x.el, E.rng(E.hash(String(seed) + ':el:' + i)));
       got.items.push(E.addItem(slot, it));
     });
     (g.unique || []).forEach((id) => {   // ⊘ «Не может существовать более чем в одном экземпляре»: второй такой предмет не создаётся — отказ с пометкой

@@ -75,6 +75,19 @@ t('снаряжение из письма: одинаковое при повт�
   assert.strictEqual(ia[0].r, 4); assert.strictEqual(ia[0].il, 12); assert.strictEqual(ia[1].nm, 'Перстень вестника'); assert.strictEqual(ia[1].il, 5);
 });
 
+t('снаряжение из письма: чары и стихия света ставятся, повтор стабилен', () => {
+  const g = { gear: [{ base: 'sword', rarity: 'divine', il: 65, nm: 'Клинок Первого Света', en: 'en_light', el: 'light' }] };
+  assert.deepStrictEqual(M.giftErrors(g), []);
+  assert(M.giftErrors({ gear: [{ base: 'sword', rarity: 7, en: 'nope' }] }).length === 1);
+  assert(M.giftErrors({ gear: [{ base: 'sword', rarity: 7, el: 'laser' }] }).length === 1);
+  const a = mk(), b = mk(); const f = M.parseFeed({ letters: [L({ id: 'light-1', gifts: g })] }).letters;
+  [a, b].forEach((s) => { M.deliver(s, f, NOW); assert(M.claim(s, 'light-1', NOW).ok); });
+  const ia = a.inv[a.inv.length - 1], ib = b.inv[b.inv.length - 1];
+  assert.strictEqual(ia.nm, 'Клинок Первого Света'); assert.strictEqual(ia.r, 7); assert.strictEqual(ia.il, 65);
+  assert.strictEqual(ia.en, 'en_light'); assert(ia.st.dmg_light > 0, 'есть урон светом');
+  assert.deepStrictEqual(ia.st, ib.st); assert.strictEqual(ia.en, ib.en);
+});
+
 console.log('Почта: срок и условия');
 t('истёкшее письмо не доставляется; доставленное и истёкшее — помечено, подарок не выдаётся', () => {
   const s = mk(); assert.strictEqual(M.deliver(s, M.parseFeed({ letters: [L({ expires: '2026-10-01' })] }).letters, NOW), 0);

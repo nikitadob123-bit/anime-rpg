@@ -1,4 +1,4 @@
-/* E2E v2.31.3 коллаба «Железный Кулак»: канонический сценарий, 4 пути, рамка диалога.
+/* E2E v2.31.4 коллаба «Железный Кулак»: канонический сценарий, 4 пути, рамка диалога.
    Скриншоты — /workspace/shots-tekken/v2310/  (444×986) */
 const { chromium } = require('playwright-core');
 const fs = require('fs'), path = require('path');
@@ -107,10 +107,10 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   });
   await page.waitForTimeout(400);
 
-  check('версия 2.31.3', await ev(() => __RPG.VERSION === '2.31.3' || (__RPG.RPG && __RPG.RPG.VERSION === '2.31.3') || document.querySelector('script') && true) && await ev(() => (__RPG.VERSION || __RPG.RPG?.VERSION) ? (__RPG.VERSION || __RPG.RPG.VERSION) === '2.31.3' : !!__RPG.D.TK_CH && __RPG.D.TK_CH.length === 19), await ev(() => __RPG.VERSION || (window.RPG && RPG.VERSION)));
+  check('версия 2.31.4', await ev(() => __RPG.VERSION === '2.31.4' || (__RPG.RPG && __RPG.RPG.VERSION === '2.31.4') || document.querySelector('script') && true) && await ev(() => (__RPG.VERSION || __RPG.RPG?.VERSION) ? (__RPG.VERSION || __RPG.RPG.VERSION) === '2.31.4' : !!__RPG.D.TK_CH && __RPG.D.TK_CH.length === 19), await ev(() => __RPG.VERSION || (window.RPG && RPG.VERSION)));
   // VERSION lives on RPG
   const ver = await ev(() => (window.RPG && RPG.VERSION) || __RPG.VERSION || '');
-  check('RPG.VERSION 2.31.3', ver === '2.31.3', ver);
+  check('RPG.VERSION 2.31.4', ver === '2.31.4', ver);
   check('19 глав канона', await ev(() => (__RPG.D.TK_CH || []).length === 19 && __RPG.D.TK_CH[0].id === 'tk01_rift' && __RPG.D.TK_CH[18].id === 'tk19_home'));
   check('событие активно', await ev(() => __RPG.E.tkActive()));
   check('баннер в Лагере', await page.locator('.tkbanner').count() > 0);
