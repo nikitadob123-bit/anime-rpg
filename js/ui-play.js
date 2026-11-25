@@ -148,6 +148,7 @@
     layer.classList.add('on'); UI.sfx('boom'); try { F.setMode('none'); } catch (e) { /* ignore */ }
     $('#bAuto').classList.toggle('on', !!B.opts.auto); $('#bCmd').classList.toggle('on', !!B.opts.cmd);
     renderUnits(B, true);
+    if (B.tk && B.tk.mark === 'story' && B.tk.chId) UI.tkBarkTrig(B, 'start');
     const boss = B.foes.find((f) => f.role === 'boss' || f.role === 'mini');
     if (boss && D.ENEMIES[boss.eid] && D.ENEMIES[boss.eid].lines) { await bubble(boss, D.ENEMIES[boss.eid].lines[0], B); }
     if (!slot.tut.bt && st.tutorial) { slot.tut.bt = 1; toastHint('Коснитесь врага, чтобы выбрать цель. Над врагами — их намерения.'); }
@@ -168,11 +169,67 @@
     await UI.wait(500 / B.speed);
     const rep = ch ? ch.finish(slot, B) : C.finishBattle(slot, B); UI.save(true);
     if (!ch) await battleSummary(B, rep);
+    if (UI.tkBarkClear) UI.tkBarkClear();
     layer.classList.remove('on'); layer.innerHTML = ''; UI.B = null;
     if (UI.v === 'game') try { F.setMode(UI.p.settings.particles ? 'embers' : 'none'); } catch (e) { /* ignore */ }
     return rep;
   };
   const toastHint = (m) => { const b = $('#bubble'); if (b) { b.innerHTML = `<div class="hintb">${m}</div>`; b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 3600); } };
+  UI._tkBarkQ = []; UI._tkBarkOn = 0;
+  UI.tkBarkClear = function () { UI._tkBarkQ = []; UI._tkBarkOn = 0; const el = document.getElementById('tkbark'); if (el) { el.classList.remove('on'); el.innerHTML = ''; } };
+  UI.tkBark = function (who, text) {
+    if (!text) return;
+    UI._tkBarkQ.push({ who, text });
+    UI.tkBarkFlush();
+  };
+  UI.tkBarkFlush = function () {
+    if (UI._tkBarkOn) return;
+    const n = UI._tkBarkQ.shift();
+    const root = document.getElementById('battle');
+    if (!n || !root) { UI._tkBarkOn = 0; return; }
+    let el = document.getElementById('tkbark');
+    if (!el) { el = document.createElement('div'); el.id = 'tkbark'; el.className = 'tkbark'; el.setAttribute('aria-live', 'polite'); root.appendChild(el); }
+    const slot = UI.slot && UI.slot();
+    const sp = whoName(n.who, slot);
+    el.innerHTML = `<div class="tkb"><b>${esc(sp)}</b>${esc(E.fmtText ? E.fmtText(n.text, slot) : n.text)}</div>`;
+    el.classList.add('on');
+    UI._tkBarkOn = 1;
+    const ms = Math.max(1400, 2200 / ((UI.B && UI.B.speed) || 1));
+    setTimeout(() => {
+      if (el) el.classList.remove('on');
+      UI._tkBarkOn = 0;
+      UI.tkBarkFlush();
+    }, ms);
+  };
+  function whoName(who, slot) {
+    if (who === 'h') return (E.fmtText && E.fmtText('{name}', slot)) || 'Король Демонов';
+    const sp = (D.TK_SPEAKERS && D.TK_SPEAKERS[who]) || (D.SPEAKERS && D.SPEAKERS[who]);
+    return (sp && (E.fmtText ? E.fmtText(sp.n, slot) : sp.n)) || who;
+  }
+  UI.tkBarkTrig = function (B, at) {
+    if (!B || !B.tk || B.tk.mark !== 'story' || !E.tkBarkList) return;
+    const list = E.tkBarkList(UI.slot && UI.slot(), B, at);
+    list.forEach((b) => UI.tkBark(b.who, b.t));
+  };
+  UI.tkBarkHit = function (B, e) {
+    if (!B || !B.tk || B.tk.mark !== 'story' || !e || !(e.v > 0) || e.thorn) return;
+    const from = B.units.find((u) => u.id === e.from);
+    const tgt = B.units.find((u) => u.id === e.u);
+    if (!from || !tgt) return;
+    B.tk._hits = B.tk._hits || 0;
+    if (from.side === 'e' && tgt.side === 'a' && !B.tk._hits && !B.tk._foe1) {
+      B.tk._foe1 = 1;
+      UI.tkBarkTrig(B, 'foehit1');
+    }
+    if (from.side === 'a' && tgt.side === 'e') {
+      B.tk._hits++;
+      if (B.tk._hits === 1) UI.tkBarkTrig(B, 'hit1');
+      else if (B.tk._hits === 2) UI.tkBarkTrig(B, 'hit2');
+      if (!B.tk._mid && tgt.maxHp && tgt.hp <= tgt.maxHp * 0.5) { B.tk._mid = 1; UI.tkBarkTrig(B, 'mid'); }
+    }
+    const hero = B.party.find((u) => u.hero) || B.party[0];
+    if (hero && hero.maxHp && hero.hp <= hero.maxHp * 0.25 && !B.tk._low) { B.tk._low = 1; UI.tkBarkTrig(B, 'lowhp'); }
+  };
   async function bubble(u, text, B) { const b = $('#bubble'); if (!b) return; b.innerHTML = `<div class="bub"><b>${esc(u.name)}</b>${esc(text)}</div>`; b.classList.add('on'); await UI.wait(1700 / (B ? B.speed : 1)); b.classList.remove('on'); }
   function showLog(B, i) { const l = $('#blog'); if (l && B.log.length > i) { l.textContent = B.log[B.log.length - 1].toString().replace(/<[^>]+>/g, ''); l.classList.remove('pop'); void l.offsetWidth; l.classList.add('pop'); } return B.log.length; }
 
@@ -268,7 +325,7 @@
     for (const e of evs) {
       switch (e.t) {
         case 'skill': { if (UI.juice) UI.juice.skill(B, e); const el = unitEl(e.u); if (el) { el.classList.add('acting'); setTimeout(() => el.classList.remove('acting'), 500 / sp); } floatTxt(e.u, `${e.ic || ''} ${esc(e.n)}`, 'skn'); UI.sfx(/ур|огн|лед|мол|луч|шар|взрыв|эфир/i.test(e.n || '') ? 'magic' : 'click'); await d(300); break; }
-        case 'dmg': { if (UI.juice) UI.juice.dmg(B, e); const el = unitEl(e.u); const col = (D.ELEMS[e.el] || D.ELEMS.phys).c; floatTxt(e.u, (e.crit ? '💥 ' : '') + '−' + fmt(e.v), 'dmg' + (e.crit ? ' crit' : '')); if (el) { el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit'); } burst(e.u, col, e.crit ? 22 : 12); UI.sfx(e.crit ? 'crit' : 'hit'); if (e.crit && UI.p.settings.shake) shake(); await d(220); break; }
+        case 'dmg': { if (UI.juice) UI.juice.dmg(B, e); const el = unitEl(e.u); const col = (D.ELEMS[e.el] || D.ELEMS.phys).c; floatTxt(e.u, (e.crit ? '💥 ' : '') + '−' + fmt(e.v), 'dmg' + (e.crit ? ' crit' : '')); if (el) { el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit'); } burst(e.u, col, e.crit ? 22 : 12); UI.sfx(e.crit ? 'crit' : 'hit'); if (e.crit && UI.p.settings.shake) shake(); if (B.tk) UI.tkBarkHit(B, e); await d(220); break; }
         case 'heal': floatTxt(e.u, '+' + fmt(e.v), 'heal'); burst(e.u, '#7dffa0', 10); UI.sfx('heal'); await d(200); break;
         case 'miss': floatTxt(e.u, 'Мимо', 'txt'); UI.sfx('miss'); await d(150); break;
         case 'txt': floatTxt(e.u, esc(e.s), 'txt'); await d(160); break;

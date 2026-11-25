@@ -142,6 +142,7 @@ h4::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(205
 @media (prefers-reduced-motion:reduce){.seal{animation:none;opacity:.42}.content.tin{animation:none}}
 /* исправление: .battle>*{position:relative} перебивал absolute у реплики/подсказки боя и сдвигал её за правый край (448>444 px) */
 .battle>.bubble{position:absolute}
+.battle>.tkbark{position:absolute}
 /* исправления переполнения на узких экранах (360 px): города-«здания» (имя .bgrid делили с сеткой Сил), перенос строк характеристик, мини-полосы создания */
 .bgrid.bcity{grid-template-columns:1fr 1fr}.bld{min-width:0}.bld small{overflow-wrap:anywhere}
 .item .il{display:inline-block}

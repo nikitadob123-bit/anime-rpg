@@ -1,6 +1,6 @@
 {
   "name": "anime-rpg",
-  "version": "2.31.9",
+  "version": "2.31.10",
   "private": true,
   "description": "Нимб Мира — RPG-PWA без сборки",
   "scripts": {

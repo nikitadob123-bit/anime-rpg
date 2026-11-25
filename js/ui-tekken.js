@@ -105,7 +105,7 @@
         return `<div class="tkrow ${done ? 'done' : 'cur'}">${por(m.art || ('tk_' + m.id), '👊')}<div class="grow tl"><b>${esc(m.n)}</b><small class="dim">${esc(m.sub || '')}${done ? ' · прочитано' : ''}</small></div><button class="btn small ${done ? 'ghost' : 'primary'}" data-act="tkMeet" data-id="${m.id}" data-replay="${done ? 1 : ''}">${done && post ? 'Галерея бойцов' : done ? 'Ещё раз' : 'Поговорить'}</button></div>`;
       }).join('');
       const blood = (t.flags.tk_reina_join && !t.blood && t.story.includes('tk17_blood'))
-        ? `<div class="card tl small">Рейна: «Я попрошу ещё раз. На этот раз знаю, как выглядит та сила, которой мне не хватало».<button class="btn primary wide" data-act="tkLateBlood">Принять кровь</button></div>` : '';
+        ? `<div class="card tl small">Рейна: «Я попрошу ещё раз. На этот раз знаю, как выглядит та сила, которой мне не хватало».<div class="row gap wrap"><button class="btn primary grow" data-act="tkLateBlood">Принять кровь</button><button class="btn ghost grow" data-act="tkLateBloodNo">Пока нет</button></div></div>` : '';
       return `<div class="small dim tl">${post ? 'Галерея бойцов — повтор встреч после титров.' : 'Личные встречи открываются по ходу истории. Спарринг — в турнире и ежедневных боях.'}</div>${blood}${rows || '<div class="dim center pad">Пока некого навестить. Продвиньтесь по сюжету.</div>'}`;
     }
     const vis = visCh(s);
@@ -256,12 +256,13 @@
             while (!win) {
               const B = E.tkBattle(s, 'story', fid);
               if (B.err) { err(B.err); break; }
+              if (B.tk) { B.tk.chId = id; B.tk.wave = w; B.tk.side = E.tkSide ? E.tkSide(s) : ''; }
               const f = (D.TK_FIGHTER && D.TK_FIGHTER[fid]) || (D.TK_STORY_FOES && D.TK_STORY_FOES[fid]) || { n: 'Противник', ic: '👊', id: fid };
               const rep = await UI.battle({ B, ic: f.ic, bio: 'ash', title: 'Железный Кулак · ' + f.n, finish: E.tkFinish });
               if (rep && rep.result === 'win') win = true;
               else {
-                const loss = (D.TK_LOSS && (D.TK_LOSS[id] || D.TK_LOSS[fid])) || [['h', 'Ещё раз.', 'n']];
-                await UI.playLines(loss, opts);
+                const loss = (E.tkLossLines && E.tkLossLines(s, id)) || (D.TK_LOSS && D.TK_LOSS[id]) || [['h', 'Ещё раз.', 'n']];
+                await UI.playLines(Array.isArray(loss) ? loss : [['h', 'Ещё раз.', 'n']], opts);
               }
             }
             if (!win) { UI.save(true); UI.tkOpen('story'); return; }
@@ -304,6 +305,16 @@
     E.tkGiveBlood(s, 1);
     t.flags.tk_blood = 1;
     UI.sfx('level'); UI.toast('Рейна приняла кровь', 'gold');
+    UI.save(true); UI.tkOpen('meets');
+  };
+  UI.act.tkLateBloodNo = async () => {
+    const s = UI.slot();
+    prepSpeakers(s);
+    UI.closeModal();
+    await UI.playLines([
+      ['h', 'Само решение хорошее. Дай себе ещё немного времени.', 'n'],
+      ['rei', 'Дам. Всё равно приду спросить снова, когда буду готова.', 'n']
+    ], { bg: 'tk_awaken', title: 'Рейна', boxPor: true });
     UI.save(true); UI.tkOpen('meets');
   };
 

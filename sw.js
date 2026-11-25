@@ -1,5 +1,5 @@
 /* Service worker: ядро (html/css/js) — обязательный прекеш с cache:'reload' и повторами; картинки/фоны — по возможности, сбой не срывает установку. Fetch: навигация и js/css — сеть первая, офлайн из кэша; картинки — сначала кэш. */
-const VERSION = 'arpg-v2.31.9';
+const VERSION = 'arpg-v2.31.10';
 const CORE = `${VERSION}-core`, RUNTIME = `${VERSION}-rt`;
 const ASSETS = [
   './', 'index.html', 'manifest.json', 'css/style.css', 'css/vn.css', 'css/demon.css', 'css/mail.css', 'css/gear.css', 'css/craft.css', 'css/crown.css', 'css/artifact.css', 'css/pets.css', 'css/goals.css', 'css/challenge.css', 'css/life.css', 'css/ui28.css', 'css/tekken.css', 'assets/bg/camp.webp', 'assets/bg/expedition.webp', 'assets/bg/throne.webp', 'assets/bg/court.webp', 'assets/vn/hero_demon_neutral.webp', 'fonts/ruslan.woff2', 'fonts/philosopher.woff2',

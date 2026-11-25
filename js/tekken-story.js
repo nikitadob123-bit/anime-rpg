@@ -629,6 +629,38 @@
 
   SC.tk19_home = { t: "Домой", sub: "Разлом обратно", bg: "tk_helmor", lines: [
     ['title', "Домой", "Разлом обратно"],
+    ['if', "tk_combo_rj", [
+      ['jin', "Ты знала про своего отца с самого начала?", "n"],
+      ['rei', "Знала, кто он. Что делать после него — только теперь выясняю.", "n"],
+      ['jin', "Если решишь выяснять на мате, скажи. Я как раз учусь драться без старой силы.", "n"],
+      ['rei', "Скажу. Когда смогу приглушить новую.", "n"]
+    ]],
+    ['if', "tk_combo_rn", [
+      ['nina', "Тебе тоже дали аванс?", "n"],
+      ['rei', "Если считать кровь, то да.", "n"],
+      ['nina', "Не считай. Будет неудобно выставлять следующий счёт.", "n"],
+      H("Если продолжите обсуждать ставки на ветру, захлопну дверь до утра.", "n"),
+      ['rei', "Неплохое первое условие. Подойдём ближе.", "n"]
+    ]],
+    ['if', "tk_combo_rk", [
+      ['rei', "Покажете, что он вам продал?", "n"],
+      H("Сначала скажи, какую жизнь хотела бы в ней подсмотреть.", "n"),
+      N("Рейна касается футляра и сама отнимает руку."),
+      ['rei', "Пока никакую. Я только начала придумывать свою.", "n"],
+      H("Тогда оставим закрытой.", "n")
+    ]],
+    ['if', "tk_combo_love_blood", [
+      ['rei', "Приказы завтра. Сейчас можете просто взять меня за руку.", "n"]
+    ]],
+    ['if', "tk_combo_love_noblood", [
+      ['rei', "Мне нравится, что мы можем прогуляться и ни слова не сказать о моей родословной.", "n"]
+    ]],
+    ['if', "tk_combo_service_other", [
+      ['rei', "Я подожду у входа. Если захотите поговорить после свидания, приду сама.", "n"]
+    ]],
+    ['if', "tk_combo_love_stays", [
+      H("Запомни это место. Если захочешь увидеться, оставь здесь то, о чём говорили.", "n")
+    ]],
     N("{name} открывает разлом. Утренний ветер на острове останавливается у его кромки. По другую сторону та же капля у опрокинутой чашки."),
     ['if', "tk_has_jin", [
       ['jin', "Ты вправду уверен, что здесь никто не заметил нашего отсутствия?", "n"],
@@ -728,15 +760,47 @@
     t.story.push(id); s.rev = (s.rev || 0) + 1; return '';
   };
 
+  D.TK_KEEP_ITEM = {
+    tk_reina: 'снимок', tk_nina: 'чашку', tk_anna: 'танцевальную карточку',
+    tk_xiaoyu: 'билет', tk_asuka: 'мел', tk_lili: 'кружку', tk_azucena: 'этикетку',
+    tk_alisa: 'бумажную утку', tk_zafina: 'камень', tk_jun: 'семена',
+    tk_lidia: 'карточку', tk_miary: 'фонарь', tk_kuni: 'карту', tk_leo: 'образец'
+  };
+
   E.tkSceneLines = function (s, sc) {
-    const lines = (sc && sc.lines) || [];
+    let lines = ((sc && sc.lines) || []).slice();
     if (s) {
       const t = E.tkEnsure(s);
+      t.flags = t.flags || {};
       if (t.rec && t.rec.includes('tk_jin')) t.flags.tk_has_jin = 1;
       if (t.rec && t.rec.includes('tk_nina')) t.flags.tk_has_nina = 1;
       if (t.rec && t.rec.includes('tk_reina')) t.flags.tk_has_reina = 1;
       if (t.sphere || t.flags.tk_sphere) t.flags.tk_sphere = 1;
+      const hasR = !!(t.flags.tk_has_reina || (s.crew && s.crew.tk_reina));
+      const hasJ = !!(t.flags.tk_has_jin || (s.crew && s.crew.tk_jin));
+      const hasN = !!(t.flags.tk_has_nina || (s.crew && s.crew.tk_nina));
+      const side = E.tkSide ? E.tkSide(s) : (t.flags.tk_side || t.ending || '');
+      const taken = t.taken && t.taken !== 'none' ? t.taken : '';
+      t.flags.tk_combo_rj = hasR && hasJ ? 1 : 0;
+      t.flags.tk_combo_rn = hasR && hasN ? 1 : 0;
+      t.flags.tk_combo_rk = hasR && side === 'kazuya' ? 1 : 0;
+      t.flags.tk_combo_love_blood = (taken === 'tk_reina' && t.blood) ? 1 : 0;
+      t.flags.tk_combo_love_noblood = (taken === 'tk_reina' && !t.blood) ? 1 : 0;
+      t.flags.tk_combo_service_other = (hasR && taken && taken !== 'tk_reina') ? 1 : 0;
+      const comes = (taken === 'tk_reina' && hasR) || (taken === 'tk_nina' && hasN) || (taken === 'tk_jin' && hasJ);
+      t.flags.tk_combo_love_stays = (taken && !comes) ? 1 : 0;
       E.tkSyncFlags && E.tkSyncFlags(s);
+      if (sc === D.TK_SCENES.tk19_home && t.flags.tk_combo_love_stays && taken) {
+        const item = (D.TK_KEEP_ITEM && D.TK_KEEP_ITEM[taken]) || 'то, о чём говорили';
+        const who = ((D.CREW[taken] || {}).n) || 'Она';
+        const extra = ['n', who + ' достаёт ' + item + ' и оставляет у кромки перед прощанием.'];
+        const out = [];
+        lines.forEach((l) => {
+          out.push(l);
+          if (l && l[0] === 'if' && l[1] === 'tk_combo_love_stays') out.push(extra);
+        });
+        lines = out;
+      }
     }
     return lines;
   };
@@ -768,6 +832,48 @@
       return 'jackmob';
     }
     return null;
+  };
+
+
+  D.TK_BARKS = [
+    { ch: 'tk03_doors', at: 'hit1', who: 'jin', t: 'Ты ударил раньше, чем я начал вкладываться.' },
+    { ch: 'tk03_doors', at: 'hit1', who: 'h', t: 'Ты начал раньше, чем поднял руку.' },
+    { ch: 'tk03_doors', at: 'hit2', who: 'jin', t: 'Снова ждёшь эту сторону?' },
+    { ch: 'tk03_doors', at: 'hit2', who: 'h', t: 'На этот раз решай сам.' },
+    { ch: 'tk04_paul', at: 'foehit1', who: 'paul', t: 'Видел? Вот поэтому не люблю ждать!' },
+    { ch: 'tk04_paul', at: 'foehit1', who: 'h', t: 'Видел. Теперь сам подожди разок.' },
+    { ch: 'tk10_coliseum', at: 'start', side: 'jin', wave: 0, who: 'lars', t: 'Первые уже в проёме.' },
+    { ch: 'tk10_coliseum', at: 'start', side: 'jin', wave: 0, who: 'h', t: 'Тогда дальше не стой, показывай выход.' },
+    { ch: 'tk10_coliseum', at: 'start', side: 'jin', wave: 1, who: 'law', t: 'Створку заедает!' },
+    { ch: 'tk10_coliseum', at: 'start', side: 'jin', wave: 1, who: 'h', t: 'Значит, проходить будем под ней.' },
+    { ch: 'tk10_coliseum', at: 'start', side: 'jin', wave: 2, who: 'boy', t: 'Кинг ещё там!' },
+    { ch: 'tk10_coliseum', at: 'start', side: 'jin', wave: 2, who: 'law', t: 'Он ушёл последним. Ты мне нужен здесь, держись за рукав.' },
+    { ch: 'tk10_coliseum', at: 'mid', side: 'kazuya', who: 'vic', t: 'Кадзуя уже вышел с арены. Вам больше незачем меня держать.' },
+    { ch: 'tk10_coliseum', at: 'mid', side: 'kazuya', who: 'h', t: 'Тогда не бегите за ним, когда открою.' },
+    { ch: 'tk10_coliseum', at: 'start', side: 'neutral', wave: 1, who: 'nina', t: 'Осталось двадцать секунд.' },
+    { ch: 'tk10_coliseum', at: 'start', side: 'neutral', wave: 1, who: 'h', t: 'Хватит. Пусть мальчик выходит прямо сейчас.' },
+    { ch: 'tk13_island', at: 'mid', side: 'kazuya', who: 'lars', t: 'Скажи, что хотя бы видел, кого с этой дороги убираешь.' },
+    { ch: 'tk13_island', at: 'mid', side: 'kazuya', who: 'h', t: 'Видел. Поэтому оставил тебе вторую.' }
+  ];
+
+  E.tkBarkList = function (s, B, at) {
+    const tk = B && B.tk; if (!tk || !tk.chId) return [];
+    const side = tk.side || (E.tkSide && E.tkSide(s)) || '';
+    const wave = tk.wave | 0;
+    return (D.TK_BARKS || []).filter((b) => {
+      if (b.ch !== tk.chId || b.at !== at) return false;
+      if (b.side && b.side !== side) return false;
+      if (b.wave != null && (b.wave | 0) !== wave) return false;
+      return true;
+    });
+  };
+
+  E.tkLossLines = function (s, chId) {
+    const spec = D.TK_LOSS && D.TK_LOSS[chId];
+    if (!spec) return [['h', 'Ещё раз.', 'n']];
+    if (Array.isArray(spec)) return spec;
+    const side = E.tkSide ? E.tkSide(s) : '';
+    return spec[side] || spec.jin || spec.neutral || spec.kazuya || [['h', 'Ещё раз.', 'n']];
   };
 
   if (typeof module !== 'undefined') module.exports = RPG;

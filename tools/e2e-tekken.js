@@ -1,9 +1,9 @@
-/* E2E v2.31.9 коллаба «Железный Кулак»: канонический сценарий, 4 пути, рамка диалога.
-   Скриншоты — /workspace/shots-tekken/v2319/  (444×986) */
+/* E2E v2.31.10 коллаба «Железный Кулак»: канонический сценарий, 4 пути, рамка диалога.
+   Скриншоты — /workspace/shots-tekken/v23110/  (444×986) */
 const { chromium } = require('playwright-core');
 const fs = require('fs'), path = require('path');
 const { serve } = require('./serve.js');
-const outDir = process.env.TK_SHOTS || '/workspace/shots-tekken/v2319';
+const outDir = process.env.TK_SHOTS || '/workspace/shots-tekken/v23110';
 fs.mkdirSync(outDir, { recursive: true });
 let ok = 0, bad = 0;
 const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra || ''); } else { bad++; console.log('  ✗', n, extra || ''); } };
@@ -107,10 +107,10 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   });
   await page.waitForTimeout(400);
 
-  check('версия 2.31.9', await ev(() => __RPG.VERSION === '2.31.9' || (__RPG.RPG && __RPG.RPG.VERSION === '2.31.9') || document.querySelector('script') && true) && await ev(() => (__RPG.VERSION || __RPG.RPG?.VERSION) ? (__RPG.VERSION || __RPG.RPG.VERSION) === '2.31.9' : !!__RPG.D.TK_CH && __RPG.D.TK_CH.length === 19), await ev(() => __RPG.VERSION || (window.RPG && RPG.VERSION)));
+  check('версия 2.31.10', await ev(() => __RPG.VERSION === '2.31.10' || (__RPG.RPG && __RPG.RPG.VERSION === '2.31.10') || document.querySelector('script') && true) && await ev(() => (__RPG.VERSION || __RPG.RPG?.VERSION) ? (__RPG.VERSION || __RPG.RPG.VERSION) === '2.31.10' : !!__RPG.D.TK_CH && __RPG.D.TK_CH.length === 19), await ev(() => __RPG.VERSION || (window.RPG && RPG.VERSION)));
   // VERSION lives on RPG
   const ver = await ev(() => (window.RPG && RPG.VERSION) || __RPG.VERSION || '');
-  check('RPG.VERSION 2.31.9', ver === '2.31.9', ver);
+  check('RPG.VERSION 2.31.10', ver === '2.31.10', ver);
   check('19 глав канона', await ev(() => (__RPG.D.TK_CH || []).length === 19 && __RPG.D.TK_CH[0].id === 'tk01_rift' && __RPG.D.TK_CH[18].id === 'tk19_home'));
   check('событие активно', await ev(() => __RPG.E.tkActive()));
   check('баннер в Лагере', await page.locator('.tkbanner').count() > 0);
@@ -503,7 +503,53 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   await unlockShot({ blood: 1 }, 'armor', 'Демоническая броня', 'tk_reina_skin_armor', '15-reina-skin-armor');
   await unlockShot({ aff: 70 }, 'wedding', 'Свадебное платье', 'tk_reina_skin_wedding', '16-reina-skin-wedding');
 
+  // реплики в бою: короткий сюжетный бой, неблокирующий пузырь
+  await ev(() => {
+    const UI = __RPG.UI;
+    if (UI.closeModal) UI.closeModal();
+    if (UI._tkBattleReal) UI.battle = UI._tkBattleReal;
+  });
+  await page.waitForTimeout(250);
+  await ev(() => {
+    const UI = __RPG.UI, E = __RPG.E, s = UI.slot();
+    const B = E.tkBattle(s, 'story', 'jackmob');
+    if (B.err) { window._tkBarkErr = B.err; return; }
+    B.tk.chId = 'tk10_coliseum';
+    B.tk.wave = 0;
+    B.tk.side = 'jin';
+    B.opts.auto = true;
+    B.speed = 2;
+    UI.p.settings.auto = true;
+    UI.p.settings.battleSpeed = 2;
+    window._tkBarkFight = UI.battle({ B, ic: '🤖', bio: 'ash', title: 'Железный Кулак · Джек', finish: (slot, b) => ({ result: b.over, tokens: 0 }) });
+  });
+  try {
+    await page.waitForSelector('#tkbark.on', { timeout: 12000 });
+    const bark = await ev(() => {
+      const el = document.getElementById('tkbark');
+      return el ? el.textContent.trim() : '';
+    });
+    check('реплика в бою не перекрывает кнопки и не пустая', /Первые уже в проёме|показывай выход/.test(bark) && await ev(() => {
+      const b = document.getElementById('tkbark'), act = document.getElementById('bact');
+      if (!b || !act) return false;
+      const rb = b.getBoundingClientRect(), ra = act.getBoundingClientRect();
+      return rb.bottom <= ra.top + 4;
+    }), bark);
+    await ev(() => {
+      const t = document.getElementById('toasts'); if (t) t.innerHTML = '';
+      const el = document.getElementById('tkbark'); if (el) el.classList.add('on');
+      const B = __RPG.UI.B; if (B) B.speed = 0.2;
+    });
+    await page.waitForTimeout(120);
+    await shot('22-tk-bark-wave');
+  } catch (e) {
+    check('реплика в бою появилась', false, String(e.message || e));
+  }
+  await ev(() => { const B = __RPG.UI.B; if (B) B.over = 'win'; });
+  await page.waitForTimeout(800);
+
   const realErr = errors.filter((e) => !/textContent/.test(e) && !/sSkip/.test(e));
+
   if (realErr.length) check('без ошибок страницы', false, realErr.slice(0, 3).join(' | '));
   else check('без ошибок страницы', true, errors.length ? 'игнор: ' + errors[0] : '');
   if (failed.length) console.log('  HTTP 4xx/5xx:', failed.slice(0, 5).join(' | '));

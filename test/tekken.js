@@ -335,7 +335,13 @@ t('в коллабе нет голой буквы «К» вместо героя
     (D.ROMANCE[id].scenes || []).forEach((sc, i) => walk('rom:' + id + '/' + i, sc.lines));
   });
   Object.keys(D.TK_MEETS || {}).forEach((id) => walk('meet:' + id, (D.TK_MEETS[id] || {}).lines));
-  Object.keys(D.TK_LOSS || {}).forEach((id) => walk('loss:' + id, D.TK_LOSS[id]));
+  Object.keys(D.TK_LOSS || {}).forEach((id) => {
+    const v = D.TK_LOSS[id];
+    if (Array.isArray(v)) walk('loss:' + id, v);
+    else Object.keys(v || {}).forEach((side) => walk('loss:' + id + '/' + side, v[side]));
+  });
+  (D.TK_BARKS || []).forEach((b, i) => walk('bark:' + i, [[b.who, b.t]]));
+
   assert.strictEqual(hits.length, 0, hits.slice(0, 8).join(' | '));
 });
 
@@ -653,6 +659,49 @@ t('облики Рейны: список, выбор сохраняется, с�
   assert.strictEqual(s.skins.tk_reina, 'top', 'сброс сюжета коллабы не должен затирать выбранный облик');
   assert.strictEqual(s.skinsUnlock.tk_reina, 1, 'сброс не должен затирать открытие обликов письмом/флагом');
   assert(!E.skinsOf('tk_nina').length);
+});
+
+
+t('реплики в боях коллабы и тексты поражения по маршрутам', () => {
+  assert((D.TK_BARKS || []).length >= 16);
+  const start = E.tkBarkList({ tk: { flags: {} } }, { tk: { chId: 'tk10_coliseum', side: 'jin', wave: 0, mark: 'story' } }, 'start');
+  assert.strictEqual(start.length, 2);
+  assert.strictEqual(start[0].who, 'lars');
+  assert(/Первые уже в проёме/.test(start[0].t));
+  const hit = E.tkBarkList({}, { tk: { chId: 'tk03_doors', side: 'jin', wave: 0 } }, 'hit1');
+  assert.strictEqual(hit.length, 2);
+  assert.strictEqual(hit[0].who, 'jin');
+  const mid = E.tkBarkList({}, { tk: { chId: 'tk13_island', side: 'kazuya', wave: 0 } }, 'mid');
+  assert.strictEqual(mid.length, 2);
+  const none = E.tkBarkList({}, { tk: { chId: 'tk03_doors', side: 'jin', wave: 0 } }, 'start');
+  assert.strictEqual(none.length, 0);
+  const s = mk();
+  s.tk.flags.tk_side = 'kazuya'; s.tk.flags.tk_kazuya = 1;
+  const lossK = E.tkLossLines(s, 'tk10_coliseum');
+  assert(lossK.some((l) => l[0] === 'vic'));
+  s.tk.flags = { tk_side: 'jin', tk_jin: 1 };
+  const lossJ = E.tkLossLines(s, 'tk10_coliseum');
+  assert(lossJ.some((l) => /первому пролёту/.test(l[1] || '')));
+  const loss13 = E.tkLossLines(s, 'tk13_island');
+  assert(loss13.some((l) => l[0] === 'ali'));
+});
+
+t('сцены сочетаний маршрутов в главе «Домой»', () => {
+  const s = mk();
+  s.crew.tk_reina = { lv: 10, loy: 80, eq: {}, t: 0, star: 0, skl: 0, bxp: 0 };
+  s.crew.tk_jin = { lv: 10, loy: 80, eq: {}, t: 0, star: 0, skl: 0, bxp: 0 };
+  s.tk.rec = ['tk_reina', 'tk_jin'];
+  s.tk.flags.tk_has_reina = 1; s.tk.flags.tk_has_jin = 1;
+  s.tk.blood = 1; s.tk.taken = 'tk_reina';
+  const lines = E.tkSceneLines(s, D.TK_SCENES.tk19_home);
+  const ifs = lines.filter((l) => l[0] === 'if').map((l) => l[1]);
+  assert(ifs.includes('tk_combo_rj'));
+  assert(ifs.includes('tk_combo_love_blood'));
+  assert.strictEqual(s.story.flags.tk_combo_rj, 1);
+  assert.strictEqual(s.story.flags.tk_combo_love_blood, 1);
+  const jinLine = lines.find((l) => l[0] === 'if' && l[1] === 'tk_combo_rj')[2][0];
+  assert.strictEqual(jinLine[0], 'jin');
+  assert(/отца с самого начала/.test(jinLine[1]));
 });
 
 console.log(`  ${pass} ✓, ${fail} ✗`); if (fail) process.exit(1);
