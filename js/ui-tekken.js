@@ -9,10 +9,9 @@
   const porSrc = (id) => {
     const s = UI.slot && UI.slot();
     if (id && String(id).indexOf('tk_reina') === 0) {
-      // полный рост — только если его явно запросили (карточка романа / просмотрщик)
+      if (s && s.tk && s.tk.blood && UI.hasTkArt('tk_reina_devil')) return 'tk_reina_devil';
+      // полный рост (jacket/top) только если его явно запросили — карточка романа
       if (id === 'tk_reina_jacket' || id === 'tk_reina_top') return id;
-      // мелкие портреты и карточка Свиты: пакетный бюст (не старый квадратный AI-портрет)
-      if (UI.hasTkArt('tk_reina_top_bust')) return 'tk_reina_top_bust';
       return UI.hasTkArt('tk_reina') ? 'tk_reina' : id;
     }
     return id;

@@ -1,4 +1,4 @@
-/* E2E v2.31.6 коллаба «Железный Кулак»: канонический сценарий, 4 пути, рамка диалога.
+/* E2E v2.31.7 коллаба «Железный Кулак»: канонический сценарий, 4 пути, рамка диалога.
    Скриншоты — /workspace/shots-tekken/v2316/  (444×986) */
 const { chromium } = require('playwright-core');
 const fs = require('fs'), path = require('path');
@@ -107,10 +107,10 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   });
   await page.waitForTimeout(400);
 
-  check('версия 2.31.6', await ev(() => __RPG.VERSION === '2.31.6' || (__RPG.RPG && __RPG.RPG.VERSION === '2.31.6') || document.querySelector('script') && true) && await ev(() => (__RPG.VERSION || __RPG.RPG?.VERSION) ? (__RPG.VERSION || __RPG.RPG.VERSION) === '2.31.6' : !!__RPG.D.TK_CH && __RPG.D.TK_CH.length === 19), await ev(() => __RPG.VERSION || (window.RPG && RPG.VERSION)));
+  check('версия 2.31.7', await ev(() => __RPG.VERSION === '2.31.7' || (__RPG.RPG && __RPG.RPG.VERSION === '2.31.7') || document.querySelector('script') && true) && await ev(() => (__RPG.VERSION || __RPG.RPG?.VERSION) ? (__RPG.VERSION || __RPG.RPG.VERSION) === '2.31.7' : !!__RPG.D.TK_CH && __RPG.D.TK_CH.length === 19), await ev(() => __RPG.VERSION || (window.RPG && RPG.VERSION)));
   // VERSION lives on RPG
   const ver = await ev(() => (window.RPG && RPG.VERSION) || __RPG.VERSION || '');
-  check('RPG.VERSION 2.31.6', ver === '2.31.6', ver);
+  check('RPG.VERSION 2.31.7', ver === '2.31.7', ver);
   check('19 глав канона', await ev(() => (__RPG.D.TK_CH || []).length === 19 && __RPG.D.TK_CH[0].id === 'tk01_rift' && __RPG.D.TK_CH[18].id === 'tk19_home'));
   check('событие активно', await ev(() => __RPG.E.tkActive()));
   check('баннер в Лагере', await page.locator('.tkbanner').count() > 0);
@@ -392,9 +392,10 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
     const im = document.querySelector('.crewm img.por');
     return im ? (im.getAttribute('src') || '') : '';
   });
-  check('в Свите бюст Рейны, не дьявольский AI-портрет', /tk_reina_top_bust\.webp/.test(crewPor), crewPor);
+  check('в Свите после крови — демонический портрет Рейны', /tk_reina_devil\.webp/.test(crewPor), crewPor);
   await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
   await shot('09-reina-crew-card');
+  await shot('13-reina-crew-devil');
   await click('[data-act="skinView"]');
   await page.waitForSelector('.skinv-im', { timeout: 8000 });
   const v1 = await ev(() => {
