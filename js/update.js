@@ -2,7 +2,7 @@
    Сохранения живут в localStorage/IndexedDB — их не трогаем; чистим только Cache Storage (файлы игры). */
 (function () {
   const RPG = globalThis.RPG, UI = RPG.UI;
-  RPG.VERSION = '2.32.0';  // романтика Рейны: большой маршрут, отдельно от преданности; облики по этапам
+  RPG.VERSION = '2.32.1';  // письмо: откат развилки романтики Рейны (новый тип подарка romanceRollback)
   const U = RPG.UPD = { latest: null, status: '', busy: false };
   const cmp = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); } return 0; };
   U.cmp = cmp;

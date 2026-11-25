@@ -24,7 +24,8 @@
     resetStory: 'перезапуск побочного сюжета: сейчас только «tekken» (коллаба «Железный Кулак»). Главы, исход и союзники коллабы сбрасываются; уровень, золото, предметы и артефакты остаются',
     achievements: 'скрытое достижение по id (например lone_wolf — «Одинокий Волк»); строка или массив. Только почтовые достижения, в списке не видны, пока не получены',
     titles: 'титул по id (например lone_wolf — «Одинокий Волк»); строка или массив. Открывается и сразу надевается',
-    unlockSkins: 'открыть заблокированный облик: «tk_reina» (все её закрытые), «tk_reina:armor» или «tk_reina:wedding»; строка или массив'
+    unlockSkins: 'открыть заблокированный облик: «tk_reina» (все её закрытые), «tk_reina:armor» или «tk_reina:wedding»; строка или массив',
+    romanceRollback: 'откатить романтический маршрут к сцене: { id: «tk_reina», toScene: название или номер сцены }. Прогресс до этой сцены и уже открытые облики сохраняются; флаги и отметки этой сцены и более поздних снимаются'
   };
   const MAXN = 10000000;
   const isInt = (n) => typeof n === 'number' && Number.isInteger(n) && n > 0 && n <= MAXN;
@@ -69,6 +70,7 @@
         else if (k === 'titles' || k === 'title') { (Array.isArray(v) ? v : [v]).forEach((id) => { out.titles = out.titles || []; if (!out.titles.includes(id)) out.titles.push(id); }); }
         else if (k === 'resetStory') out.resetStory = v;
         else if (k === 'unlockSkins' || k === 'unlockSkin') { (Array.isArray(v) ? v : [v]).forEach((id) => { out.unlockSkins = out.unlockSkins || []; const s = typeof id === 'string' ? id : (id && id.id ? (id.skin ? id.id + ':' + id.skin : id.id) : ''); if (s && !out.unlockSkins.includes(s)) out.unlockSkins.push(s); }); }
+        else if (k === 'romanceRollback') { (Array.isArray(v) ? v : [v]).forEach((it) => { if (!it || typeof it !== 'object' || !it.id) return; out.romanceRollback = out.romanceRollback || []; const row = { id: String(it.id), toScene: it.toScene }; if (Array.isArray(it.clearFlags)) row.clearFlags = it.clearFlags.slice(); if (!out.romanceRollback.some((x) => x.id === row.id && String(x.toScene) === String(row.toScene))) out.romanceRollback.push(row); }); }
         else if (v && typeof v === 'object') { out[k] = out[k] || {}; for (const id in v) out[k][id] = (out[k][id] || 0) + v[id]; }
         else out[k] = v;   // неизвестное — пусть валидатор скажет
       }
@@ -112,6 +114,14 @@
           else if (skin && !list.some((x) => x.id === skin)) err.push(`unlockSkins: нет облика «${skin}» у ${id}`);
         });
       }
+      else if (k === 'romanceRollback') {
+        if (v.length > 5) err.push('romanceRollback: не больше 5');
+        v.forEach((it, i) => {
+          if (!it || typeof it !== 'object' || !it.id) { err.push(`romanceRollback[${i}]: нужен объект { id, toScene }`); return; }
+          if (!D.ROMANCE || !D.ROMANCE[it.id]) err.push(`romanceRollback: неизвестный маршрут «${it.id}»`);
+          else if (E.romSceneIndex && E.romSceneIndex(it.id, it.toScene) < 0) err.push(`romanceRollback: нет сцены «${it.toScene}» у ${it.id}`);
+        });
+      }
       else err.push(`неизвестный тип подарка «${k}» (можно: ${Object.keys(M.GIFT_TYPES).join(', ')})`);
     }
     return err;
@@ -142,6 +152,13 @@
         const sk = list.find((x) => x.id === skin);
         out.push({ ic: '👗', n: 'Облик «' + ((sk && sk.n) || skin) + '»', q: 1 });
       } else out.push({ ic: '👗', n: 'Облики ' + who, q: 1 });
+    });
+    (g.romanceRollback || []).forEach((it) => {
+      const R = D.ROMANCE && D.ROMANCE[it.id];
+      const who = (R && D.CREW && D.CREW[it.id] && D.CREW[it.id].n) || (it.id === 'tk_reina' ? 'Рейны' : it.id);
+      const sc = R && R.scenes && E.romSceneIndex ? R.scenes[E.romSceneIndex(it.id, it.toScene)] : null;
+      const nm = (sc && (sc.t || sc.sub)) || String(it.toScene || '');
+      out.push({ ic: '✉️', n: 'Ещё один разговор' + (nm ? ' («' + nm + '»)' : '') + (who ? ' · ' + who : ''), q: 1 });
     });
     return out;
   };
@@ -193,6 +210,11 @@
       const w = E.unlockSkin && E.unlockSkin(slot, id, skin);
       if (w === '') (got.unlockSkins = got.unlockSkins || []).push(spec);
       else (got.refused = got.refused || []).push({ id: spec, n: String(spec), why: w || 'обновите игру до 2.31.8' });
+    });
+    (g.romanceRollback || []).forEach((it) => {
+      const w = E.romRollback && E.romRollback(slot, it);
+      if (w === '') (got.romanceRollback = got.romanceRollback || []).push(it.id + ':' + it.toScene);
+      else (got.refused = got.refused || []).push({ id: it.id, n: 'Откат романтики', why: w || 'обновите игру до 2.32.1' });
     });
     slot.rev = (slot.rev || 0) + 1;
     return got;

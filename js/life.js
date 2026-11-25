@@ -133,7 +133,8 @@
     { id: 'arena', n: 'Чемпион арены', ok: (s) => ((s.arena && s.arena.best) | 0) >= 1450 },
     { id: 'angler', n: 'Морской волк', ok: (s) => ((s.life && s.life.fish && s.life.fish.rare) | 0) >= 10 },
     { id: 'farmer', n: 'Добрый хозяин', ok: (s) => E.houseLv(s) >= 6 },
-    { id: 'lone_wolf', n: 'Одинокий Волк', d: 'Тот, кто идёт своим путём.', ok: (s) => !!(s.life && (s.life.titles || []).includes('lone_wolf')) }];
+    { id: 'lone_wolf', n: 'Одинокий Волк', d: 'Тот, кто идёт своим путём.', ok: (s) => !!(s.life && (s.life.titles || []).includes('lone_wolf')) },
+    { id: 'romance_wrecker', n: 'Разрушитель Романтики', d: 'За фразу, после которой пришлось писать письмо. Снимается без суда.', autoEquip: false, ok: (s) => !!(s.life && (s.life.titles || []).includes('romance_wrecker')) }];
   D.FRAMES = [
     { id: 'rar', n: 'По редкости снаряжения', c: null, ok: () => true },
     { id: 'gold', n: 'Золотая', c: '#ffd36b', ok: (s) => achN(s) >= 10 },
@@ -146,7 +147,8 @@
   E.grantTitle = function (s, id, equip) {
     const t = D.TITLES.find((x) => x.id === id); if (!t) return 'Нет такого титула';
     const l = E.lifeEnsure(s); if (!l.titles.includes(id)) l.titles.push(id);
-    if (equip !== false) l.cos.title = id;
+    const wear = equip != null ? !!equip : t.autoEquip !== false;
+    if (wear) l.cos.title = id;
     s.rev = (s.rev || 0) + 1; return '';
   };
   E.setTitle = function (s, id) { const t = D.TITLES.find((x) => x.id === id); if (!t || !t.ok(s)) return 'Титул ещё не открыт'; E.lifeEnsure(s).cos.title = id; s.rev++; return ''; };

@@ -38,14 +38,21 @@ t('giftErrors: все типы подарков проверяются по да
   assert(M.giftErrors({ gear: [{ base: 'sword', rarity: 9 }] }).length === 1);
   assert(M.giftErrors({ cons: { pot_hp1: 1.5 } }).length === 1);
   assert(M.giftErrors({ gold: '100' }).length === 1);
-  Object.keys(M.GIFT_TYPES).forEach((k) => assert(['gold', 'xp', 'sp', 'cons', 'mats', 'presents', 'gear', 'unique', 'artifacts', 'pets', 'allies', 'goals', 'challenge', 'resetStory', 'achievements', 'titles', 'unlockSkins'].includes(k)));
+  Object.keys(M.GIFT_TYPES).forEach((k) => assert(['gold', 'xp', 'sp', 'cons', 'mats', 'presents', 'gear', 'unique', 'artifacts', 'pets', 'allies', 'goals', 'challenge', 'resetStory', 'achievements', 'titles', 'unlockSkins', 'romanceRollback'].includes(k)));
   assert.deepStrictEqual(M.giftErrors({ resetStory: 'tekken', achievements: ['lone_wolf'], titles: ['lone_wolf'] }), []);
   assert(M.giftErrors({ resetStory: 'main' }).length === 1);
   assert(M.giftErrors({ achievements: ['kills_0'] }).length === 1);
   assert(M.giftErrors({ titles: ['nope'] }).length === 1);
   assert.deepStrictEqual(M.giftErrors({ unlockSkins: ['tk_reina', 'tk_reina:armor', 'tk_reina:wedding'] }), []);
   assert(M.giftErrors({ unlockSkins: ['tk_reina:nope'] }).length === 1);
+  assert.deepStrictEqual(M.giftErrors({ romanceRollback: { id: 'tk_reina', toScene: 'То, что не отдать' }, titles: ['romance_wrecker'] }), []);
+  assert.deepStrictEqual(M.giftErrors({ romanceRollback: { id: 'tk_reina', toScene: 7 } }), []);
+  assert(M.giftErrors({ romanceRollback: { id: 'tk_nope', toScene: 0 } }).length === 1);
+  assert(M.giftErrors({ romanceRollback: { id: 'tk_reina', toScene: 'нет такой' } }).length === 1);
+  const gl = M.giftList({ romanceRollback: { id: 'tk_reina', toScene: 'То, что не отдать' } });
+  assert(gl.some((x) => /То, что не отдать/.test(x.n)));
 });
+
 
 console.log('Почта: доставка и подарки');
 t('deliver: повторная загрузка ленты не дублирует письма', () => {
@@ -224,6 +231,71 @@ t('письмо может перезапустить сюжет коллабы 
   assert(gl.some((x) => /Перезапуск/.test(x.n)));
   assert(gl.some((x) => /Одинокий Волк/.test(x.n) && x.ic === '🐺'));
   assert(gl.some((x) => /Титул/.test(x.n)));
+});
+
+t('romanceRollback: откат к развилке Рейны, повтор письма не трогает прогресс, облики до сцены остаются', () => {
+  const s = mk(); s.pcode = 'NM-BXAN8Y'; s.hero.level = 28;
+  s.crew.tk_reina = { lv: 12, loy: 90, eq: {}, t: 0, star: 0, skl: 0, bxp: 0 };
+  s.rom.tk_reina = { aff: 60, seen: [0, 1, 2, 3, 4, 5, 6, 7, 8], dates: 4, gifts: 1 };
+  s.skins = { tk_reina: 'catsuit' };
+  s.tk.ending = 'jin'; s.tk.blood = 1; s.tk.story = ['tk16_outcome', 'tk19_home'];
+  s.tk.flags = { tk_reina: 1, tk_reina_join: 1, tk_blood: 1 };
+  s.story.flags = Object.assign(s.story.flags || {}, { rei_rom_bad: 1, tk_blood: 1 });
+  E.lifeEnsure(s); E.grantTitle(s, 'lone_wolf');
+  assert.strictEqual(s.life.cos.title, 'lone_wolf');
+  E.tkEnsure(s);
+  assert(E.tkRomanceOpen(s));
+  assert(!E.tkRomGate(s, 'tk_reina', 9));
+  assert(!E.skinLocked(s, 'tk_reina', 'catsuit'));
+  assert(!E.skinLocked(s, 'tk_reina', 'armor'));
+  const raw = fs.readFileSync(path.join(__dirname, '../mail/inbox.json'), 'utf8');
+  const feed = M.parseFeed(raw);
+  assert.deepStrictEqual(feed.errors, []);
+  const Ltr = feed.letters.find((x) => x.id === 'reina-door-open-NM-BXAN8Y-20261126');
+  assert(Ltr, 'в ленте есть адресное письмо');
+  assert.strictEqual(Ltr.title, 'Дверь не закрыта');
+  assert.strictEqual(Ltr.from, 'Рейна');
+  assert.deepStrictEqual(Ltr.to, ['NM-BXAN8Y']);
+  const other = mk(); other.pcode = 'NM-AAAAAA';
+  assert.strictEqual(M.deliver(other, [Ltr], Date.parse('2026-11-26T12:00:00Z')), 0, 'чужому коду письмо не приходит');
+  const now = Date.parse('2026-11-26T12:00:00Z');
+  assert.strictEqual(M.deliver(s, [Ltr], now), 1);
+  const r = M.claim(s, Ltr.id, now); assert(r.ok, r.err);
+  assert((s.life.titles || []).includes('romance_wrecker'));
+  assert(E.titlesOf(s).some((x) => x.id === 'romance_wrecker' && x.n === 'Разрушитель Романтики'));
+  assert.strictEqual(s.life.cos.title, 'lone_wolf', 'титул из письма не надевается сам');
+  assert.strictEqual(E.titleName(s), 'Одинокий Волк');
+  assert.strictEqual(E.setTitle(s, 'romance_wrecker'), '');
+  assert.strictEqual(E.titleName(s), 'Разрушитель Романтики');
+  assert.strictEqual(E.setTitle(s, 'king'), '');
+  assert.strictEqual(E.titleName(s), 'Король Демонов');
+  assert((s.life.titles || []).includes('romance_wrecker'), 'после снятия титул остаётся в списке');
+  assert.strictEqual(E.setTitle(s, 'lone_wolf'), '');
+  assert.deepStrictEqual(s.rom.tk_reina.seen, [0, 1, 2, 3, 4, 5, 6]);
+  assert.strictEqual(s.story.flags.rei_rom_bad, undefined);
+  assert.strictEqual(s.story.flags.rei_rom_love, undefined);
+  assert.strictEqual(s.tk.blood, 1, 'кровь и сюжет коллабы не тронуты');
+  assert.strictEqual(s.tk.ending, 'jin');
+  assert(!E.skinLocked(s, 'tk_reina', 'catsuit') && !E.skinLocked(s, 'tk_reina', 'armor'));
+  assert(E.skinLocked(s, 'tk_reina', 'wedding'));
+  assert.strictEqual(s.skins.tk_reina, 'catsuit');
+  assert.strictEqual(E.romScenePending(s, 'tk_reina'), 7);
+  assert(E.tkRomGate(s, 'tk_reina', 7));
+  assert.strictEqual(s.rom.tk_reina.aff >= E.romSceneAt('tk_reina', 7), true);
+  const affAfter = s.rom.tk_reina.aff, loyAfter = s.crew.tk_reina.loy;
+  const r2 = M.claim(s, Ltr.id, now); assert(!r2.ok);
+  assert.deepStrictEqual(s.rom.tk_reina.seen, [0, 1, 2, 3, 4, 5, 6]);
+  assert.strictEqual(s.rom.tk_reina.aff, affAfter);
+  assert.strictEqual(s.crew.tk_reina.loy, loyAfter);
+  // повтор apply тоже идемпотентен
+  assert.strictEqual(E.romRollback(s, { id: 'tk_reina', toScene: 'То, что не отдать' }), '');
+  assert.strictEqual(s.rom.tk_reina.aff, affAfter);
+  // любовный выбор открывает сцены 10–12 (индексы 9–11)
+  s.story.flags.rei_rom_love = 1; s.story.flags.rei_rom_ok = 1;
+  s.rom.tk_reina.seen = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  s.rom.tk_reina.aff = 80;
+  assert(E.tkRomGate(s, 'tk_reina', 9) && E.tkRomGate(s, 'tk_reina', 10) && E.tkRomGate(s, 'tk_reina', 11));
+  assert.strictEqual(E.romScenePending(s, 'tk_reina'), 9);
 });
 
 console.log(`\nПочта: ${pass} ✓, ${fail} ✗`);

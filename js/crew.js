@@ -41,7 +41,87 @@
     }
     return -1;
   };
+  E.romSceneIndex = function (id, toScene) {
+    const R = D.ROMANCE && D.ROMANCE[id];
+    if (!R || !R.scenes) return -1;
+    if (typeof toScene === 'number' && Number.isInteger(toScene) && toScene >= 0) return toScene < R.scenes.length ? toScene : -1;
+    const key = String(toScene == null ? '' : toScene).trim();
+    if (!key) return -1;
+    if (/^\d+$/.test(key)) { const n = +key; return n < R.scenes.length ? n : -1; }
+    const i = R.scenes.findIndex((sc) => sc && (sc.id === key || sc.t === key || sc.sub === key));
+    return i;
+  };
+  E.romFlagsInScenes = function (id, fromIdx) {
+    const flags = [];
+    const add = (k) => { if (k && flags.indexOf(k) < 0) flags.push(k); };
+    const walk = (arr) => {
+      (arr || []).forEach((l) => {
+        if (!l) return;
+        if (l[0] === 'if') walk(l[2]);
+        if (l[0] === 'choice') (l[1] || []).forEach((op) => {
+          if (op && op.f && typeof op.f === 'object') Object.keys(op.f).forEach(add);
+          if (op && op.r) walk(op.r);
+        });
+        if (l[0] === 'set' && l[1] && typeof l[1] === 'object') Object.keys(l[1]).forEach(add);
+      });
+    };
+    const R = D.ROMANCE && D.ROMANCE[id];
+    (R && R.scenes || []).slice(fromIdx).forEach((sc) => sc && walk(sc.lines));
+    return flags;
+  };
+  E.romChoiceAffInScenes = function (s, id, fromIdx) {
+    const flags = (s && s.story && s.story.flags) || {};
+    let n = 0;
+    const walk = (arr) => {
+      (arr || []).forEach((l) => {
+        if (!l) return;
+        if (l[0] === 'if') walk(l[2]);
+        if (l[0] === 'aff' && l[1] && l[1][id]) n += l[1][id] | 0;
+        if (l[0] === 'choice') (l[1] || []).forEach((op) => {
+          const hit = op && op.f && Object.keys(op.f).some((k) => flags[k]);
+          if (hit && op.r) walk(op.r);
+        });
+      });
+    };
+    const R = D.ROMANCE && D.ROMANCE[id];
+    (R && R.scenes || []).slice(fromIdx).forEach((sc) => sc && walk(sc.lines));
+    return n;
+  };
+  // Откатить роман к сцене toScene (включительно): снять отметки с этой и более поздних сцен,
+  // сбросить флаги их выборов, вернуть бонусы симпатии/верности этих сцен. Ранее пройденное и облики не трогает.
+  E.romRollback = function (s, spec) {
+    if (!s || !spec || typeof spec !== 'object') return 'Нет данных';
+    const id = spec.id, toScene = spec.toScene;
+    if (!id || !D.ROMANCE || !D.ROMANCE[id]) return 'Нет такого маршрута';
+    const idx = E.romSceneIndex(id, toScene);
+    if (idx < 0) return 'Нет такой сцены';
+    s.rom = s.rom || {};
+    const r = s.rom[id] = s.rom[id] || { aff: 0, seen: [], dates: 0, gifts: 0 };
+    const seen = Array.isArray(r.seen) ? r.seen.slice() : [];
+    const removed = seen.filter((i) => (i | 0) >= idx);
+    const choiceAff = removed.length ? E.romChoiceAffInScenes(s, id, idx) : 0;
+    const flags = Array.isArray(spec.clearFlags) && spec.clearFlags.length ? spec.clearFlags : E.romFlagsInScenes(id, idx);
+    const buckets = [];
+    if (s.story && s.story.flags) buckets.push(s.story.flags);
+    if (s.tk && s.tk.flags) buckets.push(s.tk.flags);
+    flags.forEach((f) => { buckets.forEach((b) => { if (b && Object.prototype.hasOwnProperty.call(b, f)) delete b[f]; }); });
+    r.seen = seen.filter((i) => (i | 0) < idx);
+    if (removed.length) {
+      const clamp = E.clamp;
+      r.aff = clamp((r.aff | 0) - 2 * removed.length - (choiceAff | 0), 0, 100);
+      if (s.crew && s.crew[id]) s.crew[id].loy = clamp((s.crew[id].loy | 0) - 5 * removed.length, 0, 100);
+    }
+    const need = E.romSceneAt ? E.romSceneAt(id, idx) : 0;
+    if ((r.aff | 0) < need) r.aff = need;
+    if (E.skinId && s.skins && s.skins[id] && E.skinLocked(s, id, s.skins[id])) {
+      const open = E.skinId(s, id);
+      if (open) s.skins[id] = open;
+    }
+    s.rev = (s.rev || 0) + 1;
+    return '';
+  };
   E.bondMods = function (slot, mods) {
+
     if (!D.ROMANCE) return;
     for (const id in slot.rom) { const R = D.ROMANCE[id], st = E.romStage(slot.rom[id]); if (R && R.bond && st) for (const k in R.bond) mods[k] = (mods[k] || 0) + R.bond[k] * st; }
   };
