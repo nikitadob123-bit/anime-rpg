@@ -583,25 +583,51 @@ t('письмо сбрасывает коллабу и выдаёт «Одино
 
 t('облики Рейны: список, выбор сохраняется, сброс сюжета его не трогает', () => {
   const list = (D.TK_SKINS && D.TK_SKINS.tk_reina) || [];
-  assert.strictEqual(list.length, 2);
+  assert.strictEqual(list.length, 4);
   assert.strictEqual(list[0].id, 'jacket');
   assert.strictEqual(list[0].n, 'Обычный');
   assert.strictEqual(list[0].img, 'tk_reina_jacket');
   assert.strictEqual(list[1].id, 'top');
   assert.strictEqual(list[1].n, 'Без бомбера');
   assert.strictEqual(list[1].img, 'tk_reina_top');
+  assert.strictEqual(list[2].id, 'armor');
+  assert.strictEqual(list[2].n, 'Демоническая броня');
+  assert.strictEqual(list[2].lock, 1);
+  assert.strictEqual(list[3].id, 'wedding');
+  assert.strictEqual(list[3].n, 'Свадебное платье');
+  assert.strictEqual(list[3].lock, 1);
   const s = mk();
   assert.strictEqual(E.skinId(s, 'tk_reina'), 'jacket');
   assert.strictEqual(E.skinOf(s, 'tk_reina').img, 'tk_reina_jacket');
   assert(E.skinSrc(E.skinOf(s, 'tk_reina')).indexOf('tk_reina_jacket.webp') >= 0);
+  assert(E.skinLocked(s, 'tk_reina', 'armor') && E.skinLocked(s, 'tk_reina', 'wedding'));
+  assert(!E.skinLocked(s, 'tk_reina', 'jacket'));
+  assert.strictEqual(E.setSkin(s, 'tk_reina', 'armor'), 'Облик ещё закрыт');
+  assert.strictEqual(s.skins.tk_reina, undefined);
   assert.strictEqual(E.setSkin(s, 'tk_reina', 'top'), '');
   assert.strictEqual(s.skins.tk_reina, 'top');
   assert.strictEqual(E.skinId(s, 'tk_reina'), 'top');
   assert.strictEqual(E.setSkin(s, 'tk_reina', 'nope'), 'Нет такого облика');
   assert.strictEqual(s.skins.tk_reina, 'top');
+  s.skins.tk_reina = 'armor'; // подмена сейва не должна показывать закрытый облик
+  assert.strictEqual(E.skinId(s, 'tk_reina'), 'jacket');
+  assert.strictEqual(E.unlockSkin(s, 'tk_reina', 'armor'), '');
+  assert(!E.skinLocked(s, 'tk_reina', 'armor') && E.skinLocked(s, 'tk_reina', 'wedding'));
+  assert.strictEqual(E.setSkin(s, 'tk_reina', 'armor'), '');
+  assert.strictEqual(E.skinOf(s, 'tk_reina').img, 'tk_reina_skin_armor');
+  assert.strictEqual(E.unlockSkin(s, 'tk_reina'), '');
+  assert(!E.skinLocked(s, 'tk_reina', 'wedding'));
+  const s2 = mk(); const M = globalThis.RPG.M;
+  const feed = M.parseFeed({ letters: [{ id: 'skin-unlock-test', from: 'Администрация', title: 'Облик', date: '2026-11-25', gifts: { unlockSkins: ['tk_reina:wedding'] } }] });
+  assert.deepStrictEqual(feed.errors, []);
+  M.deliver(s2, feed.letters, NOW);
+  assert(M.claim(s2, 'skin-unlock-test', NOW).ok);
+  assert(!E.skinLocked(s2, 'tk_reina', 'wedding') && E.skinLocked(s2, 'tk_reina', 'armor'));
+  s.skins.tk_reina = 'top';
   playThrough(s, 'tk16_outcome');
   assert.strictEqual(E.tkResetStory(s), '');
   assert.strictEqual(s.skins.tk_reina, 'top', 'сброс сюжета коллабы не должен затирать выбранный облик');
+  assert.strictEqual(s.skinsUnlock.tk_reina, 1, 'сброс не должен затирать открытие обликов');
   assert(!E.skinsOf('tk_nina').length);
 });
 

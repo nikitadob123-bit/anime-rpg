@@ -1,9 +1,9 @@
-/* E2E v2.31.7 коллаба «Железный Кулак»: канонический сценарий, 4 пути, рамка диалога.
-   Скриншоты — /workspace/shots-tekken/v2316/  (444×986) */
+/* E2E v2.31.8 коллаба «Железный Кулак»: канонический сценарий, 4 пути, рамка диалога.
+   Скриншоты — /workspace/shots-tekken/v2318/  (444×986) */
 const { chromium } = require('playwright-core');
 const fs = require('fs'), path = require('path');
 const { serve } = require('./serve.js');
-const outDir = process.env.TK_SHOTS || '/workspace/shots-tekken/v2316';
+const outDir = process.env.TK_SHOTS || '/workspace/shots-tekken/v2318';
 fs.mkdirSync(outDir, { recursive: true });
 let ok = 0, bad = 0;
 const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra || ''); } else { bad++; console.log('  ✗', n, extra || ''); } };
@@ -107,10 +107,10 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   });
   await page.waitForTimeout(400);
 
-  check('версия 2.31.7', await ev(() => __RPG.VERSION === '2.31.7' || (__RPG.RPG && __RPG.RPG.VERSION === '2.31.7') || document.querySelector('script') && true) && await ev(() => (__RPG.VERSION || __RPG.RPG?.VERSION) ? (__RPG.VERSION || __RPG.RPG.VERSION) === '2.31.7' : !!__RPG.D.TK_CH && __RPG.D.TK_CH.length === 19), await ev(() => __RPG.VERSION || (window.RPG && RPG.VERSION)));
+  check('версия 2.31.8', await ev(() => __RPG.VERSION === '2.31.8' || (__RPG.RPG && __RPG.RPG.VERSION === '2.31.8') || document.querySelector('script') && true) && await ev(() => (__RPG.VERSION || __RPG.RPG?.VERSION) ? (__RPG.VERSION || __RPG.RPG.VERSION) === '2.31.8' : !!__RPG.D.TK_CH && __RPG.D.TK_CH.length === 19), await ev(() => __RPG.VERSION || (window.RPG && RPG.VERSION)));
   // VERSION lives on RPG
   const ver = await ev(() => (window.RPG && RPG.VERSION) || __RPG.VERSION || '');
-  check('RPG.VERSION 2.31.7', ver === '2.31.7', ver);
+  check('RPG.VERSION 2.31.8', ver === '2.31.8', ver);
   check('19 глав канона', await ev(() => (__RPG.D.TK_CH || []).length === 19 && __RPG.D.TK_CH[0].id === 'tk01_rift' && __RPG.D.TK_CH[18].id === 'tk19_home'));
   check('событие активно', await ev(() => __RPG.E.tkActive()));
   check('баннер в Лагере', await page.locator('.tkbanner').count() > 0);
@@ -400,10 +400,14 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   await page.waitForSelector('.skinv-im', { timeout: 8000 });
   const v1 = await ev(() => {
     const im = document.querySelector('.skinv-im');
+    const html = (document.querySelector('.mbox.skinbox') || document.querySelector('#modal') || document.body).innerHTML;
     const on = ((document.querySelector('.skintab.on') || {}).textContent || '').trim();
-    return { src: im && im.getAttribute('src'), on, tabs: [...document.querySelectorAll('.skintab')].map((e) => e.textContent.trim()) };
+    const tabs = [...document.querySelectorAll('.skintab')].map((e) => ({ t: e.textContent.trim(), lock: e.classList.contains('lock'), dis: e.disabled }));
+    return { src: im && im.getAttribute('src'), on, tabs, leak: /tk_reina_skin_(armor|wedding)/.test(html) };
   });
-  check('просмотрщик: обычный облик (бомбер)', v1 && /tk_reina_jacket\.webp/.test(v1.src) && v1.on === 'Обычный', JSON.stringify(v1));
+  check('просмотрщик: 4 вкладки, два облика закрыты и без картинки', v1 && v1.tabs.length === 4 && v1.tabs[2].lock && v1.tabs[3].lock && /🔒/.test(v1.tabs[2].t) && /🔒/.test(v1.tabs[3].t) && /Демоническая броня/.test(v1.tabs[2].t) && /Свадебное платье/.test(v1.tabs[3].t) && /tk_reina_jacket\.webp/.test(v1.src) && v1.on === 'Обычный' && !v1.leak && !/skin_armor|skin_wedding/.test(v1.src || ''), JSON.stringify(v1));
+  await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
+  await shot('14-reina-skins-locked');
   await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
   await shot('10-reina-skin-jacket');
   await click('[data-act="skinPick"][data-skin="top"]');
@@ -433,6 +437,37 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   check('кнопка и выбранный облик на карточке романа', heart && heart.btn && /tk_reina_top\.webp/.test(heart.src || ''), JSON.stringify(heart));
   await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
   await shot('12-reina-hearts-skin');
+
+  // после проверки замка — открыть облики только в тесте и снять кадры искусства
+  await ev(() => {
+    const RPG = __RPG, E = RPG.E, UI = RPG.UI, s = UI.slot();
+    E.unlockSkin(s, 'tk_reina');
+    UI.save(true);
+    UI.sub.skinId = 'tk_reina';
+    UI.skinModal();
+  });
+  await page.waitForSelector('.skinv-im', { timeout: 8000 });
+  await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
+  await click('[data-act="skinPick"][data-skin="armor"]');
+  await page.waitForTimeout(200);
+  const vArm = await ev(() => {
+    const im = document.querySelector('.skinv-im');
+    const on = ((document.querySelector('.skintab.on') || {}).textContent || '').trim();
+    return { src: im && im.getAttribute('src'), on };
+  });
+  check('после открытия: демоническая броня', vArm && /tk_reina_skin_armor\.webp/.test(vArm.src) && vArm.on === 'Демоническая броня', JSON.stringify(vArm));
+  await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
+  await shot('15-reina-skin-armor');
+  await click('[data-act="skinPick"][data-skin="wedding"]');
+  await page.waitForTimeout(200);
+  const vWed = await ev(() => {
+    const im = document.querySelector('.skinv-im');
+    const on = ((document.querySelector('.skintab.on') || {}).textContent || '').trim();
+    return { src: im && im.getAttribute('src'), on };
+  });
+  check('после открытия: свадебное платье', vWed && /tk_reina_skin_wedding\.webp/.test(vWed.src) && vWed.on === 'Свадебное платье', JSON.stringify(vWed));
+  await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
+  await shot('16-reina-skin-wedding');
 
   const realErr = errors.filter((e) => !/textContent/.test(e) && !/sSkip/.test(e));
   if (realErr.length) check('без ошибок страницы', false, realErr.slice(0, 3).join(' | '));

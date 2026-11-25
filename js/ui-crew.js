@@ -84,10 +84,11 @@
     UI.save(true); UI.skinModal();
   };
   UI.act.skinStep = (el) => {
-    const id = el.dataset.id, list = E.skinsOf(id); if (list.length < 2) return;
-    let i = list.findIndex((x) => x.id === E.skinId(UI.slot(), id));
+    const s = UI.slot(), id = el.dataset.id, list = E.skinsOf(id).filter((x) => !E.skinLocked(s, id, x));
+    if (list.length < 2) return;
+    let i = list.findIndex((x) => x.id === E.skinId(s, id));
     i = (i + (+el.dataset.dir || 1) + list.length) % list.length;
-    E.setSkin(UI.slot(), id, list[i].id); UI.save(true); UI.skinModal();
+    E.setSkin(s, id, list[i].id); UI.save(true); UI.skinModal();
   };
   UI.act.skinBack = (el) => {
     const id = el.dataset.id || UI.sub.skinId;
@@ -97,8 +98,13 @@
   UI.skinModal = function () {
     const s = UI.slot(), id = UI.sub.skinId, c = D.CREW[id], list = E.skinsOf(id), cur = E.skinOf(s, id);
     if (!c || !cur) return;
-    const tabs = list.map((x) => `<button class="skintab${x.id === cur.id ? ' on' : ''}" data-act="skinPick" data-id="${id}" data-skin="${x.id}" data-quiet="1">${esc(x.n)}</button>`).join('');
-    const arr = list.length > 1
+    const tabs = list.map((x) => {
+      const locked = E.skinLocked(s, id, x);
+      if (locked) return `<button type="button" class="skintab lock" disabled data-quiet="1">🔒 ${esc(x.n)}</button>`;
+      return `<button class="skintab${x.id === cur.id ? ' on' : ''}" data-act="skinPick" data-id="${id}" data-skin="${x.id}" data-quiet="1">${esc(x.n)}</button>`;
+    }).join('');
+    const openN = list.filter((x) => !E.skinLocked(s, id, x)).length;
+    const arr = openN > 1
       ? `<button class="skinarr left" data-act="skinStep" data-id="${id}" data-dir="-1" data-quiet="1" aria-label="Предыдущий облик">‹</button><button class="skinarr right" data-act="skinStep" data-id="${id}" data-dir="1" data-quiet="1" aria-label="Следующий облик">›</button>`
       : '';
     UI.modal(`<div class="skinv"><div class="skinv-top"><div class="grow tl"><b>${esc(c.n)}</b><div class="dim small">${esc(cur.n)}</div></div><button class="btn ghost small" data-act="skinBack" data-id="${id}">Закрыть</button></div><div class="skinv-stage">${arr}<img class="skinv-im" src="${esc(E.skinSrc(cur))}" alt="${esc(c.n)}" draggable="false"></div><div class="skintabs">${tabs}</div></div>`, { cls: 'skinbox' });

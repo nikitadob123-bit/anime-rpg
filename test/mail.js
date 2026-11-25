@@ -38,11 +38,13 @@ t('giftErrors: все типы подарков проверяются по да
   assert(M.giftErrors({ gear: [{ base: 'sword', rarity: 9 }] }).length === 1);
   assert(M.giftErrors({ cons: { pot_hp1: 1.5 } }).length === 1);
   assert(M.giftErrors({ gold: '100' }).length === 1);
-  Object.keys(M.GIFT_TYPES).forEach((k) => assert(['gold', 'xp', 'sp', 'cons', 'mats', 'presents', 'gear', 'unique', 'artifacts', 'pets', 'allies', 'goals', 'challenge', 'resetStory', 'achievements', 'titles'].includes(k)));
+  Object.keys(M.GIFT_TYPES).forEach((k) => assert(['gold', 'xp', 'sp', 'cons', 'mats', 'presents', 'gear', 'unique', 'artifacts', 'pets', 'allies', 'goals', 'challenge', 'resetStory', 'achievements', 'titles', 'unlockSkins'].includes(k)));
   assert.deepStrictEqual(M.giftErrors({ resetStory: 'tekken', achievements: ['lone_wolf'], titles: ['lone_wolf'] }), []);
   assert(M.giftErrors({ resetStory: 'main' }).length === 1);
   assert(M.giftErrors({ achievements: ['kills_0'] }).length === 1);
   assert(M.giftErrors({ titles: ['nope'] }).length === 1);
+  assert.deepStrictEqual(M.giftErrors({ unlockSkins: ['tk_reina', 'tk_reina:armor', 'tk_reina:wedding'] }), []);
+  assert(M.giftErrors({ unlockSkins: ['tk_reina:nope'] }).length === 1);
 });
 
 console.log('Почта: доставка и подарки');

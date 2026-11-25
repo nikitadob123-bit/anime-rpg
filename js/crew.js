@@ -123,18 +123,48 @@
     if (!s.skins || typeof s.skins !== 'object' || Array.isArray(s.skins)) s.skins = {};
     return s.skins;
   };
+  E.skinUnlocks = function (s) {
+    if (!s) return {};
+    if (!s.skinsUnlock || typeof s.skinsUnlock !== 'object' || Array.isArray(s.skinsUnlock)) s.skinsUnlock = {};
+    return s.skinsUnlock;
+  };
+  E.skinLocked = function (s, id, skin) {
+    const sk = skin && typeof skin === 'object' ? skin : E.skinsOf(id).find((x) => x.id === skin);
+    if (!sk || !sk.lock) return false;
+    const u = E.skinUnlocks(s), pack = u[id];
+    if (pack === 1 || pack === true) return false;
+    if (pack && typeof pack === 'object' && pack[sk.id]) return false;
+    if (u[id + ':' + sk.id] || u[sk.id]) return false;
+    return true;
+  };
+  E.unlockSkin = function (s, id, skinId) {
+    if (!id) return 'Нет такого персонажа';
+    if (skinId && skinId !== '*' && !E.skinsOf(id).some((x) => x.id === skinId)) return 'Нет такого облика';
+    const u = E.skinUnlocks(s);
+    if (!skinId || skinId === '*') u[id] = 1;
+    else if (u[id] !== 1 && u[id] !== true) {
+      if (!u[id] || typeof u[id] !== 'object') u[id] = {};
+      u[id][skinId] = 1;
+    }
+    s.rev = (s.rev || 0) + 1;
+    return '';
+  };
   E.skinId = function (s, id) {
     const list = E.skinsOf(id); if (!list.length) return null;
     const cur = E.skinEnsure(s)[id];
-    return list.some((x) => x.id === cur) ? cur : list[0].id;
+    if (cur && list.some((x) => x.id === cur) && !E.skinLocked(s, id, cur)) return cur;
+    const open = list.find((x) => !E.skinLocked(s, id, x));
+    return open ? open.id : null;
   };
   E.skinOf = function (s, id) {
     const list = E.skinsOf(id), sid = E.skinId(s, id);
-    return (sid && list.find((x) => x.id === sid)) || list[0] || null;
+    return (sid && list.find((x) => x.id === sid)) || list.find((x) => !E.skinLocked(s, id, x)) || null;
   };
   E.setSkin = function (s, id, skinId) {
     const list = E.skinsOf(id);
-    if (!list.some((x) => x.id === skinId)) return 'Нет такого облика';
+    const sk = list.find((x) => x.id === skinId);
+    if (!sk) return 'Нет такого облика';
+    if (E.skinLocked(s, id, sk)) return 'Облик ещё закрыт';
     E.skinEnsure(s)[id] = skinId;
     s.rev = (s.rev || 0) + 1;
     return '';

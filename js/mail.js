@@ -23,7 +23,8 @@
     gear: 'снаряжение: [{ base, rarity, il?, nm?, en?, el? }] — base из списка, rarity 0–7 или common/uncommon/rare/unique/epic/legend/mythic/divine, il — уровень (по умолчанию = уровень героя), en — id чар (например en_light), el — стихия (light/fire/…) — на вещь ставится аффикс урона этой стихией',
     resetStory: 'перезапуск побочного сюжета: сейчас только «tekken» (коллаба «Железный Кулак»). Главы, исход и союзники коллабы сбрасываются; уровень, золото, предметы и артефакты остаются',
     achievements: 'скрытое достижение по id (например lone_wolf — «Одинокий Волк»); строка или массив. Только почтовые достижения, в списке не видны, пока не получены',
-    titles: 'титул по id (например lone_wolf — «Одинокий Волк»); строка или массив. Открывается и сразу надевается'
+    titles: 'титул по id (например lone_wolf — «Одинокий Волк»); строка или массив. Открывается и сразу надевается',
+    unlockSkins: 'открыть заблокированный облик: «tk_reina» (все её закрытые), «tk_reina:armor» или «tk_reina:wedding»; строка или массив'
   };
   const MAXN = 10000000;
   const isInt = (n) => typeof n === 'number' && Number.isInteger(n) && n > 0 && n <= MAXN;
@@ -67,6 +68,7 @@
         else if (k === 'achievements' || k === 'achievement') { (Array.isArray(v) ? v : [v]).forEach((id) => { out.achievements = out.achievements || []; if (!out.achievements.includes(id)) out.achievements.push(id); }); }
         else if (k === 'titles' || k === 'title') { (Array.isArray(v) ? v : [v]).forEach((id) => { out.titles = out.titles || []; if (!out.titles.includes(id)) out.titles.push(id); }); }
         else if (k === 'resetStory') out.resetStory = v;
+        else if (k === 'unlockSkins' || k === 'unlockSkin') { (Array.isArray(v) ? v : [v]).forEach((id) => { out.unlockSkins = out.unlockSkins || []; const s = typeof id === 'string' ? id : (id && id.id ? (id.skin ? id.id + ':' + id.skin : id.id) : ''); if (s && !out.unlockSkins.includes(s)) out.unlockSkins.push(s); }); }
         else if (v && typeof v === 'object') { out[k] = out[k] || {}; for (const id in v) out[k][id] = (out[k][id] || 0) + v[id]; }
         else out[k] = v;   // неизвестное — пусть валидатор скажет
       }
@@ -101,6 +103,15 @@
       else if (k === 'resetStory') { if (v !== 'tekken') err.push('resetStory: сейчас можно только «tekken»'); }
       else if (k === 'achievements') { if (v.length > 5) err.push('achievements: не больше 5'); v.forEach((id) => { if (typeof id !== 'string' || !D.ACH_MAP || !D.ACH_MAP[id] || !D.ACH_MAP[id].mail) err.push(`achievements: неизвестное почтовое достижение «${id}»`); }); }
       else if (k === 'titles') { if (v.length > 5) err.push('titles: не больше 5'); v.forEach((id) => { if (typeof id !== 'string' || !(D.TITLES || []).some((x) => x.id === id)) err.push(`titles: неизвестный титул «${id}»`); }); }
+      else if (k === 'unlockSkins') {
+        if (v.length > 10) err.push('unlockSkins: не больше 10');
+        v.forEach((spec) => {
+          const m = String(spec).split(':'), id = m[0], skin = m[1];
+          const list = (D.TK_SKINS && D.TK_SKINS[id]) || [];
+          if (!id || !list.length) err.push(`unlockSkins: неизвестный персонаж «${spec}»`);
+          else if (skin && !list.some((x) => x.id === skin)) err.push(`unlockSkins: нет облика «${skin}» у ${id}`);
+        });
+      }
       else err.push(`неизвестный тип подарка «${k}» (можно: ${Object.keys(M.GIFT_TYPES).join(', ')})`);
     }
     return err;
@@ -123,6 +134,15 @@
     if (g.resetStory === 'tekken') out.push({ ic: '🔄', n: 'Перезапуск сюжета коллабы «Железный Кулак»', q: 1 });
     (g.achievements || []).forEach((id) => { const a = D.ACH_MAP && D.ACH_MAP[id]; if (a) out.push({ ic: a.ic || '🏆', n: 'Достижение «' + a.n + '»', q: 1 }); });
     (g.titles || []).forEach((id) => { const tt = (D.TITLES || []).find((x) => x.id === id); if (tt) out.push({ ic: '🎖️', n: 'Титул «' + tt.n + '»', q: 1 }); });
+    (g.unlockSkins || []).forEach((spec) => {
+      const m = String(spec).split(':'), id = m[0], skin = m[1];
+      const list = (D.TK_SKINS && D.TK_SKINS[id]) || [];
+      const who = (id === 'tk_reina' ? 'Рейны' : id);
+      if (skin) {
+        const sk = list.find((x) => x.id === skin);
+        out.push({ ic: '👗', n: 'Облик «' + ((sk && sk.n) || skin) + '»', q: 1 });
+      } else out.push({ ic: '👗', n: 'Облики ' + who, q: 1 });
+    });
     return out;
   };
   // выдать подарки (seed — id письма: вещи одинаковы при любом устройстве)
@@ -167,6 +187,12 @@
       const w = E.grantTitle && E.grantTitle(slot, id);
       if (w === '') (got.titles = got.titles || []).push(id);
       else (got.refused = got.refused || []).push({ id, n: ((D.TITLES || []).find((x) => x.id === id) || {}).n || id, why: w || 'обновите игру до 2.31.5' });
+    });
+    (g.unlockSkins || []).forEach((spec) => {
+      const m = String(spec).split(':'), id = m[0], skin = m[1] || '*';
+      const w = E.unlockSkin && E.unlockSkin(slot, id, skin);
+      if (w === '') (got.unlockSkins = got.unlockSkins || []).push(spec);
+      else (got.refused = got.refused || []).push({ id: spec, n: String(spec), why: w || 'обновите игру до 2.31.8' });
     });
     slot.rev = (slot.rev || 0) + 1;
     return got;

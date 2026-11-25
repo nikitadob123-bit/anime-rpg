@@ -443,7 +443,9 @@
   D.TK_SKINS = D.TK_SKINS || {};
   D.TK_SKINS.tk_reina = [
     { id: 'jacket', n: 'Обычный', img: 'tk_reina_jacket' },
-    { id: 'top', n: 'Без бомбера', img: 'tk_reina_top' }
+    { id: 'top', n: 'Без бомбера', img: 'tk_reina_top' },
+    { id: 'armor', n: 'Демоническая броня', img: 'tk_reina_skin_armor', lock: 1 },
+    { id: 'wedding', n: 'Свадебное платье', img: 'tk_reina_skin_wedding', lock: 1 }
   ];
 
 
