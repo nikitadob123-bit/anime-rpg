@@ -1,7 +1,7 @@
 /* v2.31.2 коллаба «Железный Кулак»: канонический сценарий, 19 глав, 3 исхода + Рейна. */
 const assert = require('assert');
 const RPG = require('../js/data-core.js'); require('../js/data-stats.js');
-['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'allies', 'data-craft-icons', 'craft', 'goals', 'challenge', 'life', 'tekken', 'tekken-roster', 'tekken-story', 'tekken-romance', 'tekken-meet'].forEach((f) => require('../js/' + f + '.js'));
+['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'allies', 'data-craft-icons', 'craft', 'goals', 'challenge', 'life', 'tekken', 'tekken-roster', 'tekken-story', 'tekken-romance', 'tekken-meet', 'mail'].forEach((f) => require('../js/' + f + '.js'));
 const { E, D, C, S } = RPG;
 let pass = 0, fail = 0; const t = (n, f) => { try { f(); pass++; } catch (e) { fail++; console.log('  ✗', n, '\n     ', e.message); } };
 const NOW = Date.parse('2026-11-24T12:00:00+01:00');
@@ -79,14 +79,18 @@ t('принять Рейну — независимый путь; слово Д�
   assert(s.tk.blood);
 });
 
-t('сделка с Кадзуей даёт Сферу Судьбы и не требует союзника', () => {
+t('сделка с Кадзуей даёт Сферу Судьбы и предлагает выбрать союзника', () => {
   const s = mk();
   playThrough(s, 'tk16_outcome', { tk_kazuya: 1, tk_side: 'kazuya' });
   assert.strictEqual(s.tk.ending, 'kazuya');
   assert(s.tk.sphere);
   assert(s.inv.some((it) => it && (it.id === 'tk_sphere' || it.k === 'tk_sphere')));
-  assert(!s.tk.needAlly);
+  assert.strictEqual(s.tk.needAlly, 1);
+  assert(!s.tk.ally);
   assert(!s.crew.tk_jin && !s.crew.tk_nina);
+  assert.strictEqual(E.tkPickAlly(s, 'tk_azucena'), '');
+  assert(s.crew.tk_azucena);
+  assert.strictEqual(s.tk.needAlly, 0);
 });
 
 t('наблюдатель, не давший ни слова, получает Нину', () => {
@@ -395,6 +399,161 @@ t('выбор Рейны в гл. 02 — косметическое предуп
   assert.strictEqual(ch[1].length, 2);
   assert.deepStrictEqual(ch[1][0].f, { tk_reina: 1 });
   assert.deepStrictEqual(ch[1][1].f, { tk_reina_no: 1 });
+});
+
+
+function romCanStart(s, id) {
+  assert(s.crew[id], 'нет союзника ' + id);
+  assert(s.rom[id], 'нет записи романа ' + id);
+  assert(E.tkRomGate(s, id, 0), 'ворота романа закрыты для ' + id);
+  const need = E.ROM_AT[0] - ((s.rom[id].aff) | 0);
+  if (need > 0) E.addAff(s, id, need);
+  assert.strictEqual(E.romScenePending(s, id), 0, 'сцена 1 недоступна для ' + id);
+}
+
+t('каждый маршрут до конца выдаёт союзника, роман можно начать', () => {
+  // путь Дзина (слово в гл. 03) — в свиту Дзин; роман Сяоюй открывается
+  const jin = mk();
+  playThrough(jin, 'tk19_home', { tk_jin: 1, tk_side: 'jin', tk_reina_no: 1 });
+  assert.strictEqual(jin.tk.ending, 'jin');
+  assert(jin.crew.tk_jin);
+  assert(!jin.crew.tk_nina && !jin.crew.tk_reina);
+  assert(!E.tkRomGate(jin, 'tk_reina', 0));
+  assert(E.tkRomGate(jin, 'tk_xiaoyu', 0) && E.tkRomGate(jin, 'tk_xiaoyu', 2), 'ворота романа после исхода Дзина закрыты');
+  E.tkGrantComp(jin, 'tk_xiaoyu');
+  romCanStart(jin, 'tk_xiaoyu');
+
+  // путь Кадзуи (сделка в гл. 09) — сфера и выбор союзника
+  const kaz = mk();
+  playThrough(kaz, 'tk16_outcome', { tk_kazuya: 1, tk_side: 'kazuya' });
+  assert.strictEqual(kaz.tk.ending, 'kazuya');
+  assert.strictEqual(kaz.tk.needAlly, 1);
+  assert.strictEqual(E.tkPickAlly(kaz, 'tk_anna'), '');
+  kaz.tk.vowDone = 1; kaz.tk.taken = 'none';
+  playThrough(kaz, 'tk19_home');
+  assert(kaz.crew.tk_anna);
+  assert(!kaz.crew.tk_jin && !kaz.crew.tk_nina);
+  romCanStart(kaz, 'tk_anna');
+
+  // наблюдатель (замок стороны в гл. 10) — Нина Уильямс, роман открывается
+  const neu = mk();
+  playThrough(neu, 'tk10_coliseum');
+  assert.strictEqual(E.tkSide(neu), 'neutral');
+  assert(neu.tk.flags.tk_neutral);
+  playThrough(neu, 'tk19_home');
+  assert.strictEqual(neu.tk.ending, 'neutral');
+  assert(neu.crew.tk_nina);
+  romCanStart(neu, 'tk_nina');
+
+  // путь Рейны: отказ — Дзин есть, Рейны нет и роман закрыт
+  const no = mk();
+  playThrough(no, 'tk19_home', { tk_reina_no: 1, tk_jin: 1, tk_side: 'jin' });
+  assert(no.crew.tk_jin);
+  assert(!no.crew.tk_reina);
+  assert(!E.tkRomGate(no, 'tk_reina', 0));
+
+  // путь Рейны: принять и кровь — Рейна в свите, роман открывается (плюс Дзин)
+  const yes = mk();
+  playThrough(yes, 'tk16_outcome', { tk_reina: 1, tk_jin: 1, tk_side: 'jin' });
+  yes.tk.flags.tk_reina_join = 1; yes.tk.flags.tk_blood = 1; E.tkSyncFlags(yes);
+  playThrough(yes, 'tk19_home');
+  assert(yes.crew.tk_jin && yes.crew.tk_reina);
+  assert(yes.tk.blood);
+  romCanStart(yes, 'tk_reina');
+});
+
+t('если исход уже записан, а союзника нет — выдача добирается при загрузке', () => {
+  const s = mk();
+  s.tk.story = D.TK_CH.map((c) => c.id);
+  s.tk.ending = 'neutral';
+  s.tk.flags = { tk_side: 'neutral', tk_neutral: 1 };
+  s.tk.mig230 = 1; s.tk.mig231 = 1; s.tk.storyMig230 = 1;
+  E.tkEnsure(s);
+  assert(s.crew.tk_nina, 'Нина должна появиться у уже законченного наблюдателя');
+  assert(s.rom.tk_nina);
+  romCanStart(s, 'tk_nina');
+
+  const k = mk();
+  k.tk.story = D.TK_CH.map((c) => c.id);
+  k.tk.ending = 'kazuya';
+  k.tk.flags = { tk_side: 'kazuya', tk_kazuya: 1 };
+  k.tk.mig230 = 1; k.tk.mig231 = 1; k.tk.storyMig230 = 1;
+  E.tkEnsure(k);
+  assert.strictEqual(k.tk.needAlly, 1);
+  assert(k.tk.sphere);
+});
+
+t('сброс сюжета коллабы убирает прогресс и союзников, оставляя уровень и вещи', () => {
+  const mid = mk();
+  mid.gold = 8888; mid.hero.level = 33;
+  mid.inv.push({ id: 'keep_me', n: 'Вещь' });
+  E.artGain(mid, 'lantern');
+  mid.tk.tokens = 120; mid.tk.stage = 4; mid.tk.best = 4; mid.tk.bolt = 1; mid.tk.won = ['paul', 'law'];
+  playThrough(mid, 'tk10_coliseum');
+  assert(mid.tk.story.includes('tk10_coliseum'));
+  assert.strictEqual(E.tkResetStory(mid), '');
+  assert.deepStrictEqual(mid.tk.story, []);
+  assert.strictEqual(mid.tk.ending, null);
+  assert.strictEqual(mid.gold, 8888);
+  assert.strictEqual(mid.hero.level, 33);
+  assert(mid.inv.some((it) => it && it.id === 'keep_me'));
+  assert(mid.arts && mid.arts.lantern != null);
+  assert.strictEqual(mid.tk.tokens, 120);
+  assert.strictEqual(mid.tk.bolt, 1);
+  assert.deepStrictEqual(mid.tk.won, ['paul', 'law']);
+  assert.strictEqual(mid.tk.stage, 4);
+  assert(E.tkChapterOpen(mid, 'tk01_rift'));
+  assert(!E.tkChapterOpen(mid, 'tk02_reina'));
+
+  const done = mk();
+  done.gold = 5000; done.hero.level = 50;
+  playThrough(done, 'tk16_outcome');
+  assert(done.crew.tk_nina);
+  const arts = Object.assign({}, done.arts || {});
+  const invN = done.inv.length;
+  done.tk.tokens = 200;
+  assert.strictEqual(E.tkResetStory(done), '');
+  assert(!done.crew.tk_nina);
+  assert(!done.rom.tk_nina);
+  assert.deepStrictEqual(done.tk.story, []);
+  assert.strictEqual(done.tk.ending, null);
+  assert.strictEqual(done.gold, 5000);
+  assert.strictEqual(done.hero.level, 50);
+  assert.strictEqual(done.inv.length, invN);
+  assert.deepStrictEqual(done.arts, arts);
+  assert.strictEqual(done.tk.tokens, 200);
+  // после сброса маршрут наблюдателя снова выдаёт Нину, роман можно начать
+  playThrough(done, 'tk19_home');
+  assert(done.crew.tk_nina);
+  romCanStart(done, 'tk_nina');
+});
+
+t('письмо сбрасывает коллабу и выдаёт «Одинокого Волка»', () => {
+  const RPG = globalThis.RPG, M = RPG.M;
+  const s = mk();
+  s.gold = 777; s.hero.level = 28;
+  playThrough(s, 'tk16_outcome', { tk_jin: 1, tk_side: 'jin' });
+  assert(s.crew.tk_jin);
+  s.tk.tokens = 90; s.tk.bolt = 1;
+  const letter = { id: 'lone-wolf-reset-test', from: 'Администрация', title: 'Одинокий Волк', body: 'Сброс', date: '2026-11-25', gifts: { resetStory: 'tekken', achievements: ['lone_wolf'], titles: ['lone_wolf'] } };
+  const feed = M.parseFeed({ letters: [letter] });
+  assert.deepStrictEqual(feed.errors, []);
+  M.deliver(s, feed.letters, NOW);
+  const c = M.claim(s, letter.id, NOW);
+  assert(c.ok, c.err);
+  assert.deepStrictEqual(s.tk.story, []);
+  assert(!s.crew.tk_jin);
+  assert.strictEqual(s.gold, 777);
+  assert.strictEqual(s.hero.level, 28);
+  assert.strictEqual(s.tk.tokens, 90);
+  assert.strictEqual(s.tk.bolt, 1);
+  assert(s.ach.claimed.includes('lone_wolf'));
+  assert((s.life.titles || []).includes('lone_wolf'));
+  assert.strictEqual(E.titleName(s), 'Одинокий Волк');
+  // скрыто, пока не получено
+  const fresh = mk();
+  assert(!E.achList(fresh).some((x) => x.a.id === 'lone_wolf'));
+  assert(!E.titlesOf(fresh).some((x) => x.id === 'lone_wolf'));
 });
 
 console.log(`  ${pass} ✓, ${fail} ✗`); if (fail) process.exit(1);

@@ -55,6 +55,7 @@
         E.tkMigStory230(s);
         if (t.ending && !t.mig230) E.tkApplyMig230(s);
         if (!t.mig231) E.tkApplyMig231(s);
+        E.tkCatchUpAllies && E.tkCatchUpAllies(s);
         E.tkSyncFlags && E.tkSyncFlags(s);
       } finally { delete s._tkEnsuring; }
     }
@@ -518,7 +519,79 @@
     if (ending === 'kazuya') {
       E.tkGrantSphere && E.tkGrantSphere(s);
       if (t.ally) E.tkGrantComp(s, t.ally);
+      else t.needAlly = 1;
     }
+  };
+  E.tkIsCollabId = function (id) {
+    return typeof id === 'string' && (id.indexOf('tk_') === 0 || !!(D.CREW[id] && D.CREW[id].event === 'tk'));
+  };
+  E.tkDismissComp = function (s, id) {
+    if (!s || !id) return;
+    const st = s.crew && s.crew[id];
+    if (st && st.eq) {
+      s.inv = s.inv || [];
+      for (const sl in st.eq) if (st.eq[sl]) s.inv.push(st.eq[sl]);
+    }
+    if (s.crew) delete s.crew[id];
+    if (s.rom) delete s.rom[id];
+    if (Array.isArray(s.party)) s.party = s.party.filter((x) => x !== id);
+    if (Array.isArray(s.support)) s.support = s.support.filter((x) => x !== id);
+  };
+  // Добирает союзника, если исход уже записан, а выдача не прошла (миграция / глава уже в story).
+  E.tkCatchUpAllies = function (s) {
+    const t = s && s.tk; if (!t) return;
+    const finished = !!(t.ending || (t.story && t.story.includes('tk16_outcome')));
+    if (!finished) return;
+    if (t.ending === 'self') {
+      if (t.flags && t.flags.tk_reina && !t.flags.tk_reina_no) E.tkGrantComp(s, 'tk_reina');
+    } else {
+      let side = E.tkSide ? E.tkSide(s) : (t.flags && t.flags.tk_side) || t.ending || '';
+      if (!side && E.tkSide) side = E.tkSide(s, true);
+      if (side === 'jin' || t.ending === 'jin') E.tkGrantComp(s, 'tk_jin');
+      else if (side === 'neutral' || t.ending === 'neutral') E.tkGrantComp(s, 'tk_nina');
+      else if (side === 'kazuya' || t.ending === 'kazuya') {
+        E.tkGrantSphere && E.tkGrantSphere(s);
+        if (t.ally) E.tkGrantComp(s, t.ally);
+        else t.needAlly = 1;
+      }
+    }
+    if (t.flags && (t.flags.tk_reina_join || (t.flags.tk_reina && t.blood)) && !t.flags.tk_reina_no) E.tkGrantComp(s, 'tk_reina');
+  };
+  // Сброс только сюжета коллабы: уровень, золото, инвентарь, артефакты, жетоны и турнир остаются.
+  E.tkResetStory = function (s) {
+    if (!s) return 'Нет сохранения';
+    const t = E.tkEnsure(s);
+    const ids = new Set();
+    Object.keys(s.crew || {}).forEach((id) => { if (E.tkIsCollabId(id)) ids.add(id); });
+    Object.keys(s.rom || {}).forEach((id) => { if (E.tkIsCollabId(id)) ids.add(id); });
+    (t.rec || []).forEach((id) => ids.add(id));
+    if (t.ally) ids.add(t.ally);
+    if (t.taken && t.taken !== 'none') ids.add(t.taken);
+    ids.forEach((id) => E.tkDismissComp(s, id));
+    if (s.story && s.story.flags) {
+      Object.keys(s.story.flags).forEach((k) => {
+        if (/^tk_/.test(k) || /^(love|friend)_tk_/.test(k)) delete s.story.flags[k];
+      });
+    }
+    t.story = [];
+    t.flags = {};
+    t.ending = null;
+    t.ally = null;
+    t.blood = 0;
+    t.needAlly = 0;
+    t.vowDone = 0;
+    t.taken = null;
+    t.meets = [];
+    t.rec = [];
+    t.sphere = 0;
+    t.bloodAsked = 0;
+    t.mig230 = 1;
+    t.mig231 = 1;
+    t.storyMig230 = 1;
+    E.tkReinaApply && E.tkReinaApply(s);
+    E.tkSyncFlags && E.tkSyncFlags(s);
+    s.rev = (s.rev || 0) + 1;
+    return '';
   };
   E.tkPickAlly = function (s, id) {
     const t = E.tkEnsure(s);

@@ -58,11 +58,25 @@
     { id: 'arts', n: 'Хранитель реликвий', ic: '🏺', d: 'Артефактов найдено', v: (s) => cnt(s.arts), at: [1, 5, 15, 30] },
     { id: 'power', n: 'Сила престола', ic: '💪', d: 'Мощь героя', v: (s) => E.power(s), at: [500, 2000, 8000, 30000] }];
   D.ACH = []; D.ACH_FAM.forEach((f) => f.at.forEach((need, i) => D.ACH.push({ id: f.id + '_' + i, fam: f.id, tier: i, n: f.n + ' ' + ['I', 'II', 'III', 'IV', 'V'][i], ic: f.ic, d: f.d + ': ' + need.toLocaleString('ru-RU'), need, rw: { gold: Math.round(500 * Math.pow(4, i)), sig: i >= 1 ? i : 0, food: 10 * (i + 1) } })));
+  D.ACH_MAIL = [
+    { id: 'lone_wolf', n: 'Одинокий Волк', ic: '🐺', d: 'Тот, кто идёт своим путём.', mail: 1, need: 1, rw: {} }
+  ];
   D.ACH_MAP = {}; D.ACH.forEach((a) => { D.ACH_MAP[a.id] = a; });
-  E.achVal = (s, a) => D.ACH_FAM.find((f) => f.id === a.fam).v(s);
-  E.achList = function (s) { E.goalsEnsure(s); return D.ACH.map((a) => { const v = E.achVal(s, a); return { a, v, done: v >= a.need, claimed: s.ach.claimed.includes(a.id) }; }); };
-  E.achReady = (s) => E.achList(s).filter((x) => x.done && !x.claimed).length;
-  E.achClaim = function (s, id) { const a = D.ACH_MAP[id]; if (!a) return { err: 'Нет такого достижения' }; E.goalsEnsure(s); if (s.ach.claimed.includes(id)) return { err: 'Уже получено' }; if (E.achVal(s, a) < a.need) return { err: 'Ещё не выполнено' }; s.ach.claimed.push(id); return give(s, Object.assign({}, a.rw)); };
+  D.ACH_MAIL.forEach((a) => { D.ACH_MAP[a.id] = a; });
+  E.achVal = (s, a) => { if (a && a.mail) return (s.ach && s.ach.claimed && s.ach.claimed.includes(a.id)) ? 1 : 0; return D.ACH_FAM.find((f) => f.id === a.fam).v(s); };
+  E.achList = function (s) {
+    E.goalsEnsure(s);
+    const list = D.ACH.map((a) => { const v = E.achVal(s, a); return { a, v, done: v >= a.need, claimed: s.ach.claimed.includes(a.id) }; });
+    (D.ACH_MAIL || []).forEach((a) => { if (s.ach.claimed.includes(a.id)) list.push({ a, v: 1, done: true, claimed: true, mail: 1 }); });
+    return list;
+  };
+  E.achReady = (s) => E.achList(s).filter((x) => x.done && !x.claimed && !x.a.mail).length;
+  E.achClaim = function (s, id) { const a = D.ACH_MAP[id]; if (!a) return { err: 'Нет такого достижения' }; if (a.mail) return { err: 'Это достижение выдаётся письмом' }; E.goalsEnsure(s); if (s.ach.claimed.includes(id)) return { err: 'Уже получено' }; if (E.achVal(s, a) < a.need) return { err: 'Ещё не выполнено' }; s.ach.claimed.push(id); return give(s, Object.assign({}, a.rw)); };
+  E.achGrant = function (s, id) {
+    const a = D.ACH_MAP[id]; if (!a || !a.mail) return { err: 'Это достижение нельзя выдать так' };
+    E.goalsEnsure(s); if (s.ach.claimed.includes(id)) return { ok: 1, already: 1, a };
+    s.ach.claimed.push(id); s.rev = (s.rev || 0) + 1; return { ok: 1, a };
+  };
 
   // ───── «Дозор»: пока вас нет, Свита собирает добычу (до 12 ч, от 10 мин) ─────
   D.AFK_MAX_H = 12; D.AFK_MIN_MIN = 10;

@@ -45,6 +45,7 @@
     if (!Array.isArray(l.plots)) l.plots = []; if (!l.house || typeof l.house !== 'object') l.house = { garden: 0, pond: 0, bed: 0, work: 0 };
     if (!l.mk || typeof l.mk !== 'object') l.mk = { day: -1, bought: {} }; if (l.mk.day !== day) { l.mk.day = day; l.mk.bought = {}; }
     if (!l.cos || typeof l.cos !== 'object') l.cos = { title: null, frame: null };
+    if (!Array.isArray(l.titles)) l.titles = [];
     while (l.plots.length < E.plotCount(s)) l.plots.push(null);
     return l;
   };
@@ -131,7 +132,8 @@
     { id: 'tower', n: 'Покоритель Башни', ok: (s) => ((s.tower && s.tower.best) | 0) >= 100 },
     { id: 'arena', n: 'Чемпион арены', ok: (s) => ((s.arena && s.arena.best) | 0) >= 1450 },
     { id: 'angler', n: 'Морской волк', ok: (s) => ((s.life && s.life.fish && s.life.fish.rare) | 0) >= 10 },
-    { id: 'farmer', n: 'Добрый хозяин', ok: (s) => E.houseLv(s) >= 6 }];
+    { id: 'farmer', n: 'Добрый хозяин', ok: (s) => E.houseLv(s) >= 6 },
+    { id: 'lone_wolf', n: 'Одинокий Волк', d: 'Тот, кто идёт своим путём.', ok: (s) => !!(s.life && (s.life.titles || []).includes('lone_wolf')) }];
   D.FRAMES = [
     { id: 'rar', n: 'По редкости снаряжения', c: null, ok: () => true },
     { id: 'gold', n: 'Золотая', c: '#ffd36b', ok: (s) => achN(s) >= 10 },
@@ -141,6 +143,12 @@
     { id: 'dragon', n: 'Драконья', c: '#ff9a3c', ok: (s) => Object.keys(s.pets || {}).some((id) => D.PET[id] && D.PET[id].dragon) },
     { id: 'star', n: 'Звёздная', c: '#e8f4ff', ok: (s) => achN(s) >= 30 }];
   E.titlesOf = (s) => D.TITLES.filter((t) => t.ok(s)); E.framesOf = (s) => D.FRAMES.filter((f) => f.ok(s));
+  E.grantTitle = function (s, id, equip) {
+    const t = D.TITLES.find((x) => x.id === id); if (!t) return 'Нет такого титула';
+    const l = E.lifeEnsure(s); if (!l.titles.includes(id)) l.titles.push(id);
+    if (equip !== false) l.cos.title = id;
+    s.rev = (s.rev || 0) + 1; return '';
+  };
   E.setTitle = function (s, id) { const t = D.TITLES.find((x) => x.id === id); if (!t || !t.ok(s)) return 'Титул ещё не открыт'; E.lifeEnsure(s).cos.title = id; s.rev++; return ''; };
   E.setFrame = function (s, id) { const f = D.FRAMES.find((x) => x.id === id); if (!f || !f.ok(s)) return 'Рамка ещё не открыта'; E.lifeEnsure(s).cos.frame = id === 'rar' ? null : id; s.rev++; return ''; };
   E.titleName = (s) => { const id = s.life && s.life.cos && s.life.cos.title, t = id && D.TITLES.find((x) => x.id === id); return t ? t.n : 'Король Демонов'; };

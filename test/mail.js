@@ -1,7 +1,7 @@
 /* Тесты почты (node, без зависимостей): разбор ленты, валидация подарков, выдача один раз, миграция, срок, условия. Запуск: npm test */
 const fs = require('fs'), path = require('path'), assert = require('assert');
 const RPG = require('../js/data-core.js');
-['data-stats', 'data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'pets', 'allies', 'goals', 'mail'].forEach((f) => require('../js/' + f + '.js'));
+['data-stats', 'data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'pets', 'allies', 'goals', 'challenge', 'life', 'tekken', 'tekken-roster', 'tekken-story', 'tekken-romance', 'mail'].forEach((f) => require('../js/' + f + '.js'));
 const { D, E, S, M } = RPG;
 let pass = 0, fail = 0; const failed = [];
 const t = (name, fn) => { try { fn(); pass++; } catch (e) { fail++; failed.push(name + ': ' + e.message); console.log('  ✗', name, '\n     ', e.message); } };
@@ -38,7 +38,11 @@ t('giftErrors: все типы подарков проверяются по да
   assert(M.giftErrors({ gear: [{ base: 'sword', rarity: 9 }] }).length === 1);
   assert(M.giftErrors({ cons: { pot_hp1: 1.5 } }).length === 1);
   assert(M.giftErrors({ gold: '100' }).length === 1);
-  Object.keys(M.GIFT_TYPES).forEach((k) => assert(['gold', 'xp', 'sp', 'cons', 'mats', 'presents', 'gear', 'unique', 'artifacts', 'pets', 'allies', 'goals', 'challenge'].includes(k)));
+  Object.keys(M.GIFT_TYPES).forEach((k) => assert(['gold', 'xp', 'sp', 'cons', 'mats', 'presents', 'gear', 'unique', 'artifacts', 'pets', 'allies', 'goals', 'challenge', 'resetStory', 'achievements', 'titles'].includes(k)));
+  assert.deepStrictEqual(M.giftErrors({ resetStory: 'tekken', achievements: ['lone_wolf'], titles: ['lone_wolf'] }), []);
+  assert(M.giftErrors({ resetStory: 'main' }).length === 1);
+  assert(M.giftErrors({ achievements: ['kills_0'] }).length === 1);
+  assert(M.giftErrors({ titles: ['nope'] }).length === 1);
 });
 
 console.log('Почта: доставка и подарки');
@@ -194,6 +198,30 @@ t('подарок-артефакт: валидация, показ, выдача
   run(['add', '--title', 'Арт', '--gold', '500', '--artifact', 'lantern', '--to', 'nm-ab2cd3', '--id', 'art-x']);
   assert.deepStrictEqual(JSON.parse(fs.readFileSync(f, 'utf8')).letters[0].gifts, { gold: 500, artifacts: ['lantern'] }); assert.throws(() => run(['add', '--title', 'x', '--artifact', 'nope']));
   fs.unlinkSync(f);
+});
+
+t('письмо может перезапустить сюжет коллабы и выдать достижение с титулом', () => {
+  const s = mk(); s.gold = 12345; s.hero.level = 40;
+  E.tkEnsure(s); s.tk.tokens = 77; s.tk.stage = 6; s.tk.best = 6; s.tk.bolt = 1; s.tk.won = ['paul'];
+  E.tkFinishChapter(s, 'tk01_rift');
+  const feed = M.parseFeed({ letters: [L({ id: 'lw-test', gifts: { resetStory: 'tekken', achievements: ['lone_wolf'], titles: ['lone_wolf'] } })] });
+  assert.deepStrictEqual(feed.errors, []);
+  M.deliver(s, feed.letters, NOW);
+  const c = M.claim(s, 'lw-test', NOW);
+  assert(c.ok, c.err || 'claim');
+  assert.strictEqual(s.gold, 12345);
+  assert.strictEqual(s.hero.level, 40);
+  assert.strictEqual(s.tk.tokens, 77);
+  assert.strictEqual(s.tk.bolt, 1);
+  assert.deepStrictEqual(s.tk.story, []);
+  assert(s.ach.claimed.includes('lone_wolf'));
+  assert((s.life.titles || []).includes('lone_wolf'));
+  assert.strictEqual(s.life.cos.title, 'lone_wolf');
+  assert.strictEqual(E.titleName(s), 'Одинокий Волк');
+  const gl = M.giftList({ resetStory: 'tekken', achievements: ['lone_wolf'], titles: ['lone_wolf'] });
+  assert(gl.some((x) => /Перезапуск/.test(x.n)));
+  assert(gl.some((x) => /Одинокий Волк/.test(x.n) && x.ic === '🐺'));
+  assert(gl.some((x) => /Титул/.test(x.n)));
 });
 
 console.log(`\nПочта: ${pass} ✓, ${fail} ✗`);

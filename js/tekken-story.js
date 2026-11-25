@@ -715,7 +715,10 @@
       t.flags.tk_side = side;
       if (side === 'jin') { t.flags.tk_has_jin = 1; E.tkGrantComp(s, 'tk_jin'); }
       if (side === 'neutral') { t.flags.tk_has_nina = 1; E.tkGrantComp(s, 'tk_nina'); }
-      if (side === 'kazuya') E.tkGrantSphere && E.tkGrantSphere(s);
+      if (side === 'kazuya') {
+        E.tkGrantSphere && E.tkGrantSphere(s);
+        if (!t.ally) t.needAlly = 1;
+      }
       E.tkGrantEnding(s, t.ending === 'self' ? 'neutral' : t.ending);
     }
     if (id === 'tk17_blood') {

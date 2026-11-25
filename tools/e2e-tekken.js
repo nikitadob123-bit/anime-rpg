@@ -1,4 +1,4 @@
-/* E2E v2.31.4 коллаба «Железный Кулак»: канонический сценарий, 4 пути, рамка диалога.
+/* E2E v2.31.5 коллаба «Железный Кулак»: канонический сценарий, 4 пути, рамка диалога.
    Скриншоты — /workspace/shots-tekken/v2310/  (444×986) */
 const { chromium } = require('playwright-core');
 const fs = require('fs'), path = require('path');
@@ -107,10 +107,10 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   });
   await page.waitForTimeout(400);
 
-  check('версия 2.31.4', await ev(() => __RPG.VERSION === '2.31.4' || (__RPG.RPG && __RPG.RPG.VERSION === '2.31.4') || document.querySelector('script') && true) && await ev(() => (__RPG.VERSION || __RPG.RPG?.VERSION) ? (__RPG.VERSION || __RPG.RPG.VERSION) === '2.31.4' : !!__RPG.D.TK_CH && __RPG.D.TK_CH.length === 19), await ev(() => __RPG.VERSION || (window.RPG && RPG.VERSION)));
+  check('версия 2.31.5', await ev(() => __RPG.VERSION === '2.31.5' || (__RPG.RPG && __RPG.RPG.VERSION === '2.31.5') || document.querySelector('script') && true) && await ev(() => (__RPG.VERSION || __RPG.RPG?.VERSION) ? (__RPG.VERSION || __RPG.RPG.VERSION) === '2.31.5' : !!__RPG.D.TK_CH && __RPG.D.TK_CH.length === 19), await ev(() => __RPG.VERSION || (window.RPG && RPG.VERSION)));
   // VERSION lives on RPG
   const ver = await ev(() => (window.RPG && RPG.VERSION) || __RPG.VERSION || '');
-  check('RPG.VERSION 2.31.4', ver === '2.31.4', ver);
+  check('RPG.VERSION 2.31.5', ver === '2.31.5', ver);
   check('19 глав канона', await ev(() => (__RPG.D.TK_CH || []).length === 19 && __RPG.D.TK_CH[0].id === 'tk01_rift' && __RPG.D.TK_CH[18].id === 'tk19_home'));
   check('событие активно', await ev(() => __RPG.E.tkActive()));
   check('баннер в Лагере', await page.locator('.tkbanner').count() > 0);
@@ -246,14 +246,14 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
       }
     } finally { UI.playLines = origPlay; UI.tkOpen = origOpen; UI.toast = origToast; UI.modal = origModal; UI.closeModal = origClose; }
     Object.assign(s.tk, { tokens: Math.max(s.tk.tokens, keep.tokens), shop: Object.assign(keep.shop, s.tk.shop), won: keep.won, bolt: keep.bolt || s.tk.bolt });
-    return { ending: s.tk.ending, side: s.tk.flags.tk_side, reina: !!s.tk.flags.tk_reina, jin: !!s.crew.tk_jin, nina: !!s.crew.tk_nina, reiCrew: !!s.crew.tk_reina, sphere: !!s.tk.sphere, last: (s.tk.story || []).slice(-3), n: (s.tk.story || []).length };
+    return { ending: s.tk.ending, side: s.tk.flags.tk_side, reina: !!s.tk.flags.tk_reina, jin: !!s.crew.tk_jin, nina: !!s.crew.tk_nina, reiCrew: !!s.crew.tk_reina, sphere: !!s.tk.sphere, needAlly: s.tk.needAlly | 0, last: (s.tk.story || []).slice(-3), n: (s.tk.story || []).length };
   }, spec);
 
   const jin = await playPath({ reina: false, side: 'jin', picks: { 'Дать Дзину слово': 1 } });
   check('путь Дзина: концовка jin и Дзин в свите', jin && jin.ending === 'jin' && jin.jin && jin.n === 19, JSON.stringify(jin));
 
   const kaz = await playPath({ reina: false, side: 'kazuya', picks: { 'Договориться с Кадзуей': 1 } });
-  check('путь Кадзуи: Сфера Судьбы, без обязательного союзника', kaz && kaz.ending === 'kazuya' && kaz.sphere && !kaz.jin, JSON.stringify(kaz));
+  check('путь Кадзуи: Сфера Судьбы и выбор союзника', kaz && kaz.ending === 'kazuya' && kaz.sphere && kaz.needAlly === 1 && !kaz.jin && !kaz.nina, JSON.stringify(kaz));
 
   const neu = await playPath({ reina: false, side: 'neutral', picks: { 'Оставить ответ открытым': 1, 'Остаться в стороне': 1 } });
   check('наблюдатель: Нина в свите, без слова Дзину', neu && neu.ending === 'neutral' && neu.nina && !neu.jin, JSON.stringify(neu));

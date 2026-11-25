@@ -26,10 +26,11 @@
 
   // ═════ Достижения ═════
   UI.achModal = function () {
-    const s = UI.slot(), L = E.achList(s), got = L.filter((x) => x.claimed).length;
-    const fams = D.ACH_FAM.map((f) => { const xs = L.filter((x) => x.a.fam === f.id), cur = xs.find((x) => !x.claimed) || xs[xs.length - 1], v = cur.v;
+    const s = UI.slot(), L = E.achList(s), famL = L.filter((x) => !x.a.mail), got = famL.filter((x) => x.claimed).length;
+    const fams = D.ACH_FAM.map((f) => { const xs = famL.filter((x) => x.a.fam === f.id), cur = xs.find((x) => !x.claimed) || xs[xs.length - 1], v = cur.v;
       return `<div class="achf ${xs.every((x) => x.claimed) ? 'all' : ''}"><span class="achi">${UI.gi('ach_' + f.id, f.ic)}</span><div class="grow tl"><b>${esc(cur.a.n)}</b> <span class="achst">${xs.map((x) => x.claimed ? '★' : '☆').join('')}</span><div class="small dim">${esc(cur.a.d)} · награда: ${rw(cur.a.rw)}</div>${bar(Math.min(v, cur.a.need), cur.a.need, 'xp')}<small class="dim">${fmt(Math.min(v, cur.a.need))} / ${fmt(cur.a.need)}</small></div>${cur.claimed ? '<span class="dqok">✓</span>' : `<button class="btn small ${cur.done ? 'primary' : 'ghost'}" data-act="achClaim" data-id="${cur.a.id}" ${cur.done ? '' : 'disabled'}>Забрать</button>`}</div>`; }).join('');
-    UI.modal(`<h3>${UI.gi('act_ach', '🏆')} Достижения <span class="dim small">${got}/${D.ACH.length}</span></h3><div class="achlist">${fams}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
+    const mailH = L.filter((x) => x.a.mail && x.claimed).map((x) => `<div class="achf all"><span class="achi">${UI.gi('ach_' + x.a.id, x.a.ic)}</span><div class="grow tl"><b>${esc(x.a.n)}</b><div class="small dim">${esc(x.a.d)}</div></div><span class="dqok">✓</span></div>`).join('');
+    UI.modal(`<h3>${UI.gi('act_ach', '🏆')} Достижения <span class="dim small">${got}/${D.ACH.length}</span></h3><div class="achlist">${fams}${mailH}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
   };
   UI.act.achOpen = () => UI.achModal();
   UI.act.achClaim = (el) => { if (done(E.achClaim(UI.slot(), el.dataset.id), '🏆 Достижение')) UI.achModal(); };

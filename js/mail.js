@@ -20,7 +20,10 @@
     unique: 'уникальный предмет по id (например eden_light — «Свет Эдема», Концептуальный; prime_cause, zero_law, first_division — Исток; null_possibility — До существования, только один экземпляр на сохранение: второй подарок отклоняется); строка или массив id. Единственный способ получить такие вещи',
     pets: 'питомец по id (например stray_cat — «Уличная кошка», Обычный); строка или массив. Выдаётся как находка из яйца: новый или +звезда; на максимуме звёзд — корм',
     artifacts: 'артефакт по id (например lantern — «Фонарь Путника», Обычный); строка или массив id. Выдаётся как выпадение в Подземелье Артефактов: новый или +звезда; Мировой — только один экземпляр',
-    gear: 'снаряжение: [{ base, rarity, il?, nm?, en?, el? }] — base из списка, rarity 0–7 или common/uncommon/rare/unique/epic/legend/mythic/divine, il — уровень (по умолчанию = уровень героя), en — id чар (например en_light), el — стихия (light/fire/…) — на вещь ставится аффикс урона этой стихией'
+    gear: 'снаряжение: [{ base, rarity, il?, nm?, en?, el? }] — base из списка, rarity 0–7 или common/uncommon/rare/unique/epic/legend/mythic/divine, il — уровень (по умолчанию = уровень героя), en — id чар (например en_light), el — стихия (light/fire/…) — на вещь ставится аффикс урона этой стихией',
+    resetStory: 'перезапуск побочного сюжета: сейчас только «tekken» (коллаба «Железный Кулак»). Главы, исход и союзники коллабы сбрасываются; уровень, золото, предметы и артефакты остаются',
+    achievements: 'скрытое достижение по id (например lone_wolf — «Одинокий Волк»); строка или массив. Только почтовые достижения, в списке не видны, пока не получены',
+    titles: 'титул по id (например lone_wolf — «Одинокий Волк»); строка или массив. Открывается и сразу надевается'
   };
   const MAXN = 10000000;
   const isInt = (n) => typeof n === 'number' && Number.isInteger(n) && n > 0 && n <= MAXN;
@@ -61,6 +64,9 @@
         else if (k === 'pets' || k === 'pet') { (Array.isArray(v) ? v : [v]).forEach((id) => { (out.pets = out.pets || []).push(id); }); }
         else if (k === 'artifacts' || k === 'artifact') { (Array.isArray(v) ? v : [v]).forEach((id) => { (out.artifacts = out.artifacts || []).push(id); }); }
         else if (k === 'unique') { (Array.isArray(v) ? v : [v]).forEach((id) => { out.unique = out.unique || []; if (!out.unique.includes(id)) out.unique.push(id); }); }
+        else if (k === 'achievements' || k === 'achievement') { (Array.isArray(v) ? v : [v]).forEach((id) => { out.achievements = out.achievements || []; if (!out.achievements.includes(id)) out.achievements.push(id); }); }
+        else if (k === 'titles' || k === 'title') { (Array.isArray(v) ? v : [v]).forEach((id) => { out.titles = out.titles || []; if (!out.titles.includes(id)) out.titles.push(id); }); }
+        else if (k === 'resetStory') out.resetStory = v;
         else if (v && typeof v === 'object') { out[k] = out[k] || {}; for (const id in v) out[k][id] = (out[k][id] || 0) + v[id]; }
         else out[k] = v;   // неизвестное — пусть валидатор скажет
       }
@@ -92,6 +98,9 @@
       else if (k === 'pets') { if (v.length > 5) err.push('pets: не больше 5 питомцев'); v.forEach((id) => { if (typeof id !== 'string' || !D.PET || !D.PET[id]) err.push(`pets: неизвестный питомец «${id}»${D.PETS ? ' (есть: ' + D.PETS.map((a) => a.id).join(', ') + ')' : ''}`); }); }
       else if (k === 'artifacts') { if (v.length > 5) err.push('artifacts: не больше 5 артефактов'); v.forEach((id) => { if (typeof id !== 'string' || !D.ART || !D.ART[id]) err.push(`artifacts: неизвестный артефакт «${id}»${D.ARTIFACTS ? ' (есть: ' + D.ARTIFACTS.map((a) => a.id).join(', ') + ')' : ''}`); }); }
       else if (k === 'unique') { if (v.length > 5) err.push('unique: не больше 5 предметов'); v.forEach((id) => { if (typeof id !== 'string' || !D.UNIQUE_ITEMS || !D.UNIQUE_ITEMS[id]) err.push(`unique: неизвестный уникальный предмет «${id}» (есть: ${(D.UNIQUE_IDS || []).join(', ')})`); }); }
+      else if (k === 'resetStory') { if (v !== 'tekken') err.push('resetStory: сейчас можно только «tekken»'); }
+      else if (k === 'achievements') { if (v.length > 5) err.push('achievements: не больше 5'); v.forEach((id) => { if (typeof id !== 'string' || !D.ACH_MAP || !D.ACH_MAP[id] || !D.ACH_MAP[id].mail) err.push(`achievements: неизвестное почтовое достижение «${id}»`); }); }
+      else if (k === 'titles') { if (v.length > 5) err.push('titles: не больше 5'); v.forEach((id) => { if (typeof id !== 'string' || !(D.TITLES || []).some((x) => x.id === id)) err.push(`titles: неизвестный титул «${id}»`); }); }
       else err.push(`неизвестный тип подарка «${k}» (можно: ${Object.keys(M.GIFT_TYPES).join(', ')})`);
     }
     return err;
@@ -111,6 +120,9 @@
     (g.pets || []).forEach((id) => { const a = D.PET && D.PET[id]; if (a) { const pr = D.PET_RAR[a.r]; out.push({ ic: a.ic, img: a.thumb, n: a.n, q: 1, c: pr.c, r: 'Питомец · ' + pr.n, ri: Math.min(a.r, 7), pet: id }); } });
     (g.artifacts || []).forEach((id) => { const a = D.ART && D.ART[id]; if (a) { const ar = D.ART_RAR[a.r], ri = Math.min(a.r, 7); out.push({ ic: a.ic || '🏺', img: a.icon128, n: a.n, q: 1, c: ar.c || D.RARITY[ri].c, r: 'Артефакт · ' + ar.n, ri, art: id }); } });
     if (g.item === 'tear') out.push({ ic: '📿', n: 'Слеза Осколка', q: 1, c: D.RARITY[5].c, r: D.RARITY[5].n, ri: 5 });
+    if (g.resetStory === 'tekken') out.push({ ic: '🔄', n: 'Перезапуск сюжета коллабы «Железный Кулак»', q: 1 });
+    (g.achievements || []).forEach((id) => { const a = D.ACH_MAP && D.ACH_MAP[id]; if (a) out.push({ ic: a.ic || '🏆', n: 'Достижение «' + a.n + '»', q: 1 }); });
+    (g.titles || []).forEach((id) => { const tt = (D.TITLES || []).find((x) => x.id === id); if (tt) out.push({ ic: '🎖️', n: 'Титул «' + tt.n + '»', q: 1 }); });
     return out;
   };
   // выдать подарки (seed — id письма: вещи одинаковы при любом устройстве)
@@ -142,6 +154,20 @@
       (got.arts = got.arts || []).push(r); if (r.refused) (got.refused = got.refused || []).push({ id, n: r.n, why: 'Мировой артефакт уже у вас — второй экземпляр невозможен' });
     });
     if (g.item === 'tear') E.give(slot, { item: 'tear' });
+    if (g.resetStory === 'tekken') {
+      if (E.tkResetStory) { const w = E.tkResetStory(slot); if (!w) got.resetStory = 'tekken'; else (got.refused = got.refused || []).push({ id: 'tekken', n: 'Перезапуск сюжета коллабы', why: w }); }
+      else (got.refused = got.refused || []).push({ id: 'tekken', n: 'Перезапуск сюжета коллабы', why: 'обновите игру до 2.31.5' });
+    }
+    (g.achievements || []).forEach((id) => {
+      const r = E.achGrant && E.achGrant(slot, id);
+      if (r && r.ok) (got.achievements = got.achievements || []).push(id);
+      else (got.refused = got.refused || []).push({ id, n: (D.ACH_MAP && D.ACH_MAP[id] && D.ACH_MAP[id].n) || id, why: (r && r.err) || 'обновите игру до 2.31.5' });
+    });
+    (g.titles || []).forEach((id) => {
+      const w = E.grantTitle && E.grantTitle(slot, id);
+      if (w === '') (got.titles = got.titles || []).push(id);
+      else (got.refused = got.refused || []).push({ id, n: ((D.TITLES || []).find((x) => x.id === id) || {}).n || id, why: w || 'обновите игру до 2.31.5' });
+    });
     slot.rev = (slot.rev || 0) + 1;
     return got;
   };
