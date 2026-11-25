@@ -84,7 +84,11 @@ img.por.tkdevil, .tkpor.tkdevil, img.gic.tkdevil, .tkspr.tkdevil{
 .skinv-im{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;object-position:center;filter:drop-shadow(0 10px 28px rgba(0,0,0,.5));pointer-events:none;-webkit-user-drag:none}
 .skinarr{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:64px;border:0;border-radius:14px;background:rgba(12,8,20,.55);color:#ffe9c8;font-size:28px;line-height:1;z-index:2}
 .skinarr.left{left:2px}.skinarr.right{right:2px}
-.skintabs{display:flex;gap:6px;flex:none;justify-content:center;flex-wrap:wrap;padding-top:8px}
-.skintab{flex:1 1 calc(50% - 6px);min-width:calc(50% - 6px);box-sizing:border-box;padding:9px 6px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#f2e6d4;font-size:12.5px;line-height:1.2;text-align:center;white-space:normal}
+.skintabs{display:flex;gap:6px;flex:none;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scroll-snap-type:x proximity;padding:8px 2px 6px}
+.skintab{flex:0 0 auto;width:96px;min-width:96px;box-sizing:border-box;padding:6px 4px 5px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#f2e6d4;font-size:10.5px;line-height:1.15;text-align:center;white-space:normal;display:flex;flex-direction:column;align-items:center;gap:3px;scroll-snap-align:start}
 .skintab.on{border-color:var(--gold);background:linear-gradient(180deg,rgba(242,195,92,.28),rgba(80,40,16,.55));color:var(--gold2);font-weight:700}
-.skintab.lock{opacity:.55;color:#c8b8a8;filter:saturate(.35);cursor:default}
+.skintab.lock{opacity:.75;color:#c8b8a8;filter:saturate(.35);cursor:default}
+.skintab-im{width:44px;height:72px;object-fit:contain;object-position:center top;pointer-events:none;-webkit-user-drag:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45))}
+.skintab-ph{width:44px;height:72px;border-radius:8px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1}
+.skintab-n{display:block;width:100%;hyphens:auto}
+.skintab-req{display:block;width:100%;font-size:9px;line-height:1.2;opacity:.9;font-weight:400}

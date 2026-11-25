@@ -128,6 +128,18 @@
     if (!s.skinsUnlock || typeof s.skinsUnlock !== 'object' || Array.isArray(s.skinsUnlock)) s.skinsUnlock = {};
     return s.skinsUnlock;
   };
+  E.skinReqText = function (sk) {
+    if (!sk || !sk.lock) return '';
+    if (sk.blood) return 'Откроется: после крови';
+    if (sk.aff) return 'Откроется: симпатия ' + sk.aff;
+    return 'Облик закрыт';
+  };
+  E.skinMet = function (s, id, sk) {
+    if (!sk) return false;
+    if (sk.aff && ((s && s.rom && s.rom[id] && s.rom[id].aff) || 0) < sk.aff) return false;
+    if (sk.blood && !(s && s.tk && s.tk.blood)) return false;
+    return true;
+  };
   E.skinLocked = function (s, id, skin) {
     const sk = skin && typeof skin === 'object' ? skin : E.skinsOf(id).find((x) => x.id === skin);
     if (!sk || !sk.lock) return false;
@@ -135,6 +147,7 @@
     if (pack === 1 || pack === true) return false;
     if (pack && typeof pack === 'object' && pack[sk.id]) return false;
     if (u[id + ':' + sk.id] || u[sk.id]) return false;
+    if (E.skinMet(s, id, sk)) return false;
     return true;
   };
   E.unlockSkin = function (s, id, skinId) {

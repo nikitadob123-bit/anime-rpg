@@ -444,8 +444,12 @@
   D.TK_SKINS.tk_reina = [
     { id: 'jacket', n: 'Обычный', img: 'tk_reina_jacket' },
     { id: 'top', n: 'Без бомбера', img: 'tk_reina_top' },
-    { id: 'armor', n: 'Демоническая броня', img: 'tk_reina_skin_armor', lock: 1 },
-    { id: 'wedding', n: 'Свадебное платье', img: 'tk_reina_skin_wedding', lock: 1 }
+    { id: 'suit', n: 'Деловой костюм', img: 'tk_reina_skin_suit', lock: 1, aff: 15 },
+    { id: 'shorts', n: 'Топ и шорты', img: 'tk_reina_skin_shorts', lock: 1, aff: 25 },
+    { id: 'evening', n: 'Вечернее платье', img: 'tk_reina_skin_evening', lock: 1, aff: 40 },
+    { id: 'catsuit', n: 'Кожаный комбинезон', img: 'tk_reina_skin_catsuit', lock: 1, aff: 55 },
+    { id: 'armor', n: 'Демоническая броня', img: 'tk_reina_skin_armor', lock: 1, blood: 1 },
+    { id: 'wedding', n: 'Свадебное платье', img: 'tk_reina_skin_wedding', lock: 1, aff: 70 }
   ];
 
 

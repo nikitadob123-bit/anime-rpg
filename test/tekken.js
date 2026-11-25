@@ -583,51 +583,75 @@ t('письмо сбрасывает коллабу и выдаёт «Одино
 
 t('облики Рейны: список, выбор сохраняется, сброс сюжета его не трогает', () => {
   const list = (D.TK_SKINS && D.TK_SKINS.tk_reina) || [];
-  assert.strictEqual(list.length, 4);
+  assert.strictEqual(list.length, 8);
   assert.strictEqual(list[0].id, 'jacket');
   assert.strictEqual(list[0].n, 'Обычный');
   assert.strictEqual(list[0].img, 'tk_reina_jacket');
+  assert(!list[0].lock && !list[1].lock);
   assert.strictEqual(list[1].id, 'top');
   assert.strictEqual(list[1].n, 'Без бомбера');
   assert.strictEqual(list[1].img, 'tk_reina_top');
-  assert.strictEqual(list[2].id, 'armor');
-  assert.strictEqual(list[2].n, 'Демоническая броня');
-  assert.strictEqual(list[2].lock, 1);
-  assert.strictEqual(list[3].id, 'wedding');
-  assert.strictEqual(list[3].n, 'Свадебное платье');
-  assert.strictEqual(list[3].lock, 1);
+  assert.deepStrictEqual(list.slice(2).map((x) => [x.id, x.n, x.img, x.lock, x.aff || 0, x.blood || 0]), [
+    ['suit', 'Деловой костюм', 'tk_reina_skin_suit', 1, 15, 0],
+    ['shorts', 'Топ и шорты', 'tk_reina_skin_shorts', 1, 25, 0],
+    ['evening', 'Вечернее платье', 'tk_reina_skin_evening', 1, 40, 0],
+    ['catsuit', 'Кожаный комбинезон', 'tk_reina_skin_catsuit', 1, 55, 0],
+    ['armor', 'Демоническая броня', 'tk_reina_skin_armor', 1, 0, 1],
+    ['wedding', 'Свадебное платье', 'tk_reina_skin_wedding', 1, 70, 0]
+  ]);
+  assert.strictEqual(E.skinReqText(list[2]), 'Откроется: симпатия 15');
+  assert.strictEqual(E.skinReqText(list[6]), 'Откроется: после крови');
+  assert.strictEqual(E.skinReqText(list[7]), 'Откроется: симпатия 70');
   const s = mk();
   assert.strictEqual(E.skinId(s, 'tk_reina'), 'jacket');
   assert.strictEqual(E.skinOf(s, 'tk_reina').img, 'tk_reina_jacket');
   assert(E.skinSrc(E.skinOf(s, 'tk_reina')).indexOf('tk_reina_jacket.webp') >= 0);
-  assert(E.skinLocked(s, 'tk_reina', 'armor') && E.skinLocked(s, 'tk_reina', 'wedding'));
-  assert(!E.skinLocked(s, 'tk_reina', 'jacket'));
+  ['suit', 'shorts', 'evening', 'catsuit', 'armor', 'wedding'].forEach((id) => assert(E.skinLocked(s, 'tk_reina', id), id));
+  assert(!E.skinLocked(s, 'tk_reina', 'jacket') && !E.skinLocked(s, 'tk_reina', 'top'));
+  assert.strictEqual(E.setSkin(s, 'tk_reina', 'suit'), 'Облик ещё закрыт');
   assert.strictEqual(E.setSkin(s, 'tk_reina', 'armor'), 'Облик ещё закрыт');
-  assert.strictEqual(s.skins.tk_reina, undefined);
+  // уже существующее сохранение с симпатией сразу видит открытые облики (без письма)
+  s.rom.tk_reina = s.rom.tk_reina || { aff: 0, seen: [], dates: 0, gifts: 0 };
+  s.rom.tk_reina.aff = 15;
+  assert(!E.skinLocked(s, 'tk_reina', 'suit') && E.skinLocked(s, 'tk_reina', 'shorts'));
+  assert.strictEqual(E.setSkin(s, 'tk_reina', 'suit'), '');
+  assert.strictEqual(E.skinOf(s, 'tk_reina').img, 'tk_reina_skin_suit');
+  s.rom.tk_reina.aff = 25;
+  assert(!E.skinLocked(s, 'tk_reina', 'shorts') && E.skinLocked(s, 'tk_reina', 'evening'));
+  s.rom.tk_reina.aff = 40;
+  assert(!E.skinLocked(s, 'tk_reina', 'evening') && E.skinLocked(s, 'tk_reina', 'catsuit'));
+  s.rom.tk_reina.aff = 55;
+  assert(!E.skinLocked(s, 'tk_reina', 'catsuit') && E.skinLocked(s, 'tk_reina', 'wedding') && E.skinLocked(s, 'tk_reina', 'armor'));
+  s.tk.blood = 1;
+  assert(!E.skinLocked(s, 'tk_reina', 'armor') && E.skinLocked(s, 'tk_reina', 'wedding'));
+  s.rom.tk_reina.aff = 70;
+  assert(!E.skinLocked(s, 'tk_reina', 'wedding'));
+  // без симпатии письмо и E.unlockSkin по-прежнему снимают замок
+  const sMail = mk(); const M = globalThis.RPG.M;
+  assert(E.skinLocked(sMail, 'tk_reina', 'wedding'));
+  assert.strictEqual(E.unlockSkin(sMail, 'tk_reina', 'armor'), '');
+  assert(!E.skinLocked(sMail, 'tk_reina', 'armor') && E.skinLocked(sMail, 'tk_reina', 'wedding'));
+  const feed = M.parseFeed({ letters: [{ id: 'skin-unlock-test', from: 'Администрация', title: 'Облик', date: '2026-11-25', gifts: { unlockSkins: ['tk_reina:wedding'] } }] });
+  assert.deepStrictEqual(feed.errors, []);
+  M.deliver(sMail, feed.letters, NOW);
+  assert(M.claim(sMail, 'skin-unlock-test', NOW).ok);
+  assert(!E.skinLocked(sMail, 'tk_reina', 'wedding') && !E.skinLocked(sMail, 'tk_reina', 'armor'));
   assert.strictEqual(E.setSkin(s, 'tk_reina', 'top'), '');
   assert.strictEqual(s.skins.tk_reina, 'top');
   assert.strictEqual(E.skinId(s, 'tk_reina'), 'top');
   assert.strictEqual(E.setSkin(s, 'tk_reina', 'nope'), 'Нет такого облика');
   assert.strictEqual(s.skins.tk_reina, 'top');
-  s.skins.tk_reina = 'armor'; // подмена сейва не должна показывать закрытый облик
+  s.skins.tk_reina = 'armor';
+  s.tk.blood = 0;
+  s.rom.tk_reina.aff = 0;
   assert.strictEqual(E.skinId(s, 'tk_reina'), 'jacket');
-  assert.strictEqual(E.unlockSkin(s, 'tk_reina', 'armor'), '');
-  assert(!E.skinLocked(s, 'tk_reina', 'armor') && E.skinLocked(s, 'tk_reina', 'wedding'));
-  assert.strictEqual(E.setSkin(s, 'tk_reina', 'armor'), '');
-  assert.strictEqual(E.skinOf(s, 'tk_reina').img, 'tk_reina_skin_armor');
   assert.strictEqual(E.unlockSkin(s, 'tk_reina'), '');
-  assert(!E.skinLocked(s, 'tk_reina', 'wedding'));
-  const s2 = mk(); const M = globalThis.RPG.M;
-  const feed = M.parseFeed({ letters: [{ id: 'skin-unlock-test', from: 'Администрация', title: 'Облик', date: '2026-11-25', gifts: { unlockSkins: ['tk_reina:wedding'] } }] });
-  assert.deepStrictEqual(feed.errors, []);
-  M.deliver(s2, feed.letters, NOW);
-  assert(M.claim(s2, 'skin-unlock-test', NOW).ok);
-  assert(!E.skinLocked(s2, 'tk_reina', 'wedding') && E.skinLocked(s2, 'tk_reina', 'armor'));
+  assert(!E.skinLocked(s, 'tk_reina', 'wedding') && !E.skinLocked(s, 'tk_reina', 'suit'));
   s.skins.tk_reina = 'top';
   playThrough(s, 'tk16_outcome');
   assert.strictEqual(E.tkResetStory(s), '');
   assert.strictEqual(s.skins.tk_reina, 'top', 'сброс сюжета коллабы не должен затирать выбранный облик');
-  assert.strictEqual(s.skinsUnlock.tk_reina, 1, 'сброс не должен затирать открытие обликов');
+  assert.strictEqual(s.skinsUnlock.tk_reina, 1, 'сброс не должен затирать открытие обликов письмом/флагом');
   assert(!E.skinsOf('tk_nina').length);
 });
 

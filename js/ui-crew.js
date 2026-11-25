@@ -100,14 +100,18 @@
     if (!c || !cur) return;
     const tabs = list.map((x) => {
       const locked = E.skinLocked(s, id, x);
-      if (locked) return `<button type="button" class="skintab lock" disabled data-quiet="1">🔒 ${esc(x.n)}</button>`;
-      return `<button class="skintab${x.id === cur.id ? ' on' : ''}" data-act="skinPick" data-id="${id}" data-skin="${x.id}" data-quiet="1">${esc(x.n)}</button>`;
+      const lab = `<span class="skintab-n">${esc(x.n)}</span>`;
+      if (locked) return `<button type="button" class="skintab lock" disabled data-quiet="1"><span class="skintab-ph" aria-hidden="true">🔒</span>${lab}<span class="skintab-req">${esc(E.skinReqText(x))}</span></button>`;
+      const im = E.skinSrc(x) ? `<img class="skintab-im" src="${esc(E.skinSrc(x))}" alt="" draggable="false">` : '';
+      return `<button class="skintab${x.id === cur.id ? ' on' : ''}" data-act="skinPick" data-id="${id}" data-skin="${x.id}" data-quiet="1">${im}${lab}</button>`;
     }).join('');
     const openN = list.filter((x) => !E.skinLocked(s, id, x)).length;
     const arr = openN > 1
       ? `<button class="skinarr left" data-act="skinStep" data-id="${id}" data-dir="-1" data-quiet="1" aria-label="Предыдущий облик">‹</button><button class="skinarr right" data-act="skinStep" data-id="${id}" data-dir="1" data-quiet="1" aria-label="Следующий облик">›</button>`
       : '';
     UI.modal(`<div class="skinv"><div class="skinv-top"><div class="grow tl"><b>${esc(c.n)}</b><div class="dim small">${esc(cur.n)}</div></div><button class="btn ghost small" data-act="skinBack" data-id="${id}">Закрыть</button></div><div class="skinv-stage">${arr}<img class="skinv-im" src="${esc(E.skinSrc(cur))}" alt="${esc(c.n)}" draggable="false"></div><div class="skintabs">${tabs}</div></div>`, { cls: 'skinbox' });
+    const on = document.querySelector('.mbox.skinbox .skintab.on');
+    if (on && on.scrollIntoView) on.scrollIntoView({ inline: 'center', block: 'nearest' });
   };
 
   const gearName = (it) => `${UI.itemIc(it)} ${UI.itemName(it)}`;
