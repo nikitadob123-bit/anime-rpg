@@ -135,5 +135,14 @@
     const mk = (k, label) => ({ t: label, f: {}, r: [H(reply[k], k === 'tease' ? 'h' : 'n'), [spk, res[k][0], res[k][1]], ['date', k === pref ? 1 : 0]] });
     return { t: 'Свидание', sub: c.n + ' · ' + pl.n, bg: pl.bg, lines: [['bg', pl.bg], ['n', pl.intro + ` Рядом идёт ${c.n}.`], [spk, c.talk[pi % c.talk.length], 'n'], ['choice', [mk('sincere', 'Сказать искренне'), mk('tease', 'Пошутить'), mk('bold', 'Быть смелым')]]] };
   };
+  // Облики Ильвары в полный рост (img/crew). Открываются сценами её «Сердца»; свадебное — только её финал сердца.
+  D.TK_SKINS = D.TK_SKINS || {};
+  D.TK_SKINS.gen1 = [
+    { id: 'general', n: 'Первый генерал', img: 'img/crew/gen1_skin_general.webp' },
+    { id: 'battle', n: 'Боевой костюм', img: 'img/crew/gen1_skin_battle.webp', lock: 1, hero: 'gen1', stage: 0, stageName: 'Первое тепло' },
+    { id: 'home', n: 'Домашний вечер', img: 'img/crew/gen1_skin_home.webp', lock: 1, hero: 'gen1', stage: 1, stageName: 'Тихий вечер' },
+    { id: 'evening', n: 'Вечернее платье', img: 'img/crew/gen1_skin_evening.webp', lock: 1, hero: 'gen1', stage: 2, stageName: 'Признание' },
+    { id: 'wedding', n: 'Свадебное платье', img: 'img/crew/gen1_skin_wedding.webp', lock: 1, flag: 'heart_gen1', flagName: 'финал «Сорок восьмая — твоя»' }
+  ];
   if (typeof module !== 'undefined') module.exports = RPG;
 })();

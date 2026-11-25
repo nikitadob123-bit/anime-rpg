@@ -236,6 +236,7 @@
       const sc = R && R.scenes && R.scenes[sk.stage];
       if (sc && (sc.t || sc.sub)) return 'Откроется: этап «' + (sc.t || sc.sub) + '»';
     }
+    if (sk.flag) return 'Откроется: ' + (sk.flagName || 'особый финал');
     if (sk.blood) return 'Откроется: после крови';
     if (sk.aff) return 'Откроется: симпатия ' + sk.aff;
     return 'Облик закрыт';
@@ -247,6 +248,7 @@
       if (!seen.includes(sk.stage)) return false;
     } else if (sk.aff && ((s && s.rom && s.rom[id] && s.rom[id].aff) || 0) < sk.aff) return false;
     if (sk.blood && !(s && s.tk && s.tk.blood)) return false;
+    if (sk.flag && !(s && s.story && s.story.flags && s.story.flags[sk.flag])) return false;
     return true;
   };
   E.skinLocked = function (s, id, skin) {
