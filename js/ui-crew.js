@@ -163,31 +163,56 @@
     const cards = D.ROM_IDS.map((id) => {
       const c = D.CREW[id], R = s.rom[id], rec = !!s.crew[id];
       if (!rec) return `<div class="card heart locked"><div class="row gap center-v">${sil(c.art, 'sm')}<div class="grow tl"><b>???</b><div class="dim small">${c.t === 'her' ? 'Героиня Света — её судьба решится в дуэли' : 'Генерал — присоединится по ходу сюжета'}</div></div></div></div>`;
-      const stg = E.romStage(R), pd = E.romScenePending(s, id);
-      return `<button class="card heart tap ${pd >= 0 ? 'glow' : ''}" data-act="heartOpen" data-id="${id}" data-quiet="1"><div class="row gap center-v">${UI.por(c.art, 'sm', true)}<div class="grow tl"><b>${esc(c.n)}</b> ${pd >= 0 ? '<span class="tag new">новая сцена</span>' : ''}<div class="dim small">${esc(c.role)}</div><div class="affb">${bar(R.aff, 100, 'aff')}<i style="left:15%"></i><i style="left:40%"></i><i style="left:70%"></i></div><div class="dim small">💞 ${R.aff}/100 · ступень ${stg}/3${stg ? ' · ' + bondText(id, stg) : ''}</div></div></div></button>`;
+      const lockedRom = (id === 'tk_reina' && E.tkRomanceOpen && !E.tkRomanceOpen(s));
+      const stg = E.romStage(R), pd = lockedRom ? -1 : E.romScenePending(s, id);
+      const sub = lockedRom
+        ? 'Романтика откроется после прохождения коллабы. Преданность сохраняется отдельно.'
+        : esc(c.role);
+      return `<button class="card heart tap ${pd >= 0 ? 'glow' : ''}" data-act="heartOpen" data-id="${id}" data-quiet="1"><div class="row gap center-v">${UI.por(c.art, 'sm', true)}<div class="grow tl"><b>${esc(c.n)}</b> ${pd >= 0 ? '<span class="tag new">новая сцена</span>' : ''}<div class="dim small">${sub}</div><div class="affb">${bar(R.aff, 100, 'aff')}<i style="left:15%"></i><i style="left:40%"></i><i style="left:70%"></i></div><div class="dim small">💞 ${R.aff}/100 · ступень ${stg}/3${stg ? ' · ' + bondText(id, stg) : ''} · верность ${D.loyTier(s.crew[id].loy).n}</div></div></div></button>`;
     }).join('');
-    return `<h2>Сердца</h2><div class="small dim tl">Лёгкая романтика без откровенных сцен: разговоры, подарки, свидания. Симпатия открывает три сцены (на 15, 40 и 70) и даёт постоянные бонусы. Свободных вечеров: <b>${s.crewTalk || 0}</b>${pend ? ` · новых сцен: <b>${pend}</b>` : ''}.</div>${cards}`;
+    return `<h2>Сердца</h2><div class="small dim tl">Лёгкая романтика без откровенных сцен: разговоры, подарки, свидания. Симпатия открывает сцены и даёт постоянные бонусы. Преданность в Свите считается отдельно. Свободных вечеров: <b>${s.crewTalk || 0}</b>${pend ? ` · новых сцен: <b>${pend}</b>` : ''}.</div>${cards}`;
   };
   UI.act.heartOpen = (el) => { UI.sub.heartId = el.dataset.id; UI.heartModal(); };
   UI.heartModal = function () {
     const s = UI.slot(), id = UI.sub.heartId, c = D.CREW[id], R = s.rom[id], st = s.crew[id]; if (!R || !st) return;
     const R0 = D.ROMANCE[id], stg = E.romStage(R);
-    const sc = R0.scenes.map((x, i) => { const seen = R.seen.includes(i), ok = R.aff >= E.ROM_AT[i]; return `<button class="btn ${seen ? 'ghost' : ok ? 'primary' : 'ghost'} small grow" data-act="romScene" data-id="${id}" data-i="${i}" ${ok ? '' : 'disabled'} data-quiet="1">${seen ? '↺ ' : ok ? '▶ ' : '🔒 '}${i + 1}<br><small>${ok ? esc(x.sub.split('·')[1] || x.sub) : 'симп. ' + E.ROM_AT[i]}</small></button>`; }).join('');
+    const lockedRom = (id === 'tk_reina' && E.tkRomanceOpen && !E.tkRomanceOpen(s));
+    const many = !!(R0.scenes && R0.scenes.length > 4);
+    const sc = lockedRom ? '<div class="dim small">Сначала закончите коллабу «Железный Кулак». Преданность Рейны уже может быть высокой — романтика начнётся с нуля.</div>' : R0.scenes.map((x, i) => {
+      const seen = R.seen.includes(i);
+      const need = E.romSceneAt ? E.romSceneAt(id, i) : E.ROM_AT[i];
+      const prev = !i || R.seen.includes(i - 1) || (R0 && R0.freeOrder);
+      const gated = E.tkRomGate && !E.tkRomGate(s, id, i);
+      const ok = !gated && prev && R.aff >= need;
+      const lab = esc(x.t || x.sub || ('Сцена ' + (i + 1)));
+      const why = gated ? 'ещё не открыто' : (!prev ? 'сначала предыдущий этап' : ('симп. ' + need));
+      return `<button class="btn ${seen ? 'ghost' : ok ? 'primary' : 'ghost'} small ${many ? 'wide tl' : 'grow'}" data-act="romScene" data-id="${id}" data-i="${i}" ${ok || seen ? '' : 'disabled'} data-quiet="1">${seen ? '↺ ' : ok ? '▶ ' : '🔒 '}${lab}${ok || seen ? '' : `<br><small>${why}</small>`}</button>`;
+    }).join('');
     const gifts = Object.keys(D.GIFTS).filter((g) => E.giftCount(s, g) > 0).map((g) => `<button class="btn ghost small" data-act="giveGift" data-id="${id}" data-g="${g}" data-quiet="1">${D.GIFTS[g].ic} ×${E.giftCount(s, g)}</button>`).join('') || '<span class="dim small">Подарков нет — купите в лавке.</span>';
     const why = E.dateOk(s, id);
     UI.modal(`<div class="crewm"><div class="row gap">${(UI.romCardPor && UI.romCardPor(id)) || UI.por(c.art, 'lg', false)}<div class="grow tl"><h3 class="m0">${esc(c.n)}</h3><div class="dim small">${esc(c.role)}</div><div class="affb">${bar(R.aff, 100, 'aff')}<i style="left:15%"></i><i style="left:40%"></i><i style="left:70%"></i></div><div class="small">💞 ${R.aff}/100 · верность: ${D.loyTier(st.loy).n}</div></div></div>
       ${UI.crewSkinBtn ? UI.crewSkinBtn(s, id) : ''}
       <div class="small tl">${stg ? '<b>Бонус сердца:</b> ' + bondText(id, stg) : 'Бонус откроется со ступенью 1 (симпатия 15).'}</div>
-      <div class="card"><b>Сцены</b><div class="row gap">${sc}</div></div>
+      <div class="card"><b>Сцены</b><div class="row gap wrap${many ? ' romsc' : ''}">${sc}</div></div>
       <div class="card"><b>Подарок</b> <span class="dim small">любимое: ${D.GIFTS[c.fav].ic} ${D.GIFTS[c.fav].n}</span><div class="row gap wrap">${gifts}</div></div>
       <div class="card"><b>Свидание</b> <span class="dim small">🪙 ${E.dateCost(s)} · 1 вечер</span><div class="row gap">${D.DATE_PLACES.map((p, i) => `<button class="btn ghost small grow" data-act="dateGo" data-id="${id}" data-i="${i}" ${why ? 'disabled' : ''} data-quiet="1">${p.n}</button>`).join('')}</div>${why ? `<div class="small dim">${why}</div>` : ''}</div>
       <div class="row gap"><button class="btn ghost grow" data-act="crewTalk" data-id="${id}" ${(s.crewTalk || 0) < 1 ? 'disabled' : ''}>💬 Поговорить</button><button class="btn ghost grow" data-act="closeModal">Закрыть</button></div></div>`);
   };
   UI.act.romScene = async (el) => {
-    const s = UI.slot(), id = el.dataset.id, i = +el.dataset.i, R = s.rom[id], sc = D.ROMANCE[id].scenes[i]; if (!R || R.aff < E.ROM_AT[i]) return;
+    const s = UI.slot(), id = el.dataset.id, i = +el.dataset.i, R = s.rom[id], sc = D.ROMANCE[id].scenes[i];
+    if (!R || !sc) return;
+    if (id === 'tk_reina' && E.tkRomanceOpen && !E.tkRomanceOpen(s)) return;
+    const need = E.romSceneAt ? E.romSceneAt(id, i) : E.ROM_AT[i];
+    const seenAlready = R.seen.includes(i);
+    if (!seenAlready && (R.aff < need || (E.tkRomGate && !E.tkRomGate(s, id, i)))) return;
     const first = !R.seen.includes(i); UI.closeModal();
     await UI.playLines(sc.lines, { bg: sc.bg, replay: !first, boxPor: !!(id && String(id).indexOf('tk_') === 0) });
-    if (first) { R.seen.push(i); E.addLoy(s, id, 5); E.addAff(s, id, 2); s.rev++; UI.toast('💞 Бонус сердца усилен', 'gold'); UI.save(true); }
+    if (first) {
+      R.seen.push(i); E.addLoy(s, id, 5); E.addAff(s, id, 2); s.rev++;
+      const opened = (E.skinsOf(id) || []).find((sk) => sk.stage === i && !E.skinLocked(s, id, sk));
+      UI.toast(opened ? ('Открыт облик: ' + opened.n) : '💞 Бонус сердца усилен', 'gold');
+      UI.save(true);
+    }
     UI.refresh(false); UI.heartModal();
   };
   UI.act.dateGo = async (el) => {

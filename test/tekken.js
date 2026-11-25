@@ -1,7 +1,7 @@
 /* v2.31.2 коллаба «Железный Кулак»: канонический сценарий, 19 глав, 3 исхода + Рейна. */
 const assert = require('assert');
 const RPG = require('../js/data-core.js'); require('../js/data-stats.js');
-['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'allies', 'data-craft-icons', 'craft', 'goals', 'challenge', 'life', 'tekken', 'tekken-roster', 'tekken-story', 'tekken-romance', 'tekken-meet', 'mail'].forEach((f) => require('../js/' + f + '.js'));
+['data-maou', 'data-maou2', 'data-prof', 'data-world', 'data-world2', 'data-crew', 'data-theme', 'data-story', 'data-story2', 'data-story3', 'data-romance', 'portrait', 'engine', 'stats', 'gear', 'combat', 'crew', 'save', 'artifact', 'dungeons-sp', 'pets', 'allies', 'data-craft-icons', 'craft', 'goals', 'challenge', 'life', 'tekken', 'tekken-roster', 'tekken-story', 'tekken-romance', 'tekken-reina-romance', 'tekken-meet', 'mail'].forEach((f) => require('../js/' + f + '.js'));
 const { E, D, C, S } = RPG;
 let pass = 0, fail = 0; const t = (n, f) => { try { f(); pass++; } catch (e) { fail++; console.log('  ✗', n, '\n     ', e.message); } };
 const NOW = Date.parse('2026-11-24T12:00:00+01:00');
@@ -30,7 +30,7 @@ t('окно события', () => {
 t('полный состав: 43 бойца, 14 романтических линий, Юдзиро не в сетке', () => {
   assert.strictEqual(D.TK_FIGHTERS.length, 43);
   assert.strictEqual(D.TK_WOMEN.length, 14);
-  D.TK_WOMEN.forEach((id) => assert(D.ROMANCE[id] && D.ROMANCE[id].scenes.length === 3, id));
+  D.TK_WOMEN.forEach((id) => assert(D.ROMANCE[id] && D.ROMANCE[id].scenes.length === (id === 'tk_reina' ? 12 : 3), id));
   assert(!D.TK_FIGHTER.yujiro && !D.TK_FIGHTERS.some((f) => /yujiro|ханма/i.test(f.id + f.n)));
   const first = D.TK_FIGHTERS.slice(0, 11).map((f) => f.id);
   assert.deepStrictEqual(first, D.TK_OLD_LADDER);
@@ -138,17 +138,22 @@ t('встречи: 31 сцена, Юдзиро и Хэйхати после фи
   assert(E.tkMeetOpen(s, 'yujiro') && E.tkMeetOpen(s, 'heihachi') && E.tkMeetOpen(s, 'clive'));
 });
 
-t('ворота романа: Рейна после 05/11/17, остальные после 05/10/16–17', () => {
+t('ворота романа: Рейна после финала коллабы, остальные после 05/10/16–17', () => {
   const s = mk();
   playThrough(s, 'tk05_street', { tk_reina: 1 });
-  assert(E.tkRomGate(s, 'tk_reina', 0));
-  assert(!E.tkRomGate(s, 'tk_reina', 1));
+  assert(!E.tkRomGate(s, 'tk_reina', 0), 'романтика Рейны закрыта до конца коллабы');
   assert(E.tkRomGate(s, 'tk_nina', 0));
   assert(!E.tkRomGate(s, 'tk_nina', 1));
   playThrough(s, 'tk11_daughter', { tk_reina: 1, tk_jin: 1, tk_side: 'jin' });
-  assert(E.tkRomGate(s, 'tk_reina', 1));
+  assert(!E.tkRomGate(s, 'tk_reina', 0));
   assert(E.tkRomGate(s, 'tk_nina', 1));
-  assert(!E.tkRomGate(s, 'tk_reina', 2));
+  playThrough(s, 'tk16_outcome');
+  s.tk.flags.tk_reina_join = 1; E.tkSyncFlags(s);
+  playThrough(s, 'tk19_home');
+  assert(s.crew.tk_reina);
+  assert(E.tkRomGate(s, 'tk_reina', 0));
+  assert(E.tkRomGate(s, 'tk_reina', 5));
+  assert(!E.tkRomGate(s, 'tk_reina', 11), 'свадебный этап без любовной ветки закрыт');
 });
 
 t('магазин и награды', () => {
@@ -597,17 +602,17 @@ t('облики Рейны: список, выбор сохраняется, с�
   assert.strictEqual(list[1].id, 'top');
   assert.strictEqual(list[1].n, 'Без бомбера');
   assert.strictEqual(list[1].img, 'tk_reina_top');
-  assert.deepStrictEqual(list.slice(2).map((x) => [x.id, x.n, x.img, x.lock, x.aff || 0, x.blood || 0]), [
-    ['suit', 'Деловой костюм', 'tk_reina_skin_suit', 1, 15, 0],
-    ['shorts', 'Топ и шорты', 'tk_reina_skin_shorts', 1, 25, 0],
-    ['evening', 'Вечернее платье', 'tk_reina_skin_evening', 1, 40, 0],
-    ['catsuit', 'Кожаный комбинезон', 'tk_reina_skin_catsuit', 1, 55, 0],
-    ['armor', 'Демоническая броня', 'tk_reina_skin_armor', 1, 0, 1],
-    ['wedding', 'Свадебное платье', 'tk_reina_skin_wedding', 1, 70, 0]
+  assert.deepStrictEqual(list.slice(2).map((x) => [x.id, x.n, x.img, x.lock, x.stage, x.stageName]), [
+    ['suit', 'Деловой костюм', 'tk_reina_skin_suit', 1, 1, 'Деловой визит'],
+    ['shorts', 'Топ и шорты', 'tk_reina_skin_shorts', 1, 2, 'Свои правила ринга'],
+    ['evening', 'Вечернее платье', 'tk_reina_skin_evening', 1, 4, 'Вечер, который не назначен'],
+    ['catsuit', 'Кожаный комбинезон', 'tk_reina_skin_catsuit', 1, 6, 'Ночная работа'],
+    ['armor', 'Демоническая броня', 'tk_reina_skin_armor', 1, 5, 'Крылья, которые не просили'],
+    ['wedding', 'Свадебное платье', 'tk_reina_skin_wedding', 1, 11, 'Не как у Мисим']
   ]);
-  assert.strictEqual(E.skinReqText(list[2]), 'Откроется: симпатия 15');
-  assert.strictEqual(E.skinReqText(list[6]), 'Откроется: после крови');
-  assert.strictEqual(E.skinReqText(list[7]), 'Откроется: симпатия 70');
+  assert.strictEqual(E.skinReqText(list[2]), 'Откроется: этап «Деловой визит»');
+  assert.strictEqual(E.skinReqText(list[6]), 'Откроется: этап «Крылья, которые не просили»');
+  assert.strictEqual(E.skinReqText(list[7]), 'Откроется: этап «Не как у Мисим»');
   const s = mk();
   assert.strictEqual(E.skinId(s, 'tk_reina'), 'jacket');
   assert.strictEqual(E.skinOf(s, 'tk_reina').img, 'tk_reina_jacket');
@@ -616,21 +621,25 @@ t('облики Рейны: список, выбор сохраняется, с�
   assert(!E.skinLocked(s, 'tk_reina', 'jacket') && !E.skinLocked(s, 'tk_reina', 'top'));
   assert.strictEqual(E.setSkin(s, 'tk_reina', 'suit'), 'Облик ещё закрыт');
   assert.strictEqual(E.setSkin(s, 'tk_reina', 'armor'), 'Облик ещё закрыт');
-  // уже существующее сохранение с симпатией сразу видит открытые облики (без письма)
+  // облики открываются этапами маршрута, а не числом симпатии или кровью
   s.rom.tk_reina = s.rom.tk_reina || { aff: 0, seen: [], dates: 0, gifts: 0 };
-  s.rom.tk_reina.aff = 15;
+  s.rom.tk_reina.aff = 100;
+  s.tk.blood = 1;
+  assert(E.skinLocked(s, 'tk_reina', 'suit'), 'высокая симпатия и кровь сами по себе не открывают облик');
+  const see = (n) => { s.rom.tk_reina.seen = Array.from({ length: n + 1 }, (_, i) => i); };
+  see(1);
   assert(!E.skinLocked(s, 'tk_reina', 'suit') && E.skinLocked(s, 'tk_reina', 'shorts'));
   assert.strictEqual(E.setSkin(s, 'tk_reina', 'suit'), '');
   assert.strictEqual(E.skinOf(s, 'tk_reina').img, 'tk_reina_skin_suit');
-  s.rom.tk_reina.aff = 25;
+  see(2);
   assert(!E.skinLocked(s, 'tk_reina', 'shorts') && E.skinLocked(s, 'tk_reina', 'evening'));
-  s.rom.tk_reina.aff = 40;
-  assert(!E.skinLocked(s, 'tk_reina', 'evening') && E.skinLocked(s, 'tk_reina', 'catsuit'));
-  s.rom.tk_reina.aff = 55;
-  assert(!E.skinLocked(s, 'tk_reina', 'catsuit') && E.skinLocked(s, 'tk_reina', 'wedding') && E.skinLocked(s, 'tk_reina', 'armor'));
-  s.tk.blood = 1;
-  assert(!E.skinLocked(s, 'tk_reina', 'armor') && E.skinLocked(s, 'tk_reina', 'wedding'));
-  s.rom.tk_reina.aff = 70;
+  see(4);
+  assert(!E.skinLocked(s, 'tk_reina', 'evening') && E.skinLocked(s, 'tk_reina', 'catsuit') && E.skinLocked(s, 'tk_reina', 'armor'));
+  see(5);
+  assert(!E.skinLocked(s, 'tk_reina', 'armor') && E.skinLocked(s, 'tk_reina', 'catsuit'), 'броня — этап гена, без крови как условия');
+  see(6);
+  assert(!E.skinLocked(s, 'tk_reina', 'catsuit') && E.skinLocked(s, 'tk_reina', 'wedding'));
+  see(11);
   assert(!E.skinLocked(s, 'tk_reina', 'wedding'));
   // без симпатии письмо и E.unlockSkin по-прежнему снимают замок
   const sMail = mk(); const M = globalThis.RPG.M;
@@ -650,6 +659,7 @@ t('облики Рейны: список, выбор сохраняется, с�
   s.skins.tk_reina = 'armor';
   s.tk.blood = 0;
   s.rom.tk_reina.aff = 0;
+  s.rom.tk_reina.seen = [];
   assert.strictEqual(E.skinId(s, 'tk_reina'), 'jacket');
   assert.strictEqual(E.unlockSkin(s, 'tk_reina'), '');
   assert(!E.skinLocked(s, 'tk_reina', 'wedding') && !E.skinLocked(s, 'tk_reina', 'suit'));
@@ -661,6 +671,67 @@ t('облики Рейны: список, выбор сохраняется, с�
   assert(!E.skinsOf('tk_nina').length);
 });
 
+
+
+t('романтика Рейны отдельно от преданности и открывается после коллабы', () => {
+  const s = mk();
+  s.crew.tk_reina = { lv: 10, loy: 40, eq: {}, t: 0, star: 0, skl: 0, bxp: 0 };
+  s.rom.tk_reina = { aff: 0, seen: [], dates: 0, gifts: 0 };
+  s.tk.flags.tk_reina = 1;
+  assert.strictEqual(E.tkRomanceOpen(s), false);
+  assert.strictEqual(E.addAff(s, 'tk_reina', 20), 0);
+  assert.strictEqual(s.rom.tk_reina.aff, 0);
+  assert.strictEqual(E.dateOk(s, 'tk_reina'), 'Романтика Рейны откроется после прохождения коллабы');
+  E.tkGiveBlood(s, 1);
+  assert.strictEqual(s.tk.blood, 1);
+  assert.strictEqual(s.crew.tk_reina.loy, 90);
+  assert.strictEqual(s.rom.tk_reina.aff, 0, 'кровь не поднимает романтику');
+  s.tk.ending = 'jin';
+  s.tk.story = (s.tk.story || []).concat(['tk16_outcome', 'tk19_home']);
+  assert.strictEqual(E.tkRomanceOpen(s), true);
+  assert.strictEqual(E.addAff(s, 'tk_reina', 6), 6);
+  assert.strictEqual(s.rom.tk_reina.aff, 6);
+  const sc = D.ROMANCE.tk_reina.scenes;
+  assert.strictEqual(sc.length, 12);
+  assert.strictEqual(sc[0].t, 'Утро без расписания');
+  assert.strictEqual(sc[11].t, 'Не как у Мисим');
+  assert.deepStrictEqual(E.romAts('tk_reina'), [0, 6, 12, 18, 24, 32, 40, 48, 56, 64, 72, 80]);
+  assert.strictEqual(E.romScenePending(s, 'tk_reina'), 0);
+  s.rom.tk_reina.aff = 80;
+  s.rom.tk_reina.seen = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  s.story.flags = s.story.flags || {};
+  assert.strictEqual(E.tkRomGate(s, 'tk_reina', 11), false, 'свадебный этап только на любовной ветке');
+  s.story.flags.rei_rom_love = 1;
+  assert.strictEqual(E.tkRomGate(s, 'tk_reina', 11), true);
+  s.story.flags.rei_rom_bad = 1;
+  assert.strictEqual(E.tkRomGate(s, 'tk_reina', 9), false);
+});
+
+t('старые сохранения: романтика Рейны сбрасывается, преданность и письма с обликами остаются', () => {
+  const s = mk();
+  s.crew.tk_reina = { lv: 12, loy: 90, eq: {}, t: 0, star: 0, skl: 0, bxp: 0 };
+  s.rom.tk_reina = { aff: 80, seen: [0, 1, 2], dates: 3, gifts: 2 };
+  s.skins = { tk_reina: 'wedding' };
+  s.tk.blood = 1;
+  s.tk.ending = 'jin';
+  s.tk.mig232 = 0;
+  E.tkEnsure(s);
+  assert.strictEqual(s.tk.mig232, 1);
+  assert.strictEqual(s.rom.tk_reina.aff, 0);
+  assert.deepStrictEqual(s.rom.tk_reina.seen, []);
+  assert.strictEqual(s.crew.tk_reina.loy, 90);
+  assert.strictEqual(s.skins.tk_reina, 'jacket');
+  assert(E.skinLocked(s, 'tk_reina', 'wedding'));
+  const sMail = mk();
+  sMail.skins = { tk_reina: 'armor' };
+  sMail.rom.tk_reina = { aff: 40, seen: [0], dates: 0, gifts: 0 };
+  sMail.skinsUnlock = { tk_reina: { armor: 1 } };
+  sMail.tk.mig232 = 0;
+  E.tkEnsure(sMail);
+  assert.strictEqual(sMail.rom.tk_reina.aff, 0);
+  assert(!E.skinLocked(sMail, 'tk_reina', 'armor'), 'письмо/unlockSkin не перезапирает');
+  assert.strictEqual(sMail.skins.tk_reina, 'armor');
+});
 
 t('реплики в боях коллабы и тексты поражения по маршрутам', () => {
   assert((D.TK_BARKS || []).length >= 16);

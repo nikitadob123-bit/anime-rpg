@@ -1,9 +1,9 @@
-/* E2E v2.31.10 коллаба «Железный Кулак»: канонический сценарий, 4 пути, рамка диалога.
-   Скриншоты — /workspace/shots-tekken/v23110/  (444×986) */
+/* E2E v2.32.0 коллаба «Железный Кулак»: канонический сценарий, 4 пути, рамка диалога.
+   Скриншоты — /workspace/shots-tekken/v2320/  (444×986) */
 const { chromium } = require('playwright-core');
 const fs = require('fs'), path = require('path');
 const { serve } = require('./serve.js');
-const outDir = process.env.TK_SHOTS || '/workspace/shots-tekken/v23110';
+const outDir = process.env.TK_SHOTS || '/workspace/shots-tekken/v2320';
 fs.mkdirSync(outDir, { recursive: true });
 let ok = 0, bad = 0;
 const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra || ''); } else { bad++; console.log('  ✗', n, extra || ''); } };
@@ -107,10 +107,10 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   });
   await page.waitForTimeout(400);
 
-  check('версия 2.31.10', await ev(() => __RPG.VERSION === '2.31.10' || (__RPG.RPG && __RPG.RPG.VERSION === '2.31.10') || document.querySelector('script') && true) && await ev(() => (__RPG.VERSION || __RPG.RPG?.VERSION) ? (__RPG.VERSION || __RPG.RPG.VERSION) === '2.31.10' : !!__RPG.D.TK_CH && __RPG.D.TK_CH.length === 19), await ev(() => __RPG.VERSION || (window.RPG && RPG.VERSION)));
+  check('версия 2.32.0', await ev(() => __RPG.VERSION === '2.32.0' || (__RPG.RPG && __RPG.RPG.VERSION === '2.32.0') || document.querySelector('script') && true) && await ev(() => (__RPG.VERSION || __RPG.RPG?.VERSION) ? (__RPG.VERSION || __RPG.RPG.VERSION) === '2.32.0' : !!__RPG.D.TK_CH && __RPG.D.TK_CH.length === 19), await ev(() => __RPG.VERSION || (window.RPG && RPG.VERSION)));
   // VERSION lives on RPG
   const ver = await ev(() => (window.RPG && RPG.VERSION) || __RPG.VERSION || '');
-  check('RPG.VERSION 2.31.10', ver === '2.31.10', ver);
+  check('RPG.VERSION 2.32.0', ver === '2.32.0', ver);
   check('19 глав канона', await ev(() => (__RPG.D.TK_CH || []).length === 19 && __RPG.D.TK_CH[0].id === 'tk01_rift' && __RPG.D.TK_CH[18].id === 'tk19_home'));
   check('событие активно', await ev(() => __RPG.E.tkActive()));
   check('баннер в Лагере', await page.locator('.tkbanner').count() > 0);
@@ -422,12 +422,12 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   const expectReq = [
     ['Обычный', false, ''],
     ['Без бомбера', false, ''],
-    ['Деловой костюм', true, 'Откроется: симпатия 15'],
-    ['Топ и шорты', true, 'Откроется: симпатия 25'],
-    ['Вечернее платье', true, 'Откроется: симпатия 40'],
-    ['Кожаный комбинезон', true, 'Откроется: симпатия 55'],
-    ['Демоническая броня', true, 'Откроется: после крови'],
-    ['Свадебное платье', true, 'Откроется: симпатия 70']
+    ['Деловой костюм', true, 'Откроется: этап «Деловой визит»'],
+    ['Топ и шорты', true, 'Откроется: этап «Свои правила ринга»'],
+    ['Вечернее платье', true, 'Откроется: этап «Вечер, который не назначен»'],
+    ['Кожаный комбинезон', true, 'Откроется: этап «Ночная работа»'],
+    ['Демоническая броня', true, 'Откроется: этап «Крылья, которые не просили»'],
+    ['Свадебное платье', true, 'Откроется: этап «Не как у Мисим»']
   ];
   const tabsOk = v1 && v1.tabs.length === 8 && expectReq.every((row, i) => v1.tabs[i] && v1.tabs[i].t === row[0] && v1.tabs[i].lock === row[1] && v1.tabs[i].req === row[2] && (row[1] ? !v1.tabs[i].hasIm : true));
   check('просмотрщик: 8 обликов, по умолчанию открыты только обычный и без бомбера, закрытые без картинки и с требованием', tabsOk && /tk_reina_jacket\.webp/.test(v1.src) && v1.on === 'Обычный' && !v1.leak, JSON.stringify(v1));
@@ -467,7 +467,22 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
     const im = document.querySelector('.crewm img.tkfull, .crewm img.por.lg');
     return { btn, src: im && im.getAttribute('src') };
   });
-  check('кнопка и выбранный облик на карточке романа', heart && heart.btn && /tk_reina_top\.webp/.test(heart.src || ''), JSON.stringify(heart));
+  const romUi = await ev(() => {
+    const s = __RPG.UI.slot(), E = __RPG.E;
+    const btns = [...document.querySelectorAll('[data-act="romScene"]')].map((b) => (b.textContent || '').replace(/\s+/g, ' ').trim());
+    return {
+      open: E.tkRomanceOpen(s),
+      aff: s.rom.tk_reina && s.rom.tk_reina.aff,
+      loy: s.crew.tk_reina && s.crew.tk_reina.loy,
+      n: btns.length,
+      first: btns[0] || '',
+      last: btns[btns.length - 1] || ''
+    };
+  });
+  check('романтика открыта после коллабы, 12 этапов, симпатия с нуля', romUi && romUi.open && romUi.aff === 0 && romUi.n === 12 && /Утро без расписания/.test(romUi.first) && /Не как у Мисим/.test(romUi.last), JSON.stringify(romUi));
+
+  check('кнопка и выбранный облик на карточке романа'
+, heart && heart.btn && /tk_reina_top\.webp/.test(heart.src || ''), JSON.stringify(heart));
   await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
   await shot('12-reina-hearts-skin');
 
@@ -476,8 +491,11 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
       const RPG = __RPG, UI = RPG.UI, s = UI.slot();
       s.rom = s.rom || {};
       s.rom.tk_reina = s.rom.tk_reina || { aff: 0, seen: [], dates: 0, gifts: 0 };
-      if (p.aff != null) s.rom.tk_reina.aff = p.aff;
-      if (p.blood != null && s.tk) s.tk.blood = p.blood;
+      if (p.stage != null) {
+        s.rom.tk_reina.seen = [];
+        for (let i = 0; i <= p.stage; i++) s.rom.tk_reina.seen.push(i);
+        s.rom.tk_reina.aff = 100;
+      }
       UI.save && UI.save(true);
       UI.sub.skinId = 'tk_reina';
       UI.skinModal();
@@ -496,12 +514,12 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
     await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
     await shot(shotName);
   };
-  await unlockShot({ aff: 15 }, 'suit', 'Деловой костюм', 'tk_reina_skin_suit', '18-reina-skin-suit');
-  await unlockShot({ aff: 25 }, 'shorts', 'Топ и шорты', 'tk_reina_skin_shorts', '20-reina-skin-shorts');
-  await unlockShot({ aff: 40 }, 'evening', 'Вечернее платье', 'tk_reina_skin_evening', '19-reina-skin-evening');
-  await unlockShot({ aff: 55 }, 'catsuit', 'Кожаный комбинезон', 'tk_reina_skin_catsuit', '21-reina-skin-catsuit');
-  await unlockShot({ blood: 1 }, 'armor', 'Демоническая броня', 'tk_reina_skin_armor', '15-reina-skin-armor');
-  await unlockShot({ aff: 70 }, 'wedding', 'Свадебное платье', 'tk_reina_skin_wedding', '16-reina-skin-wedding');
+  await unlockShot({ stage: 1 }, 'suit', 'Деловой костюм', 'tk_reina_skin_suit', '18-reina-skin-suit');
+  await unlockShot({ stage: 2 }, 'shorts', 'Топ и шорты', 'tk_reina_skin_shorts', '20-reina-skin-shorts');
+  await unlockShot({ stage: 4 }, 'evening', 'Вечернее платье', 'tk_reina_skin_evening', '19-reina-skin-evening');
+  await unlockShot({ stage: 6 }, 'catsuit', 'Кожаный комбинезон', 'tk_reina_skin_catsuit', '21-reina-skin-catsuit');
+  await unlockShot({ stage: 5 }, 'armor', 'Демоническая броня', 'tk_reina_skin_armor', '15-reina-skin-armor');
+  await unlockShot({ stage: 11 }, 'wedding', 'Свадебное платье', 'tk_reina_skin_wedding', '16-reina-skin-wedding');
 
   // реплики в бою: короткий сюжетный бой, неблокирующий пузырь
   await ev(() => {

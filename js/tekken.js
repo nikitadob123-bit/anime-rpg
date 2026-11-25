@@ -55,6 +55,7 @@
         E.tkMigStory230(s);
         if (t.ending && !t.mig230) E.tkApplyMig230(s);
         if (!t.mig231) E.tkApplyMig231(s);
+        if (!t.mig232) E.tkApplyMig232(s);
         E.tkCatchUpAllies && E.tkCatchUpAllies(s);
         E.tkSyncFlags && E.tkSyncFlags(s);
       } finally { delete s._tkEnsuring; }
@@ -444,12 +445,12 @@
   D.TK_SKINS.tk_reina = [
     { id: 'jacket', n: 'Обычный', img: 'tk_reina_jacket' },
     { id: 'top', n: 'Без бомбера', img: 'tk_reina_top' },
-    { id: 'suit', n: 'Деловой костюм', img: 'tk_reina_skin_suit', lock: 1, aff: 15 },
-    { id: 'shorts', n: 'Топ и шорты', img: 'tk_reina_skin_shorts', lock: 1, aff: 25 },
-    { id: 'evening', n: 'Вечернее платье', img: 'tk_reina_skin_evening', lock: 1, aff: 40 },
-    { id: 'catsuit', n: 'Кожаный комбинезон', img: 'tk_reina_skin_catsuit', lock: 1, aff: 55 },
-    { id: 'armor', n: 'Демоническая броня', img: 'tk_reina_skin_armor', lock: 1, blood: 1 },
-    { id: 'wedding', n: 'Свадебное платье', img: 'tk_reina_skin_wedding', lock: 1, aff: 70 }
+    { id: 'suit', n: 'Деловой костюм', img: 'tk_reina_skin_suit', lock: 1, stage: 1, stageName: 'Деловой визит' },
+    { id: 'shorts', n: 'Топ и шорты', img: 'tk_reina_skin_shorts', lock: 1, stage: 2, stageName: 'Свои правила ринга' },
+    { id: 'evening', n: 'Вечернее платье', img: 'tk_reina_skin_evening', lock: 1, stage: 4, stageName: 'Вечер, который не назначен' },
+    { id: 'catsuit', n: 'Кожаный комбинезон', img: 'tk_reina_skin_catsuit', lock: 1, stage: 6, stageName: 'Ночная работа' },
+    { id: 'armor', n: 'Демоническая броня', img: 'tk_reina_skin_armor', lock: 1, stage: 5, stageName: 'Крылья, которые не просили' },
+    { id: 'wedding', n: 'Свадебное платье', img: 'tk_reina_skin_wedding', lock: 1, stage: 11, stageName: 'Не как у Мисим' }
   ];
 
 
@@ -630,9 +631,40 @@
     t.taken = id || 'none'; t.vowDone = 1;
     if (id) {
       E.tkGrantComp(s, id);
-      if (s.rom[id]) s.rom[id].aff = Math.max(s.rom[id].aff | 0, 40);
+      if (id !== 'tk_reina' && s.rom[id]) s.rom[id].aff = Math.max(s.rom[id].aff | 0, 40);
     }
     s.rev = (s.rev || 0) + 1; return '';
+  };
+  if (!E._addAffBase) {
+    E._addAffBase = E.addAff;
+    E.addAff = function (slot, id, n) {
+      if (id === 'tk_reina' && E.tkRomanceOpen && !E.tkRomanceOpen(slot)) return 0;
+      return E._addAffBase.apply(this, arguments);
+    };
+  }
+  if (!E._dateOkBase && E.dateOk) {
+    E._dateOkBase = E.dateOk;
+    E.dateOk = function (slot, id) {
+      if (id === 'tk_reina' && E.tkRomanceOpen && !E.tkRomanceOpen(slot)) return 'Романтика Рейны откроется после прохождения коллабы';
+      return E._dateOkBase.apply(this, arguments);
+    };
+  }
+  E.tkRomanceOpen = function (s) {
+    if (!s || !s.crew || !s.crew.tk_reina) return false;
+    const tk = s.tk || {};
+    if (tk.flags && tk.flags.tk_reina_no) return false;
+    const st = tk.story || [];
+    return !!(tk.ending || st.includes('tk16_outcome') || st.includes('tk19_home'));
+  };
+  E.tkApplyMig232 = function (s) {
+    const tk = s.tk; if (!tk || tk.mig232) return;
+    tk.mig232 = 1;
+    if (s.rom && s.rom.tk_reina) {
+      s.rom.tk_reina.aff = 0;
+      s.rom.tk_reina.seen = [];
+    }
+    const cur = s.skins && s.skins.tk_reina;
+    if (cur && E.skinLocked && E.skinLocked(s, 'tk_reina', cur)) s.skins.tk_reina = 'jacket';
   };
   E.tkGiveBlood = function (s, yes) {
     const t = E.tkEnsure(s);
@@ -640,9 +672,9 @@
     if (t.taken && t.taken !== 'tk_reina') return 'Клятву вы уже дали другой';
     if (!yes) { t.bloodAsked = 1; return ''; }
     t.blood = 1; t.taken = 'tk_reina'; t.vowDone = 1;
+    t.flags.tk_blood = 1;
     E.tkGrantComp(s, 'tk_reina');
     E.tkReinaApply && E.tkReinaApply(s);
-    if (s.rom.tk_reina) s.rom.tk_reina.aff = Math.max(s.rom.tk_reina.aff | 0, 80);
     if (s.crew.tk_reina) s.crew.tk_reina.loy = Math.max(s.crew.tk_reina.loy | 0, 90);
     s.rev = (s.rev || 0) + 1; return '';
   };

@@ -809,6 +809,7 @@
     const t = E.tkEnsure(s);
     s.story = s.story || { flags: {}, done: [] };
     s.story.flags = s.story.flags || {};
+    if (t.blood) t.flags.tk_blood = 1;
     Object.assign(s.story.flags, t.flags);
   };
 

@@ -19,8 +19,28 @@
   E.addAff = function (slot, id, n) { const r = slot.rom[id]; if (!r) return 0; const b = r.aff; r.aff = clamp(r.aff + n, 0, 100); return r.aff - b; };
   E.romStage = (r) => (!r ? 0 : r.aff >= 70 ? 3 : r.aff >= 40 ? 2 : r.aff >= 15 ? 1 : 0);
   E.ROM_AT = [15, 40, 70];
-  // следующая доступная романтическая сцена (индекс 0..2) или -1
-  E.romScenePending = function (slot, id) { const r = slot.rom[id]; if (!r || !slot.crew[id]) return -1; for (let i = 0; i < 3; i++) if (r.aff >= E.ROM_AT[i] && !r.seen.includes(i)) return i; return -1; };
+  E.romAts = function (id) {
+    const R = D.ROMANCE && D.ROMANCE[id];
+    if (R && Array.isArray(R.at) && R.at.length) return R.at;
+    if (R && R.scenes && R.scenes.some((s) => s && s.at != null)) return R.scenes.map((s, i) => (s && s.at != null) ? s.at : (E.ROM_AT[i] != null ? E.ROM_AT[i] : 999));
+    return E.ROM_AT;
+  };
+  E.romSceneAt = function (id, i) {
+    const ats = E.romAts(id);
+    return (ats && ats[i] != null) ? ats[i] : 999;
+  };
+  E.romScenePending = function (slot, id) {
+    const r = slot.rom[id]; if (!r || !slot.crew[id]) return -1;
+    const R = D.ROMANCE && D.ROMANCE[id];
+    const n = (R && R.scenes && R.scenes.length) || E.romAts(id).length;
+    for (let i = 0; i < n; i++) {
+      if (r.aff >= E.romSceneAt(id, i) && !r.seen.includes(i)) {
+        if (i && !(R && R.freeOrder) && !r.seen.includes(i - 1)) continue;
+        return i;
+      }
+    }
+    return -1;
+  };
   E.bondMods = function (slot, mods) {
     if (!D.ROMANCE) return;
     for (const id in slot.rom) { const R = D.ROMANCE[id], st = E.romStage(slot.rom[id]); if (R && R.bond && st) for (const k in R.bond) mods[k] = (mods[k] || 0) + R.bond[k] * st; }
@@ -130,13 +150,22 @@
   };
   E.skinReqText = function (sk) {
     if (!sk || !sk.lock) return '';
+    if (sk.stageName) return 'Откроется: этап «' + sk.stageName + '»';
+    if (sk.stage != null && D.ROMANCE) {
+      const R = D.ROMANCE[sk.hero || 'tk_reina'];
+      const sc = R && R.scenes && R.scenes[sk.stage];
+      if (sc && (sc.t || sc.sub)) return 'Откроется: этап «' + (sc.t || sc.sub) + '»';
+    }
     if (sk.blood) return 'Откроется: после крови';
     if (sk.aff) return 'Откроется: симпатия ' + sk.aff;
     return 'Облик закрыт';
   };
   E.skinMet = function (s, id, sk) {
     if (!sk) return false;
-    if (sk.aff && ((s && s.rom && s.rom[id] && s.rom[id].aff) || 0) < sk.aff) return false;
+    if (sk.stage != null) {
+      const seen = (s && s.rom && s.rom[id] && s.rom[id].seen) || [];
+      if (!seen.includes(sk.stage)) return false;
+    } else if (sk.aff && ((s && s.rom && s.rom[id] && s.rom[id].aff) || 0) < sk.aff) return false;
     if (sk.blood && !(s && s.tk && s.tk.blood)) return false;
     return true;
   };
