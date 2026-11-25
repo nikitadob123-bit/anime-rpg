@@ -115,5 +115,35 @@
     ids.forEach((id) => { if (!slot.crew[id]) return; out[id] = E.crewAddXp(slot, id, Math.round(xp * 0.7)); if (boss) E.addLoy(slot, id, 2); });
     return out;
   };
+  // Облики (скины) спутников: список в D.TK_SKINS[id], выбор в slot.skins (добавляется при обращении, ничего не затирает).
+  D.TK_SKINS = D.TK_SKINS || {};
+  E.skinsOf = (id) => (D.TK_SKINS && D.TK_SKINS[id]) || [];
+  E.skinEnsure = function (s) {
+    if (!s) return {};
+    if (!s.skins || typeof s.skins !== 'object' || Array.isArray(s.skins)) s.skins = {};
+    return s.skins;
+  };
+  E.skinId = function (s, id) {
+    const list = E.skinsOf(id); if (!list.length) return null;
+    const cur = E.skinEnsure(s)[id];
+    return list.some((x) => x.id === cur) ? cur : list[0].id;
+  };
+  E.skinOf = function (s, id) {
+    const list = E.skinsOf(id), sid = E.skinId(s, id);
+    return (sid && list.find((x) => x.id === sid)) || list[0] || null;
+  };
+  E.setSkin = function (s, id, skinId) {
+    const list = E.skinsOf(id);
+    if (!list.some((x) => x.id === skinId)) return 'Нет такого облика';
+    E.skinEnsure(s)[id] = skinId;
+    s.rev = (s.rev || 0) + 1;
+    return '';
+  };
+  E.skinSrc = (sk) => {
+    if (!sk || !sk.img) return '';
+    if (/^(img\/|https?:)/.test(sk.img)) return sk.img;
+    return 'img/tekken/' + sk.img + '.webp';
+  };
+
   if (typeof module !== 'undefined') module.exports = RPG;
 })();

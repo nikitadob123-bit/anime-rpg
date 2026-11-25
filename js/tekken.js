@@ -439,6 +439,13 @@
   D.TITLES.push({ id: 'ironfist', n: 'Король Железного Кулака', ok: (s) => !!(s.tk && (s.tk.ending || (s.tk.shop && s.tk.shop.title))) });
   D.FRAMES.push({ id: 'ironfist', n: 'Железный Кулак', c: '#ff5a3a', ok: (s) => !!(s.tk && (s.tk.ending || (s.tk.shop && s.tk.shop.frame))) });
 
+  // Облики полного роста. Новый скин: файл img/tekken/<img>.webp и строка в этом списке.
+  D.TK_SKINS = D.TK_SKINS || {};
+  D.TK_SKINS.tk_reina = [
+    { id: 'jacket', n: 'Обычный', img: 'tk_reina_jacket' },
+    { id: 'top', n: 'Без бомбера', img: 'tk_reina_top' }
+  ];
+
 
   E.tkGrantSphere = function (s) {
     const t = E.tkEnsure(s);
@@ -459,9 +466,7 @@
     { id: 'frame', n: 'Рамка «Железный Кулак»', ic: '🖼️', cost: 80, once: 1, typ: 'frame' },
     { id: 'bolt', n: 'Навык «Электрический Удар Мисимы»', ic: '⚡', cost: 150, once: 1, typ: 'bolt' },
     { id: 'gloves', n: 'Перчатки Железного Кулака', ic: '👊', cost: 200, once: 1, typ: 'gloves' },
-    { id: 'gene', n: 'Артефакт «Ген Дьявола»', ic: '😈', cost: 280, once: 1, typ: 'art' },
-    { id: 'rec_jin', n: 'Пригласить Дзина в Свиту', ic: '👊', cost: 240, once: 1, typ: 'rec', rec: 'tk_jin', need: (s) => { const t = E.tkEnsure(s); return t.stage >= 8 || (t.story && t.story.includes('tk16_outcome')) || t.ending === 'jin' || (t.rec && t.rec.includes('tk_jin')); } },
-    { id: 'rec_nina', n: 'Пригласить Нину в Свиту', ic: '🗡️', cost: 220, once: 1, typ: 'rec', rec: 'tk_nina', need: (s) => { const t = E.tkEnsure(s); return t.stage >= 4 || (t.story && t.story.includes('tk16_outcome')) || t.ending === 'neutral' || (t.rec && t.rec.includes('tk_nina')); } }
+    { id: 'gene', n: 'Артефакт «Ген Дьявола»', ic: '😈', cost: 280, once: 1, typ: 'art' }
   ];
   D.TK_SHOP_MAP = {}; D.TK_SHOP.forEach((x) => { D.TK_SHOP_MAP[x.id] = x; });
 

@@ -72,3 +72,18 @@ img.por.tkdevil, .tkpor.tkdevil, img.gic.tkdevil, .tkspr.tkdevil{
 .schoice.on .choice{animation-delay:0s}
 .schoice.on .choice + .choice{animation-delay:.08s}
 .schoice.on .choice + .choice + .choice{animation-delay:.16s}
+
+/* Просмотр полного роста и выбор облика */
+#modal.on:has(.mbox.skinbox){z-index:140}
+#modal .mbox.skinbox{max-height:100dvh;height:100dvh;width:100%;border-radius:0;border:0;padding:0;background:#0c0814;overflow:hidden;animation:none}
+#modal .mbox.skinbox .mbox-body{display:flex;flex-direction:column;height:100%;max-height:100dvh;padding:0;overflow:hidden;gap:0}
+.skinv{display:flex;flex-direction:column;height:100%;min-height:0;padding:calc(8px + var(--sat,0px)) 10px calc(10px + var(--sab,0px));box-sizing:border-box}
+.skinv-top{display:flex;align-items:center;gap:8px;flex:none;padding:2px 2px 8px}
+.skinv-top b{color:var(--gold2);font-size:16px}
+.skinv-stage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center}
+.skinv-im{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;object-position:center;filter:drop-shadow(0 10px 28px rgba(0,0,0,.5));pointer-events:none;-webkit-user-drag:none}
+.skinarr{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:64px;border:0;border-radius:14px;background:rgba(12,8,20,.55);color:#ffe9c8;font-size:28px;line-height:1;z-index:2}
+.skinarr.left{left:2px}.skinarr.right{right:2px}
+.skintabs{display:flex;gap:6px;flex:none;justify-content:center;flex-wrap:wrap;padding-top:8px}
+.skintab{flex:1;min-width:0;padding:10px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#f2e6d4;font-size:13px}
+.skintab.on{border-color:var(--gold);background:linear-gradient(180deg,rgba(242,195,92,.28),rgba(80,40,16,.55));color:var(--gold2);font-weight:700}

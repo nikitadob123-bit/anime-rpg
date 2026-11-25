@@ -1,9 +1,9 @@
-/* E2E v2.31.5 коллаба «Железный Кулак»: канонический сценарий, 4 пути, рамка диалога.
-   Скриншоты — /workspace/shots-tekken/v2310/  (444×986) */
+/* E2E v2.31.6 коллаба «Железный Кулак»: канонический сценарий, 4 пути, рамка диалога.
+   Скриншоты — /workspace/shots-tekken/v2316/  (444×986) */
 const { chromium } = require('playwright-core');
 const fs = require('fs'), path = require('path');
 const { serve } = require('./serve.js');
-const outDir = process.env.TK_SHOTS || '/workspace/shots-tekken/v2310';
+const outDir = process.env.TK_SHOTS || '/workspace/shots-tekken/v2316';
 fs.mkdirSync(outDir, { recursive: true });
 let ok = 0, bad = 0;
 const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra || ''); } else { bad++; console.log('  ✗', n, extra || ''); } };
@@ -87,7 +87,7 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   const closeStory = async () => {
     await ev(() => { try { if (document.getElementById('sSkip') && __RPG.UI.sSkip) __RPG.UI.sSkip(); } catch (e) {} });
     await page.waitForFunction(() => !document.getElementById('story'), { timeout: 15000 }).catch(() => {});
-    await ev(() => { const t = document.getElementById('toast'); if (t) t.remove(); });
+    await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
     await page.waitForTimeout(150);
   };
 
@@ -107,10 +107,10 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   });
   await page.waitForTimeout(400);
 
-  check('версия 2.31.5', await ev(() => __RPG.VERSION === '2.31.5' || (__RPG.RPG && __RPG.RPG.VERSION === '2.31.5') || document.querySelector('script') && true) && await ev(() => (__RPG.VERSION || __RPG.RPG?.VERSION) ? (__RPG.VERSION || __RPG.RPG.VERSION) === '2.31.5' : !!__RPG.D.TK_CH && __RPG.D.TK_CH.length === 19), await ev(() => __RPG.VERSION || (window.RPG && RPG.VERSION)));
+  check('версия 2.31.6', await ev(() => __RPG.VERSION === '2.31.6' || (__RPG.RPG && __RPG.RPG.VERSION === '2.31.6') || document.querySelector('script') && true) && await ev(() => (__RPG.VERSION || __RPG.RPG?.VERSION) ? (__RPG.VERSION || __RPG.RPG.VERSION) === '2.31.6' : !!__RPG.D.TK_CH && __RPG.D.TK_CH.length === 19), await ev(() => __RPG.VERSION || (window.RPG && RPG.VERSION)));
   // VERSION lives on RPG
   const ver = await ev(() => (window.RPG && RPG.VERSION) || __RPG.VERSION || '');
-  check('RPG.VERSION 2.31.5', ver === '2.31.5', ver);
+  check('RPG.VERSION 2.31.6', ver === '2.31.6', ver);
   check('19 глав канона', await ev(() => (__RPG.D.TK_CH || []).length === 19 && __RPG.D.TK_CH[0].id === 'tk01_rift' && __RPG.D.TK_CH[18].id === 'tk19_home'));
   check('событие активно', await ev(() => __RPG.E.tkActive()));
   check('баннер в Лагере', await page.locator('.tkbanner').count() > 0);
@@ -281,7 +281,7 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
     UI.playLines(sc.lines, { bg: sc.bg || 'tk_dojo', title: sc.t, boxPor: true });
   });
   await page.waitForSelector('#story', { timeout: 8000 });
-  await ev(() => { const t = document.getElementById('toast'); if (t) t.remove(); });
+  await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
   await page.waitForTimeout(2600);
   for (let i = 0; i < 20; i++) {
     const st = await ev(() => {
@@ -298,7 +298,7 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
     const t = (document.querySelector('#stxt') && document.querySelector('#stxt').textContent) || '';
     return /заберёте/.test(t);
   }, { timeout: 8000 }).catch(() => {});
-  await ev(() => { const t = document.getElementById('toast'); if (t) t.remove(); });
+  await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
   await page.waitForTimeout(200);
   await shot('05-romance-reina');
   const boxPor = await ev(() => !!document.querySelector('.story.boxpor, #dpor, .dlg.haspor'));
@@ -371,6 +371,67 @@ const check = (n, c, extra) => { if (c) { ok++; console.log('  ✓', n, extra ||
   const yuj = await ev(() => __RPG.E.tkMeetOpen(__RPG.UI.slot(), 'yujiro'));
   check('Юдзиро доступен после финала', yuj);
   await shot('08-meets-gallery');
+
+  // полный рост и облики Рейны
+  await ev(() => {
+    const UI = __RPG.UI, E = __RPG.E, s = UI.slot();
+    if (document.getElementById('story') && UI.sSkip) { try { UI.sSkip(); } catch (e) {} }
+    if (!s.crew.tk_reina) E.tkGrantComp(s, 'tk_reina');
+    s.rom = s.rom || {};
+    s.rom.tk_reina = s.rom.tk_reina || { aff: 20, seen: [], dates: 0, gifts: 0 };
+    UI.closeModal && UI.closeModal();
+    UI.tab = 'crew';
+    UI.refresh && UI.refresh();
+    UI.sub.crewId = 'tk_reina';
+    UI.crewModal();
+  });
+  await page.waitForSelector('[data-act="skinView"]', { timeout: 8000 });
+  const crewBtn = await ev(() => ((document.querySelector('[data-act="skinView"]') || {}).textContent || '').replace(/\s+/g, ' ').trim());
+  check('кнопка «В полный рост» на карточке Свиты', /полный рост/.test(crewBtn), crewBtn);
+  const crewPor = await ev(() => {
+    const im = document.querySelector('.crewm img.por');
+    return im ? (im.getAttribute('src') || '') : '';
+  });
+  check('в Свите бюст Рейны, не дьявольский AI-портрет', /tk_reina_top_bust\.webp/.test(crewPor), crewPor);
+  await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
+  await shot('09-reina-crew-card');
+  await click('[data-act="skinView"]');
+  await page.waitForSelector('.skinv-im', { timeout: 8000 });
+  const v1 = await ev(() => {
+    const im = document.querySelector('.skinv-im');
+    const on = ((document.querySelector('.skintab.on') || {}).textContent || '').trim();
+    return { src: im && im.getAttribute('src'), on, tabs: [...document.querySelectorAll('.skintab')].map((e) => e.textContent.trim()) };
+  });
+  check('просмотрщик: обычный облик (бомбер)', v1 && /tk_reina_jacket\.webp/.test(v1.src) && v1.on === 'Обычный', JSON.stringify(v1));
+  await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
+  await shot('10-reina-skin-jacket');
+  await click('[data-act="skinPick"][data-skin="top"]');
+  await page.waitForTimeout(200);
+  const v2 = await ev(() => {
+    const im = document.querySelector('.skinv-im');
+    const on = ((document.querySelector('.skintab.on') || {}).textContent || '').trim();
+    const saved = __RPG.UI.slot().skins && __RPG.UI.slot().skins.tk_reina;
+    return { src: im && im.getAttribute('src'), on, saved };
+  });
+  check('просмотрщик: облик без бомбера запоминается', v2 && /tk_reina_top\.webp/.test(v2.src) && v2.on === 'Без бомбера' && v2.saved === 'top', JSON.stringify(v2));
+  await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
+  await shot('11-reina-skin-top');
+  await ev(() => {
+    const UI = __RPG.UI;
+    UI.tab = 'hearts';
+    UI.refresh && UI.refresh();
+    UI.sub.heartId = 'tk_reina';
+    UI.heartModal();
+  });
+  await page.waitForSelector('[data-act="skinView"]', { timeout: 8000 });
+  const heart = await ev(() => {
+    const btn = !!document.querySelector('[data-act="skinView"]');
+    const im = document.querySelector('.crewm img.tkfull, .crewm img.por.lg');
+    return { btn, src: im && im.getAttribute('src') };
+  });
+  check('кнопка и выбранный облик на карточке романа', heart && heart.btn && /tk_reina_top\.webp/.test(heart.src || ''), JSON.stringify(heart));
+  await ev(() => { const t = document.getElementById('toasts'); if (t) t.innerHTML = ''; });
+  await shot('12-reina-hearts-skin');
 
   const realErr = errors.filter((e) => !/textContent/.test(e) && !/sSkip/.test(e));
   if (realErr.length) check('без ошибок страницы', false, realErr.slice(0, 3).join(' | '));

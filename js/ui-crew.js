@@ -73,6 +73,37 @@
     UI.refresh();
   };
   UI.act.crewOpen = (el) => { UI.sub.crewId = el.dataset.id; UI.crewModal(); };
+  UI.crewSkinBtn = function (s, id) {
+    if (!E.skinsOf || !E.skinsOf(id).length) return '';
+    return `<button class="btn ghost wide" data-act="skinView" data-id="${id}" data-from="${UI.tab || ''}" data-quiet="1">👁 В полный рост</button>`;
+  };
+  UI.act.skinView = (el) => { UI.sub.skinId = el.dataset.id; UI.sub.skinFrom = el.dataset.from || UI.tab || ''; UI.skinModal(); };
+  UI.act.skinPick = (el) => {
+    const id = el.dataset.id, w = E.setSkin(UI.slot(), id, el.dataset.skin);
+    if (w) { UI.toast(w, 'bad'); UI.sfx('err'); return; }
+    UI.save(true); UI.skinModal();
+  };
+  UI.act.skinStep = (el) => {
+    const id = el.dataset.id, list = E.skinsOf(id); if (list.length < 2) return;
+    let i = list.findIndex((x) => x.id === E.skinId(UI.slot(), id));
+    i = (i + (+el.dataset.dir || 1) + list.length) % list.length;
+    E.setSkin(UI.slot(), id, list[i].id); UI.save(true); UI.skinModal();
+  };
+  UI.act.skinBack = (el) => {
+    const id = el.dataset.id || UI.sub.skinId;
+    if ((UI.sub.skinFrom || UI.tab) === 'hearts') { UI.sub.heartId = id; UI.heartModal(); }
+    else { UI.sub.crewId = id; UI.crewModal(); }
+  };
+  UI.skinModal = function () {
+    const s = UI.slot(), id = UI.sub.skinId, c = D.CREW[id], list = E.skinsOf(id), cur = E.skinOf(s, id);
+    if (!c || !cur) return;
+    const tabs = list.map((x) => `<button class="skintab${x.id === cur.id ? ' on' : ''}" data-act="skinPick" data-id="${id}" data-skin="${x.id}" data-quiet="1">${esc(x.n)}</button>`).join('');
+    const arr = list.length > 1
+      ? `<button class="skinarr left" data-act="skinStep" data-id="${id}" data-dir="-1" data-quiet="1" aria-label="Предыдущий облик">‹</button><button class="skinarr right" data-act="skinStep" data-id="${id}" data-dir="1" data-quiet="1" aria-label="Следующий облик">›</button>`
+      : '';
+    UI.modal(`<div class="skinv"><div class="skinv-top"><div class="grow tl"><b>${esc(c.n)}</b><div class="dim small">${esc(cur.n)}</div></div><button class="btn ghost small" data-act="skinBack" data-id="${id}">Закрыть</button></div><div class="skinv-stage">${arr}<img class="skinv-im" src="${esc(E.skinSrc(cur))}" alt="${esc(c.n)}" draggable="false"></div><div class="skintabs">${tabs}</div></div>`, { cls: 'skinbox' });
+  };
+
   const gearName = (it) => `${UI.itemIc(it)} ${UI.itemName(it)}`;
   UI.crewModal = function () {
     const s = UI.slot(), id = UI.sub.crewId, c = D.CREW[id], st = s.crew[id]; if (!st) return;
@@ -81,6 +112,7 @@
     const sk = E.crewSkills(s, id).map((x) => D.SKILLS[x]).filter(Boolean).map((k) => `<div class="small tl"><b>${k.ic} ${k.n}</b> — ${k.d}</div>`).join('');
     const gifts = Object.keys(D.GIFTS).filter((g) => E.giftCount(s, g) > 0).map((g) => `<button class="btn ghost small" data-act="giveGift" data-id="${id}" data-g="${g}" data-quiet="1">${D.GIFTS[g].ic} ×${E.giftCount(s, g)}</button>`).join('') || '<span class="dim small">Подарков нет — купите в лавке.</span>';
     UI.modal(`<div class="crewm"><div class="row gap">${UI.por(c.art, 'lg', false)}<div class="grow tl"><h3 class="m0">${esc(c.n)}</h3><div class="dim small">${esc(c.role)} · ${D.ARCH_N[c.arch]} · ур. ${st.lv}</div>${loyBar(st)}<div class="small dim">Опыт ${st.xp}/${E.crewXpNeed(st.lv)} · потолок ур. ${E.crewCap(s, id)}</div></div></div>
+      ${UI.crewSkinBtn ? UI.crewSkinBtn(s, id) : ''}
       <div class="small tl">${esc(c.d)}</div>
       <div class="stats"><span>❤️ ${fmt(u.maxHp)}</span><span>⚔️ ${fmt(Math.max(u.atk || 0, u.mag || 0))}</span><span>🛡️ ${fmt(u.def || 0)}</span><span>✨ ${fmt(u.res || 0)}</span></div>
       ${UI.crewExtra ? UI.crewExtra(s, id) : ''}<div class="card">${sk || '<div class="dim small">Навыки откроются с уровнем.</div>'}${c.sig ? `<div class="small dim tl">${st.lv >= 8 ? (st.loy >= 50 ? '' : 'Подписной навык требует верности 50+.') : 'Подписной навык — с 8 ур.'}</div>` : ''}</div>
@@ -134,6 +166,7 @@
     const gifts = Object.keys(D.GIFTS).filter((g) => E.giftCount(s, g) > 0).map((g) => `<button class="btn ghost small" data-act="giveGift" data-id="${id}" data-g="${g}" data-quiet="1">${D.GIFTS[g].ic} ×${E.giftCount(s, g)}</button>`).join('') || '<span class="dim small">Подарков нет — купите в лавке.</span>';
     const why = E.dateOk(s, id);
     UI.modal(`<div class="crewm"><div class="row gap">${(UI.romCardPor && UI.romCardPor(id)) || UI.por(c.art, 'lg', false)}<div class="grow tl"><h3 class="m0">${esc(c.n)}</h3><div class="dim small">${esc(c.role)}</div><div class="affb">${bar(R.aff, 100, 'aff')}<i style="left:15%"></i><i style="left:40%"></i><i style="left:70%"></i></div><div class="small">💞 ${R.aff}/100 · верность: ${D.loyTier(st.loy).n}</div></div></div>
+      ${UI.crewSkinBtn ? UI.crewSkinBtn(s, id) : ''}
       <div class="small tl">${stg ? '<b>Бонус сердца:</b> ' + bondText(id, stg) : 'Бонус откроется со ступенью 1 (симпатия 15).'}</div>
       <div class="card"><b>Сцены</b><div class="row gap">${sc}</div></div>
       <div class="card"><b>Подарок</b> <span class="dim small">любимое: ${D.GIFTS[c.fav].ic} ${D.GIFTS[c.fav].n}</span><div class="row gap wrap">${gifts}</div></div>

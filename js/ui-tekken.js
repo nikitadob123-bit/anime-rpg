@@ -9,9 +9,10 @@
   const porSrc = (id) => {
     const s = UI.slot && UI.slot();
     if (id && String(id).indexOf('tk_reina') === 0) {
-      if (s && s.tk && s.tk.blood && UI.hasTkArt('tk_reina_devil')) return 'tk_reina_devil';
-      // полный рост (jacket/top) только если его явно запросили — карточка романа
+      // полный рост — только если его явно запросили (карточка романа / просмотрщик)
       if (id === 'tk_reina_jacket' || id === 'tk_reina_top') return id;
+      // мелкие портреты и карточка Свиты: пакетный бюст (не старый квадратный AI-портрет)
+      if (UI.hasTkArt('tk_reina_top_bust')) return 'tk_reina_top_bust';
       return UI.hasTkArt('tk_reina') ? 'tk_reina' : id;
     }
     return id;
@@ -30,8 +31,10 @@
   UI.hasTkArt = (id) => haveArt.has(id);
 
   UI.romCardPor = (id) => {
-    if (id !== 'tk_reina' || !UI.hasTkArt('tk_reina_jacket')) return null;
-    return '<img class="por lg tkfull" src="img/tekken/tk_reina_jacket.webp" alt="" draggable="false">';
+    const sk = (E.skinOf && E.skinOf(UI.slot && UI.slot(), id));
+    if (sk && UI.hasTkArt(sk.img)) return '<img class="por lg tkfull" src="' + E.skinSrc(sk) + '" alt="" draggable="false">';
+    if (id === 'tk_reina' && UI.hasTkArt('tk_reina_jacket')) return '<img class="por lg tkfull" src="img/tekken/tk_reina_jacket.webp" alt="" draggable="false">';
+    return null;
   };
   if (typeof document !== 'undefined') {
     const rules = [];

@@ -160,6 +160,30 @@ t('магазин и награды', () => {
   assert.strictEqual(E.tkShopBuy(s, 'gene', NOW), ''); assert(s.arts.devil_gene != null);
   // Дзин уже выдан концовкой
   assert(s.crew.tk_jin);
+  assert(!D.TK_SHOP.some((it) => it.id === 'rec_jin' || it.id === 'rec_nina' || it.typ === 'rec'));
+  assert(!D.TK_SHOP_MAP.rec_jin && !D.TK_SHOP_MAP.rec_nina);
+  assert.strictEqual(E.tkShopBuy(s, 'rec_jin', NOW), 'Нет такой позиции');
+  assert.strictEqual(E.tkShopBuy(s, 'rec_nina', NOW), 'Нет такой позиции');
+});
+
+t('старая покупка Дзина/Нины в магазине не ломает сохранение и не забирает их из Свиты', () => {
+  const s = mk();
+  s.tk.tokens = 50;
+  s.tk.shop.rec_jin = 1;
+  s.tk.shop.rec_nina = 1;
+  s.tk.rec = ['tk_jin', 'tk_nina'];
+  E.recruit(s, 'tk_jin');
+  E.recruit(s, 'tk_nina');
+  E.tkEnsure(s);
+  assert(s.crew.tk_jin && s.crew.tk_nina);
+  assert.strictEqual(s.tk.shop.rec_jin, 1);
+  assert.strictEqual(s.tk.shop.rec_nina, 1);
+  assert.deepStrictEqual(s.tk.rec, ['tk_jin', 'tk_nina']);
+  assert.strictEqual(s.tk.tokens, 50);
+  // остальные позиции магазина по-прежнему покупаются
+  assert.strictEqual(E.tkShopWhy(s, 'pack_s', NOW), '');
+  assert.strictEqual(E.tkShopBuy(s, 'pack_s', NOW), '');
+  assert(s.crew.tk_jin && s.crew.tk_nina);
 });
 
 t('после окончания события награды остаются, бои закрыты', () => {
@@ -554,6 +578,31 @@ t('письмо сбрасывает коллабу и выдаёт «Одино
   const fresh = mk();
   assert(!E.achList(fresh).some((x) => x.a.id === 'lone_wolf'));
   assert(!E.titlesOf(fresh).some((x) => x.id === 'lone_wolf'));
+});
+
+
+t('облики Рейны: список, выбор сохраняется, сброс сюжета его не трогает', () => {
+  const list = (D.TK_SKINS && D.TK_SKINS.tk_reina) || [];
+  assert.strictEqual(list.length, 2);
+  assert.strictEqual(list[0].id, 'jacket');
+  assert.strictEqual(list[0].n, 'Обычный');
+  assert.strictEqual(list[0].img, 'tk_reina_jacket');
+  assert.strictEqual(list[1].id, 'top');
+  assert.strictEqual(list[1].n, 'Без бомбера');
+  assert.strictEqual(list[1].img, 'tk_reina_top');
+  const s = mk();
+  assert.strictEqual(E.skinId(s, 'tk_reina'), 'jacket');
+  assert.strictEqual(E.skinOf(s, 'tk_reina').img, 'tk_reina_jacket');
+  assert(E.skinSrc(E.skinOf(s, 'tk_reina')).indexOf('tk_reina_jacket.webp') >= 0);
+  assert.strictEqual(E.setSkin(s, 'tk_reina', 'top'), '');
+  assert.strictEqual(s.skins.tk_reina, 'top');
+  assert.strictEqual(E.skinId(s, 'tk_reina'), 'top');
+  assert.strictEqual(E.setSkin(s, 'tk_reina', 'nope'), 'Нет такого облика');
+  assert.strictEqual(s.skins.tk_reina, 'top');
+  playThrough(s, 'tk16_outcome');
+  assert.strictEqual(E.tkResetStory(s), '');
+  assert.strictEqual(s.skins.tk_reina, 'top', 'сброс сюжета коллабы не должен затирать выбранный облик');
+  assert(!E.skinsOf('tk_nina').length);
 });
 
 console.log(`  ${pass} ✓, ${fail} ✗`); if (fail) process.exit(1);
