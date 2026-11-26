@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3b0"/><stop offset=".35" stop-color="#ffd35a"/><stop offset=".7" stop-color="#d98f1c"/><stop offset="1" stop-color="#8a4f0c"/>
+    </linearGradient>
+    <linearGradient id="goldL" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fffbe0"/><stop offset=".45" stop-color="#ffe07a"/><stop offset="1" stop-color="#e09a22"/>
+    </linearGradient>
+    <radialGradient id="pur" cx=".5" cy=".38" r=".7">
+      <stop offset="0" stop-color="#b98cff"/><stop offset=".45" stop-color="#6a2fc4"/><stop offset="1" stop-color="#22093f"/>
+    </radialGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#e2c9ff" stop-opacity=".9"/><stop offset="1" stop-color="#9b5cff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000" flood-opacity=".55"/></filter>
+  </defs>
+  <g filter="url(#sh)">
+    <!-- боковые крылья-лучи -->
+    <path d="M128 30 L150 60 L128 52 L106 60 Z" fill="url(#gold)"/>
+    <path d="M40 92 L78 84 L66 100 Z M216 92 L178 84 L190 100 Z" fill="url(#gold)"/>
+    <!-- герб -->
+    <path d="M128 44 L196 72 L196 138 C196 182 166 208 128 226 C90 208 60 182 60 138 L60 72 Z" fill="url(#gold)"/>
+    <path d="M128 58 L183 81 L183 137 C183 173 159 195 128 210 C97 195 73 173 73 137 L73 81 Z" fill="#3a1268"/>
+    <path d="M128 64 L177 85 L177 137 C177 169 156 189 128 203 C100 189 79 169 79 137 L79 85 Z" fill="url(#pur)"/>
+    <ellipse cx="128" cy="128" rx="44" ry="50" fill="url(#glow)"/>
+    <!-- молния -->
+    <path d="M140 72 L100 138 L124 138 L112 190 L158 118 L133 118 L148 72 Z" fill="url(#goldL)" stroke="#7a3d06" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M140 80 L110 132 L118 132 L136 102 Z" fill="#fffef2" opacity=".75"/>
+    <!-- блик на кромке -->
+    <path d="M128 48 L192 74 L192 82 L128 55 L64 82 L64 74 Z" fill="#fffbe0" opacity=".55"/>
+    <!-- искры -->
+    <path d="M196 46 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4 Z" fill="#fff6c8"/>
+    <path d="M58 182 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 Z" fill="#e8d4ff"/>
+  </g>
+</svg>

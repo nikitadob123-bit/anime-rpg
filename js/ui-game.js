@@ -8,7 +8,7 @@
   UI.sub = { skills: 'root', crew: null, hearts: null, prof: null, inv: 'gear', filt: 'all', shop: 'gear' };
   const rar = (it) => E.rar(it);
   const bar = (v, max, cl) => `<span class="bar ${cl || ''}"><i style="width:${Math.max(0, Math.min(100, v / max * 100))}%"></i></span>`;
-  const matTxt = (m, slot) => Object.keys(m || {}).map((k) => { const have = (slot.mats[k] || 0), ok = have >= m[k]; return `<span class="mat ${ok ? 'ok' : 'no'}">${D.MATS[k].ic} ${D.MATS[k].n} ${have}/${m[k]}</span>`; }).join('');
+  const matTxt = (m, slot) => Object.keys(m || {}).map((k) => { const have = (slot.mats[k] || 0), ok = have >= m[k]; return `<span class="mat ${ok ? 'ok' : 'no'}">${UI.mIc(k)} ${D.MATS[k].n} ${have}/${m[k]}</span>`; }).join('');
   // редкость: цвет (--rc), свечение (--rg), класс r0…r10 (особые эффекты для старших)
   UI.rarVars = (it) => { const R = rar(it); return `--rc:${R.c};--rg:${R.g}`; };
   UI.rarCls = (it) => 'rar r' + ((it && it.r) | 0);
@@ -133,11 +133,11 @@
     } else if (t === 'gifts') {
       body = UI.giftShop(s);
     } else if (t === 'mats') {
-      body = E.SHOP_MATS.map((id) => { const m = D.MATS[id], p = E.matBuy(id); return `<div class="item"><span class="ico">${m.ic}</span><span class="grow tl"><b>${m.n}</b> <small>в сумке: ${s.mats[id] || 0}</small></span><button class="btn small ${s.gold >= p ? 'primary' : 'ghost'}" data-act="buyMat" data-id="${id}" data-quiet="1">🪙 ${p}</button><button class="btn small ${s.gold >= p * 5 ? 'primary' : 'ghost'}" data-act="buyMat" data-id="${id}" data-n="5" data-quiet="1">×5</button></div>`; }).join('');
+      body = E.SHOP_MATS.map((id) => { const m = D.MATS[id], p = E.matBuy(id); return `<div class="item"><span class="ico">${UI.mIc(id)}</span><span class="grow tl"><b>${m.n}</b> <small>в сумке: ${s.mats[id] || 0}</small></span><button class="btn small ${s.gold >= p ? 'primary' : 'ghost'}" data-act="buyMat" data-id="${id}" data-quiet="1">🪙 ${p}</button><button class="btn small ${s.gold >= p * 5 ? 'primary' : 'ghost'}" data-act="buyMat" data-id="${id}" data-n="5" data-quiet="1">×5</button></div>`; }).join('');
     } else {
       const junk = s.inv.filter((x) => x.r <= 1 && !x.lock);
       body = `<div class="row gap"><button class="btn ghost grow small" data-act="sellJunk" data-r="0">Продать обычное (${s.inv.filter((x) => x.r === 0 && !x.lock).length})</button><button class="btn ghost grow small" data-act="sellJunk" data-r="1">+ необычное (${junk.length})</button></div>` +
-        Object.keys(s.mats).filter((k) => s.mats[k] > 0 && D.MATS[k]).map((k) => `<div class="item"><span class="ico">${D.MATS[k].ic}</span><span class="grow tl"><b>${D.MATS[k].n}</b> <small>×${s.mats[k]}</small></span><button class="btn small ghost" data-act="sellMat" data-id="${k}" data-n="1" data-quiet="1">🪙 ${E.matSell(k)}</button><button class="btn small ghost" data-act="sellMat" data-id="${k}" data-n="99" data-quiet="1">все</button></div>`).join('') +
+        Object.keys(s.mats).filter((k) => s.mats[k] > 0 && D.MATS[k]).map((k) => `<div class="item"><span class="ico">${UI.mIc(k)}</span><span class="grow tl"><b>${D.MATS[k].n}</b> <small>×${s.mats[k]}</small></span><button class="btn small ghost" data-act="sellMat" data-id="${k}" data-n="1" data-quiet="1">🪙 ${E.matSell(k)}</button><button class="btn small ghost" data-act="sellMat" data-id="${k}" data-n="99" data-quiet="1">все</button></div>`).join('') +
         s.inv.slice().sort((a, b) => b.r - a.r || b.il - a.il).map((it) => itemRow(it, 'sellItem', `<span class="btn small ghost">🪙 ${E.sellPrice(it)}</span>`)).join('') || '';
     }
     UI.modal(`<div class="row center-v"><h3 class="grow m0">🏪 Лавка беженцев</h3><b>🪙 ${fmt(s.gold)}</b></div><div class="seg small">${tb.map(([k, n]) => `<button class="${t === k ? 'on' : ''}" data-act="shopTab" data-v="${k}" data-quiet="1">${n}</button>`).join('')}</div><div class="mlist">${body || '<div class="dim center pad">Пусто</div>'}</div><button class="btn ghost wide" data-act="closeModal">Закрыть</button>`, { cls: 'tall' });
@@ -245,7 +245,7 @@
     const head = `<div class="seg small">${[['gear', 'Снаряжение'], ['mats', 'Материалы'], ['cons', 'Расходники']].map(([a, b]) => `<button class="${k === a ? 'on' : ''}" data-act="sub" data-k="inv" data-v="${a}" data-quiet="1">${b}</button>`).join('')}</div>`;
     if (k === 'mats') {
       const ids = Object.keys(s.mats).filter((x) => s.mats[x] > 0 && D.MATS[x]);
-      return head + `<div class="matgrid">${ids.map((id) => `<div class="mt"><span>${D.MATS[id].ic}</span><b>${s.mats[id]}</b><small>${D.MATS[id].n}</small></div>`).join('') || '<div class="dim center pad">Материалов нет. Добывайте их в подземельях и на промысле.</div>'}</div>`;
+      return head + `<div class="matgrid">${ids.map((id) => `<div class="mt"><span>${UI.mIc(id)}</span><b>${s.mats[id]}</b><small>${D.MATS[id].n}</small></div>`).join('') || '<div class="dim center pad">Материалов нет. Добывайте их в подземельях и на промысле.</div>'}</div>`;
     }
     if (k === 'cons') {
       const ids = Object.keys(s.cons).filter((x) => s.cons[x] > 0 && D.CONS[x]);
@@ -282,7 +282,7 @@
     const s = UI.slot(), it = E.findItem(s, id); if (!it) { UI.closeModal(); return; }
     const worn = s.eq[it.sl] === it, cur = !worn && s.eq[it.sl], cap = E.upCap(s, it), c = E.upCost(s, it);
     const matsOk = Object.keys(c.mats || {}).every((m) => (s.mats[m] || 0) >= c.mats[m]);
-    const matLine = Object.keys(c.mats || {}).map((m) => `${D.MATS[m].ic}${c.mats[m]}`).join(' ') || '';
+    const matLine = Object.keys(c.mats || {}).map((m) => `${UI.mIc(m)}${c.mats[m]}`).join(' ') || '';
     UI.modal(`<div class="itemhead ${UI.rarCls(it)}" style="${UI.rarVars(it)}"><span class="big-ic">${UI.itemIc(it, true)}</span><div class="grow tl"><h3 class="m0">${UI.itemName(it)}</h3><div class="dim small">${UI.rarBadge(it)} ${D.SLOTS[it.sl]} · ур. ${it.il} · улучш. +${it.up || 0}/${cap}${it.en ? ' · ✨ ' + D.ENCHANTS.find((e) => e.id === it.en).n : ''}</div></div><button class="btn ghost small qbtn" data-act="rarInfo" data-quiet="1" aria-label="Редкости">?</button></div>
       ${E.uniqOf(it) ? `<div class="uqart ${UI.rarCls(it)}"><img src="${E.uniqOf(it).art}" alt="${esc(it.nm)}">${E.uniqOf(it).sub ? `<div class="uqsub">${esc(E.uniqOf(it).sub)}</div>` : ''}<div class="uqlore">«${esc(E.uniqOf(it).lore)}»</div><div class="uqtag">Уникальный предмет · не продаётся</div>${E.uniqOf(it).note ? `<div class="uqnote">Примечание: ${esc(E.uniqOf(it).note)}</div>` : ''}</div>` : ''}
       ${UI.itemDiffHtml(it, cur)}${UI.cxHtml(it)}
@@ -359,7 +359,7 @@
   UI.act.gather = (el) => {
     const s = UI.slot(); if (s.run) { UI.toast('Не во время вылазки', 'bad'); return; }
     const r = E.gather(s, el.dataset.p, +el.dataset.i); if (r.err) { UI.toast(r.err, 'bad'); UI.sfx('err'); return; }
-    UI.sfx('pick'); UI.save(true); UI.toast('Добыто: ' + Object.keys(r.got).map((k) => `${D.MATS[k].ic}${r.got[k]}`).join(' ') + (r.lvUp ? ' · 🌟 новый уровень!' : ''), 'ok'); UI.refresh();
+    UI.sfx('pick'); UI.save(true); UI.toast('Добыто: ' + Object.keys(r.got).map((k) => `${UI.mIc(k)}${r.got[k]}`).join(' ') + (r.lvUp ? ' · 🌟 новый уровень!' : ''), 'ok'); UI.refresh();
   };
 
   // ═════ НАСТРОЙКИ ═════

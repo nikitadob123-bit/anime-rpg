@@ -134,7 +134,7 @@
     if (g.xp) out.push({ ic: '⭐', n: 'Опыт', q: g.xp });
     if (g.sp) out.push({ ic: '✦', n: 'Искры Нимба', q: g.sp });
     for (const id in (g.cons || {})) if (D.CONS[id]) out.push({ ic: D.CONS[id].ic, n: D.CONS[id].n, q: g.cons[id] });
-    for (const id in (g.mats || {})) if (D.MATS[id]) out.push({ ic: D.MATS[id].ic, n: D.MATS[id].n, q: g.mats[id] });
+    for (const id in (g.mats || {})) if (D.MATS[id]) out.push({ ic: D.MATS[id].ic, img: D.MATS[id].img, mat: 1, n: D.MATS[id].n, q: g.mats[id] });
     for (const id in (g.presents || {})) if (D.GIFTS[id]) out.push({ ic: D.GIFTS[id].ic, n: D.GIFTS[id].n, q: g.presents[id] });
     (g.gear || []).forEach((it) => { const B = D.BASES[it.base]; if (B) { const ri = rarIdx(it.rarity || 0), r = D.RARITY[ri] || D.RARITY[0]; out.push({ ic: B.ic, n: it.nm || B.n, q: 1, c: r.c, r: r.n, ri: D.RARITY[ri] ? ri : 0 }); } });
     (g.unique || []).forEach((id) => { const U = D.UNIQUE_ITEMS && D.UNIQUE_ITEMS[id]; if (U) { const r = D.RARITY[U.r]; out.push({ ic: D.BASES[U.base].ic, img: U.img128 || U.img, n: U.nm, q: 1, c: r.c, r: r.n, ri: U.r, uq: id }); } });

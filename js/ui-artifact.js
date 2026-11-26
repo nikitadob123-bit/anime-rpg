@@ -71,26 +71,26 @@
   };
   UI.artDropHtml = function (rep) {
     if (!rep || (!rep.art && !rep.artSig)) return '';
-    const s = UI.slot(); let h = rep.artSig ? `<div class="small">🔱 Знаки возвышения +${rep.artSig}</div>` : '';
+    const s = UI.slot(); let h = rep.artSig ? `<div class="small">${UI.sigIc()} Знаки возвышения +${rep.artSig}</div>` : '';
     const r = rep.art; if (!r || r.none) return h + '<div class="small dim">Артефакт на этот раз не найден.</div>';
     const a = D.ART[r.id];
-    h += `<div class="adrop ${a.r === D.ART_WORLD ? 'world' : ''}" style="--ac:${R(a).c};--ag:${R(a).g}">${UI.artIc(a)}<div class="grow tl"><b>${r.isNew ? '🏺 Новый артефакт!' : '🏺 Артефакт'}</b><div>${esc(a.n)} ${rb(a)}</div><div class="small dim">${r.star ? 'Повтор: звезда ' + r.star + '/' + D.ART_STAR_MAX : r.conv ? 'Звёзды на максимуме → 🔱' + r.conv.sig + ' и 🪙' + fmt(r.conv.gold) : r.refused ? 'Уникален — второй экземпляр невозможен' : 'Наденьте во вкладке «Герой»'}</div>${r.comp ? `<div class="small">✨ К вам присоединилась <b>${esc(D.CREW[r.comp].n)}</b>!</div>` : ''}</div></div>`;
+    h += `<div class="adrop ${a.r === D.ART_WORLD ? 'world' : ''}" style="--ac:${R(a).c};--ag:${R(a).g}">${UI.artIc(a)}<div class="grow tl"><b>${r.isNew ? '🏺 Новый артефакт!' : '🏺 Артефакт'}</b><div>${esc(a.n)} ${rb(a)}</div><div class="small dim">${r.star ? 'Повтор: звезда ' + r.star + '/' + D.ART_STAR_MAX : r.conv ? 'Звёзды на максимуме → ' + UI.sigIc() + r.conv.sig + ' и 🪙' + fmt(r.conv.gold) : r.refused ? 'Уникален — второй экземпляр невозможен' : 'Наденьте во вкладке «Герой»'}</div>${r.comp ? `<div class="small">✨ К вам присоединилась <b>${esc(D.CREW[r.comp].n)}</b>!</div>` : ''}</div></div>`;
     return h;
   };
 
   // ═════ Свита: звёзды, мастерство, узы, поддержка ═════
   UI.crewTopExtra = function (s) {
     const sup = s.support && D.CREW[s.support];
-    return `<div class="card small tl crewx"><b>🤝 Поддержка в бою:</b> ${sup ? `${esc(sup.n)} — герой получает навык «${esc(D.SKILLS['sup_' + sup.arch].n)}»` : '<span class="dim">не выбрана (назначьте в карточке члена Свиты вне отряда)</span>'}<br><b>🔱 Знаки возвышения:</b> ${fmt((s.mats && s.mats.asc_sigil) || 0)} <span class="dim">— экспедиции и Подземелье Артефактов</span></div>`;
+    return `<div class="card small tl crewx"><div><b>🤝 Поддержка в бою:</b> ${sup ? `${esc(sup.n)} — герой получает навык «${esc(D.SKILLS['sup_' + sup.arch].n)}»` : '<span class="dim">не выбрана (назначьте в карточке члена Свиты вне отряда)</span>'}</div><div><b>${UI.sigIc()} Знаки возвышения:</b> ${fmt((s.mats && s.mats.asc_sigil) || 0)} <span class="dim">— экспедиции и Подземелье Артефактов</span></div></div>`;
   };
   UI.crewExtra = function (s, id) {
     const st = E.crewEnsure(s.crew[id]), c = D.CREW[id], bl = E.bondLv(st), nx = E.bondNext(st), ac = E.ascCost(st), aw = E.crewAscendWhy(s, id), sc = E.sklCost(st), sw = E.crewSkillUpWhy(s, id);
     const bh = D.BOND_HERO[c.arch], supOk = !E.supportOk(s, id), isSup = s.support === id;
     return `<div class="card crewx small tl">
       <div class="row between center-v"><b>Возвышение ${'★'.repeat(st.star)}${'☆'.repeat(D.CREW_STAR_MAX - st.star)}</b><span class="dim">+${st.star * 12}% силы · потолок +${st.star * 10} ур.</span></div>
-      ${st.star < D.CREW_STAR_MAX ? `<button class="btn ${aw ? 'ghost' : 'primary'} small wide" data-act="crewAsc" data-id="${id}" ${aw ? 'disabled' : ''}>Возвысить: 🪙${fmt(ac.gold)} · 🔱${ac.sig} · ур. ${ac.lv}+${aw ? ' — ' + esc(aw) : ''}</button>` : ''}
+      ${st.star < D.CREW_STAR_MAX ? `<button class="btn ${aw ? 'ghost' : 'primary'} small wide" data-act="crewAsc" data-id="${id}" ${aw ? 'disabled' : ''}>Возвысить: 🪙${fmt(ac.gold)} · ${UI.sigIc()}${ac.sig} · ур. ${ac.lv}+${aw ? ' — ' + esc(aw) : ''}</button>` : ''}
       <div class="row between center-v"><b>Мастерство навыков ${st.skl}/${D.CREW_SKL_MAX}</b><span class="dim">+${st.skl * 10}% к силе навыков</span></div>
-      ${st.skl < D.CREW_SKL_MAX ? `<button class="btn ${sw ? 'ghost' : 'primary'} small wide" data-act="crewSkl" data-id="${id}" ${sw ? 'disabled' : ''}>Улучшить: 🪙${fmt(sc.gold)} · 🔱${sc.sig}${sw ? ' — ' + esc(sw) : ''}</button>` : ''}
+      ${st.skl < D.CREW_SKL_MAX ? `<button class="btn ${sw ? 'ghost' : 'primary'} small wide" data-act="crewSkl" data-id="${id}" ${sw ? 'disabled' : ''}>Улучшить: 🪙${fmt(sc.gold)} · ${UI.sigIc()}${sc.sig}${sw ? ' — ' + esc(sw) : ''}</button>` : ''}
       <div class="row between center-v"><b>Узы ${bl}/${D.CREW_BOND_MAX}</b><span class="dim">${nx ? 'опыт уз ' + Math.floor(st.bxp) + '/' + nx : 'максимум'}</span></div>
       <div class="dim">Сила +${bl * 2}% · герою: ${esc(E.gearLabel(bh[0]))} +${Math.round(bh[1] * bl * 10) / 10}%. Узы растут в боях, разговорах, от подарков и заданий.</div>
       <button class="btn ${isSup ? 'ghost' : supOk ? 'primary' : 'ghost'} small wide" data-act="crewSup" data-id="${id}" ${isSup || supOk ? '' : 'disabled'}>${isSup ? 'Снять с поддержки' : '🤝 Назначить поддержкой'} <span class="dim">(«${esc(D.SKILLS['sup_' + c.arch].n)}»)</span></button></div>`;

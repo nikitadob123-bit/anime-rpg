@@ -114,3 +114,8 @@ img.por.tkdevil, .tkpor.tkdevil, img.gic.tkdevil, .tkspr.tkdevil{
 @keyframes reascPulse{50%{opacity:.45}}
 .reasc .no{color:#ff8e8e}
 @media (prefers-reduced-motion:reduce){.reasc-pips i.ready{animation:none}}
+/* v2.33.1 иконка Знаков возвышения (и других материалов с картинкой) */
+.gic.gmat{width:1.45em;height:1.45em;vertical-align:-.38em}
+.btn .gic.gmat{width:1.3em;height:1.3em;vertical-align:-.3em;margin:0 1px}
+.mt span .gic,.item .ico .gic,.mgift .gi .gic{width:1.2em;height:1.2em;vertical-align:middle}
+.mic .gic{width:1.25em;height:1.25em;vertical-align:-.3em}

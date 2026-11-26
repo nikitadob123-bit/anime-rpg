@@ -82,7 +82,7 @@
   const dt = (iso) => { const t = M.parseT(iso); if (!Number.isFinite(t)) return ''; const d = new Date(t), y = d.getFullYear() !== new Date().getFullYear(); return d.toLocaleDateString('ru-RU', y ? { day: 'numeric', month: 'short', year: 'numeric' } : { day: 'numeric', month: 'short' }); };
   const body = (s, txt) => esc(E.fmtText(txt || '', s)).replace(/\n/g, '<br>');
   const sealIc = (L) => (L.src === 'local' ? '🪶' : L.from === 'Администрация' ? '👑' : '✉️');
-  const giftTiles = (g, cls) => M.giftList(g).map((x, i) => `<div class="mgift ${cls || ''} ${x.r ? 'rar r' + (x.ri || 0) : ''}" style="${x.c ? '--rc:' + x.c + ';--rg:' + RPG.D.RARITY[x.ri || 0].g + ';' : ''}--i:${i}"><span class="gi">${x.img ? `<img class="uqi${(x.ri || 0) >= 9 ? ' o9' : ''}${(x.ri || 0) >= 10 ? ' p10' : ''}" src="${x.img}" alt="">` : x.ic}</span><b>${x.q > 1 || !x.r ? '×' + fmt(x.q) : ''}</b><small>${esc(x.n)}</small>${x.r ? `<i class="mgr">${esc(x.r)}</i>` : ''}</div>`).join('');
+  const giftTiles = (g, cls) => M.giftList(g).map((x, i) => `<div class="mgift ${cls || ''} ${x.r ? 'rar r' + (x.ri || 0) : ''}" style="${x.c ? '--rc:' + x.c + ';--rg:' + RPG.D.RARITY[x.ri || 0].g + ';' : ''}--i:${i}"><span class="gi">${x.img && x.mat ? `<img class="gic mgic" src="${x.img}" alt="">` : x.img ? `<img class="uqi${(x.ri || 0) >= 9 ? ' o9' : ''}${(x.ri || 0) >= 10 ? ' p10' : ''}" src="${x.img}" alt="">` : x.ic}</span><b>${x.q > 1 || !x.r ? '×' + fmt(x.q) : ''}</b><small>${esc(x.n)}</small>${x.r ? `<i class="mgr">${esc(x.r)}</i>` : ''}</div>`).join('');
   const status = (s, L) => {
     if (!M.hasGifts(L.gifts)) return '';
     if (L.claimed || M.ensure(s).claimed[L.id]) return '<span class="mst ok">✔ Получено</span>';
@@ -99,7 +99,7 @@
       : st === 'loading' ? '<div class="mnet">⏳ Проверяем почту…</div>'
       : UI.mailNet.t ? `<div class="mnet ok">Почта проверена в ${new Date(UI.mailNet.t).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div>` : '';
     const rows = list.map((L) => {
-      const exp = M.hasGifts(L.gifts) && !L.claimed && M.isExpired(L), ic = M.giftList(L.gifts).slice(0, 5).map((x) => x.ic).join('');
+      const exp = M.hasGifts(L.gifts) && !L.claimed && M.isExpired(L), ic = M.giftList(L.gifts).slice(0, 5).map((x) => (x.img && x.mat ? `<img class="gic" src="${x.img}" alt="">` : x.ic)).join('');
       return `<button class="mrow ${L.read ? '' : 'unread'} ${exp ? 'expired' : ''}" data-act="mailOpen" data-id="${esc(L.id)}" data-quiet="1"><span class="mseal">${sealIc(L)}</span><span class="grow tl"><span class="mfrom">${esc(L.from)} · ${dt(L.date || L.got)}</span><b class="mtitle">${esc(L.title)}</b><span class="mmeta">${ic ? `<span class="mic">${ic}</span>` : ''}${status(s, L)}</span></span>${L.read ? '' : '<i class="mdot" aria-label="Не прочитано"></i>'}<span class="chev">›</span></button>`;
     }).join('');
     return `<div class="mailtop"><div class="row center-v gap"><span class="mailic">${ENV}</span><h2 class="grow m0">Почта</h2><button class="btn ghost mref" data-act="mailRefresh" data-quiet="1" aria-label="Проверить почту" title="Проверить почту"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4.5h-4.5"/></svg></button></div>${net}

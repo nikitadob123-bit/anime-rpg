@@ -67,7 +67,7 @@
     const ers = C.erasedList(s).filter((x) => x.k.startsWith(run.did + '|' + run.tier + '|') && +x.k.split('|')[2] >= run.node);
     const party = [`<div class="pm">${UI.por(s.hero.portrait, 'xs', false)}<div class="grow"><b>${esc(s.hero.name)}</b>${bar(run.hp, dd.maxHp, 'hp')}${bar(run.mp, dd.maxMp, 'mp')}<small>${fmt(run.hp)}/${fmt(dd.maxHp)} · ${fmt(run.mp)}/${fmt(dd.maxMp)}</small></div></div>`]
       .concat(s.party.map((id) => `<div class="pm">${UI.por(D.CREW[id].art, 'xs', false)}<div class="grow"><b>${D.CREW[id].n}</b>${bar((run.comp[id] == null ? 1 : run.comp[id]), 1, 'hp')}</div></div>`)).join('');
-    const b = run.bag, mats = Object.keys(b.mats).map((k) => `${D.MATS[k].ic}${b.mats[k]}`).join(' ');
+    const b = run.bag, mats = Object.keys(b.mats).map((k) => `${UI.mIc(k)}${b.mats[k]}`).join(' ');
     let label = 'Дальше'; if (node) label = node.t === 'boss' ? '👹 Сразиться с боссом' : node.t === 'mini' ? '💀 К мини-боссу' : node.t === 'ev' ? 'Исследовать ' + evIcon(node.ev) : node.elite ? '⚔️ Закалённый отряд' : '🗡️ В бой';
     return `<div class="runhead" style="--dc:${d.col}"><span class="big-ic">${d.ic}</span><div class="grow tl"><h3 class="m0">${d.n}</h3><div class="dim small">${T.ic} ${T.n} · этаж ${fl + 1}/${d.floors}</div></div></div>
       <div class="track">${track}</div>${dns ? `<div class="dnz">⚫ Отрицается впереди: ${dns}</div>` : ''}${ers.length ? `<div class="erz" data-until="${ers.reduce((a, x) => Math.max(a, x.until), 0)}">🌌 Стёрто впереди: ${ers.length} · <b>${C.fmtLeft(C.eraseLeft({ until: ers.reduce((a, x) => Math.max(a, x.until), 0) }))}</b></div>` : ''}
@@ -112,7 +112,7 @@
   UI.act.shrineP = (el) => { if (UI.shrineRes) { const f = UI.shrineRes; UI.shrineRes = null; f(el.dataset.c); } };
   function evResult(r) {
     return new Promise((res) => {
-      const mats = Object.keys(r.mats || {}).map((k) => `${D.MATS[k].ic} ${D.MATS[k].n} ×${r.mats[k]}`).join('<br>');
+      const mats = Object.keys(r.mats || {}).map((k) => `${UI.mIc(k)} ${D.MATS[k].n} ×${r.mats[k]}`).join('<br>');
       UI.sfx(r.ev === 'chest' ? 'loot' : r.ev === 'rest' ? 'heal' : 'ok');
       UI.modal(`<div class="big-ic xl center">${evIcon(r.ev)}</div><h3>${r.ev === 'chest' ? 'Сундук' : r.ev === 'rest' ? 'Привал' : r.ev === 'shrine' ? 'Алтарь Лиры' : 'Находка'}</h3><div class="mtext tl">${esc(r.text)}</div>${r.gold ? `<div>🪙 +${fmt(r.gold)}</div>` : ''}${mats ? `<div class="small">${mats}</div>` : ''}${(r.items || []).map((it) => `<div>${rarSpan(it)}</div>`).join('')}${r.lvUp ? '<div class="ok">🌟 Профессия повысила уровень!</div>' : ''}<button class="btn primary wide" id="evOk" data-act="evOk">Продолжить</button>`, { lock: true });
       UI.evDone = () => { UI.closeModal(); res(); };
@@ -125,7 +125,7 @@
     const xp = run.bag.xp, res = E.claimRun(s, outcome); s.crewTalk = Math.min(6, (s.crewTalk || 0) + (outcome === 'win' ? 2 : 1)); UI.save(true);
     await new Promise((resolve) => {
       UI.sfx(outcome === 'win' ? 'win' : outcome === 'lose' ? 'lose' : 'ok');
-      const mats = Object.keys(res.mats).map((k) => `${D.MATS[k].ic} ${D.MATS[k].n} ×${res.mats[k]}`).join('<br>');
+      const mats = Object.keys(res.mats).map((k) => `${UI.mIc(k)} ${D.MATS[k].n} ×${res.mats[k]}`).join('<br>');
       UI.modal(`<div class="big-ic xl center">${outcome === 'win' ? '🏆' : outcome === 'lose' ? '💀' : '🏃'}</div><h3 class="center">${outcome === 'win' ? 'Подземелье пройдено!' : outcome === 'lose' ? 'Отряд повержен' : 'Вы покинули вылазку'}</h3>
         <div class="mtext small tl dim">${outcome === 'lose' ? 'Вы очнулись у ворот города. Половина добычи потеряна.' : outcome === 'win' ? `«${d.n}» (${D.TIERS[run.tier].n}) покорено. ${first ? 'Первая победа: +1 искра Нимба! Свободных вечеров для Свиты: +2.' : ''}` : 'Добыча вылазки сохранена.'}</div>
         <div class="card"><div>🪙 ${fmt(res.gold)} · ✨ ${fmt(xp)} опыта получено в боях</div>${mats ? `<div class="small">${mats}</div>` : ''}${res.items.map((it) => `<div>${rarSpan(it)}</div>`).join('') || '<div class="dim small">Предметов нет</div>'}</div>
@@ -351,7 +351,7 @@
       const s = UI.slot();
       let body;
       if (rep.result === 'win') {
-        UI.sfx(rep.lvUp ? 'level' : 'win'); const mats = Object.keys(rep.mats).map((k) => `${D.MATS[k].ic}${rep.mats[k]}`).join(' ');
+        UI.sfx(rep.lvUp ? 'level' : 'win'); const mats = Object.keys(rep.mats).map((k) => `${UI.mIc(k)}${rep.mats[k]}`).join(' ');
         body = `<div class="big-ic xl center">${rep.bossDown ? '👑' : '⚔️'}</div><h3 class="center">${rep.bossDown ? 'Босс повержен!' : 'Победа!'}</h3><div class="card"><div>✨ +${fmt(rep.xp)} опыта · 🪙 +${fmt(rep.gold)}</div>${mats ? `<div class="small">${mats}</div>` : ''}${rep.items.map((it) => `<div>${rarSpan(it)}</div>`).join('')}</div>${rep.lvUp ? `<div class="lvup">🌟 Новый уровень: <b>${s.hero.level}</b>! Очко навыков получено${s.hero.level % 3 === 0 ? ' + искра Эха' : ''}.</div>` : ''}${rep.firstClear ? '<div class="lvup">🔥 Первая победа над боссом — искра Эха!</div>' : ''}${rep.denied ? `<div class="dnz">⚫ Существование отрицается: ${rep.denied} (без добычи за них)</div>` : ''}${UI.artDropHtml ? UI.artDropHtml(rep) : ''}${UI.spDropHtml ? UI.spDropHtml(rep) : ''}${UI.petDropHtml ? UI.petDropHtml(rep) : ''}`;
       } else if (rep.result === 'lose') { UI.sfx('lose'); body = `<div class="big-ic xl center">💀</div><h3 class="center">Поражение</h3><div class="mtext tl dim center">Отряд пал. Тьма отступает не сразу — но Лира ещё поёт.</div>`; }
       else body = `<div class="big-ic xl center">🏃</div><h3 class="center">Отступление</h3>`;

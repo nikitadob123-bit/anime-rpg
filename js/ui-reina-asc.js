@@ -12,7 +12,7 @@
     const have = (s.mats && s.mats.asc_sigil) || 0;
     const rankBtn = next
       ? `<button class="btn ${why ? 'ghost' : 'primary'} small wide reasc-up" data-act="reinaRank" ${why ? 'disabled' : ''}>⚡ Возвышение ранга ${r.rank + 1}: «${esc(A.names[r.rank + 1])}»</button>
-         <span class="alcost"><span class="${st.lv >= next.lv ? 'ok' : 'no'}">ур. ${next.lv}+</span><span class="${s.gold >= next.gold ? 'ok' : 'no'}">🪙 ${fmt(next.gold)}</span><span class="${have >= next.sig ? 'ok' : 'no'}">🔱 ${have}/${next.sig}</span><span class="dim">→ ${kTxt(r.rank + 1)} к силе</span></span>${why ? `<div class="dim">${esc(why)}</div>` : ''}`
+         <span class="alcost"><span class="${st.lv >= next.lv ? 'ok' : 'no'}">ур. ${next.lv}+</span><span class="${s.gold >= next.gold ? 'ok' : 'no'}">🪙 ${fmt(next.gold)}</span><span class="${have >= next.sig ? 'ok' : 'no'}">${UI.sigIc()} ${have}/${next.sig}</span><span class="dim">→ ${kTxt(r.rank + 1)} к силе</span></span>${why ? `<div class="dim">${esc(why)}</div>` : ''}`
       : '<div class="alperk on">✦ Все десять рангов взяты</div>';
     const gateTxt = r.rank < A.max && gate < max ? ` · сейчас до ур. ${gate} — дальше нужен ранг ${r.rank + 1}` : '';
     const brk = r.capBreak
