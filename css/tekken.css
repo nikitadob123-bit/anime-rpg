@@ -103,3 +103,14 @@ img.por.tkdevil, .tkpor.tkdevil, img.gic.tkdevil, .tkspr.tkdevil{
 .romsc{display:flex;flex-direction:column;gap:6px;align-items:stretch}
 .romsc .btn{text-align:left;line-height:1.25;padding:8px 10px}
 .romsc .btn small{display:block;font-weight:400;opacity:.75}
+/* v2.33.0 Ранги Рейны */
+.reasc{padding:8px 0 10px;margin-bottom:6px;border-bottom:1px solid rgba(180,140,255,.22);display:flex;flex-direction:column;gap:5px}
+.reasc>.row{gap:8px}
+.reasc-n{color:#d9c2ff;font-weight:600}
+.reasc-pips{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.reasc-pips i{height:8px;border-radius:4px;background:rgba(255,255,255,.12)}
+.reasc-pips i.on{background:linear-gradient(90deg,#b48cff,#ffd35a);box-shadow:0 0 6px rgba(180,140,255,.6)}
+.reasc-pips i.ready{background:rgba(255,211,90,.45);animation:reascPulse 1.4s ease-in-out infinite}
+@keyframes reascPulse{50%{opacity:.45}}
+.reasc .no{color:#ff8e8e}
+@media (prefers-reduced-motion:reduce){.reasc-pips i.ready{animation:none}}
